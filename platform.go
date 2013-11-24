@@ -37,14 +37,14 @@ type PlatformVersion struct {
 // Get all the platforms on the system.
 func GetPlatforms() ([]Platform, error) {
 
-	var num_platforms clw.Uint
-	err := clw.GetPlatformIDs(0, nil, &num_platforms)
+	var numPlatforms clw.Uint
+	err := clw.GetPlatformIDs(0, nil, &numPlatforms)
 	if err != nil {
 		return nil, err
 	}
 
-	platformIDs := make([]clw.PlatformID, num_platforms)
-	err = clw.GetPlatformIDs(num_platforms, &platformIDs[0], nil)
+	platformIDs := make([]clw.PlatformID, numPlatforms)
+	err = clw.GetPlatformIDs(numPlatforms, &platformIDs[0], nil)
 	if err != nil {
 		return nil, err
 	}
