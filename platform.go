@@ -34,7 +34,7 @@ type PlatformVersion struct {
 	Info  string
 }
 
-// Get all platforms on the system.
+// Get all the platforms on the system.
 func GetPlatforms() ([]Platform, error) {
 
 	var num_platforms clw.Uint
@@ -156,13 +156,19 @@ func (p *Platform) getVersion() error {
 		return err
 	}
 	n, err := fmt.Sscanf(version, "OpenCL %d.%d %s", &p.version.Major, &p.version.Minor, &p.version.Info)
+
 	// May encounter EOF and only scan 2 items if there is no "info".
-	if err != nil && err != io.EOF {
+	if err == io.EOF && n == 2 {
+		return nil
+	}
+
+	if err != nil {
 		return err
 	}
-	if n < 2 {
+	if n != 3 {
 		return errors.New("could not parse OpenCL platform version")
 	}
+
 	return nil
 }
 
