@@ -9,6 +9,8 @@ import (
 )
 
 type Platform struct {
+	Devices []Device
+
 	id         clw.PlatformID
 	profile    PlatformProfile
 	version    PlatformVersion
@@ -89,7 +91,7 @@ func (p Platform) String() string {
 	return fmt.Sprintf("%s, %s, %s, %s, %v", p.vendor, p.name, p.version.String(), p.profile.String(), p.extensions)
 }
 
-func (p *Platform) getPlatformInfo(paramName clw.PlatformInfo) (string, error) {
+func (p *Platform) getInfo(paramName clw.PlatformInfo) (string, error) {
 
 	var paramValueSize clw.Size
 	err := clw.GetPlatformInfo(p.id, paramName, 0, nil, &paramValueSize)
@@ -98,7 +100,7 @@ func (p *Platform) getPlatformInfo(paramName clw.PlatformInfo) (string, error) {
 	}
 
 	buffer := make([]byte, paramValueSize)
-	err = clw.GetPlatformInfo(p.id, paramName, paramValueSize, buffer, nil)
+	err = clw.GetPlatformInfo(p.id, paramName, paramValueSize, clw.Pointer(buffer), nil)
 	if err != nil {
 		return "", err
 	}
@@ -108,7 +110,7 @@ func (p *Platform) getPlatformInfo(paramName clw.PlatformInfo) (string, error) {
 }
 
 func (p *Platform) getProfile() error {
-	profile, err := p.getPlatformInfo(clw.PlatformProfile)
+	profile, err := p.getInfo(clw.PlatformProfile)
 	if err != nil {
 		return err
 	}
@@ -151,7 +153,7 @@ func (pp PlatformProfile) String() string {
 }
 
 func (p *Platform) getVersion() error {
-	version, err := p.getPlatformInfo(clw.PlatformVersion)
+	version, err := p.getInfo(clw.PlatformVersion)
 	if err != nil {
 		return err
 	}
@@ -193,7 +195,7 @@ func (pv PlatformVersion) String() string {
 
 func (p *Platform) getName() error {
 	var err error
-	p.name, err = p.getPlatformInfo(clw.PlatformName)
+	p.name, err = p.getInfo(clw.PlatformName)
 	if err != nil {
 		return err
 	}
@@ -214,7 +216,7 @@ func (p *Platform) Name() string {
 
 func (p *Platform) getVendor() error {
 	var err error
-	p.vendor, err = p.getPlatformInfo(clw.PlatformVendor)
+	p.vendor, err = p.getInfo(clw.PlatformVendor)
 	if err != nil {
 		return err
 	}
@@ -234,7 +236,7 @@ func (p *Platform) Vendor() string {
 }
 
 func (p *Platform) getExtensions() error {
-	extensions, err := p.getPlatformInfo(clw.PlatformExtensions)
+	extensions, err := p.getInfo(clw.PlatformExtensions)
 	if err != nil {
 		return err
 	}
