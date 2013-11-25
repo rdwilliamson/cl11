@@ -16,13 +16,13 @@ func (p *Platform) GetDevices() ([]Device, error) {
 	}
 
 	var numEntries clw.Uint
-	err := clw.GetDeviceIDs(p.id, clw.DeviceTypeAll, 0, nil, &numEntries)
+	err := clw.GetDeviceIDs(p.ID, clw.DeviceTypeAll, 0, nil, &numEntries)
 	if err != nil {
 		return nil, err
 	}
 
 	deviceIDs := make([]clw.DeviceID, numEntries)
-	err = clw.GetDeviceIDs(p.id, clw.DeviceTypeAll, numEntries, &deviceIDs[0], nil)
+	err = clw.GetDeviceIDs(p.ID, clw.DeviceTypeAll, numEntries, &deviceIDs[0], nil)
 	if err != nil {
 		return nil, err
 	}
@@ -41,15 +41,6 @@ func (d *Device) GetInfo() error {
 
 func (d Device) String() string {
 	return ""
-}
-
-func getDeviceUint(id clw.DeviceID, paramName clw.DeviceInfo) (clw.Uint, error) {
-	var paramValue clw.Uint
-	err := clw.GetDeviceInfo(id, paramName, clw.Size(unsafe.Sizeof(paramValue)), unsafe.Pointer(&paramValue), nil)
-	if err != nil {
-		return 0, err
-	}
-	return paramValue, nil
 }
 
 func (d *Device) getInfo(paramName clw.DeviceInfo) error {
@@ -143,4 +134,22 @@ func (d *Device) getInfo(paramName clw.DeviceInfo) error {
 	}
 
 	return nil
+}
+
+func getDeviceUint(id clw.DeviceID, paramName clw.DeviceInfo) (clw.Uint, error) {
+	var paramValue clw.Uint
+	err := clw.GetDeviceInfo(id, paramName, clw.Size(unsafe.Sizeof(paramValue)), unsafe.Pointer(&paramValue), nil)
+	if err != nil {
+		return 0, err
+	}
+	return paramValue, nil
+}
+
+func getDeviceBool(id clw.DeviceID, paramName clw.DeviceInfo) (clw.Bool, error) {
+	var paramValue clw.Bool
+	err := clw.GetDeviceInfo(id, paramName, clw.Size(unsafe.Sizeof(paramValue)), unsafe.Pointer(&paramValue), nil)
+	if err != nil {
+		return 0, err
+	}
+	return paramValue, nil
 }

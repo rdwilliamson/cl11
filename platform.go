@@ -9,14 +9,13 @@ import (
 )
 
 type Platform struct {
-	Devices []Device
-
-	id         clw.PlatformID
-	profile    PlatformProfile
-	version    PlatformVersion
-	name       string
-	vendor     string
-	extensions []string
+	ID         clw.PlatformID
+	Devices    []Device
+	Profile    PlatformProfile
+	Version    PlatformVersion
+	Name       string
+	Vendor     string
+	Extensions []string
 }
 
 type PlatformProfile int8
@@ -53,15 +52,23 @@ func GetPlatforms() ([]Platform, error) {
 
 	platforms := make([]Platform, len(platformIDs))
 	for i := range platforms {
-		platforms[i].id = platformIDs[i]
+		platforms[i].ID = platformIDs[i]
+		err = platforms[i].getAllInfo()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return platforms, nil
 }
 
-// Retrieve all platform information. Required if your going to print platform
-// out or avoid panics in the convenience calls for info.
-func (p *Platform) GetInfo() error {
+// Prints platform info in the form of "vendor, name, version, profile,
+// extensions.""
+func (p Platform) String() string {
+	return fmt.Sprintf("%s, %s, %s, %s, %v", p.Vendor, p.Name, p.Version.String(), p.Profile.String(), p.Extensions)
+}
+
+func (p *Platform) getAllInfo() error {
 	err := p.getProfile()
 	if err != nil {
 		return err
@@ -85,22 +92,16 @@ func (p *Platform) GetInfo() error {
 	return nil
 }
 
-// Prints platform info in the form of "vendor, name, version, profile,
-// extensions.""
-func (p Platform) String() string {
-	return fmt.Sprintf("%s, %s, %s, %s, %v", p.vendor, p.name, p.version.String(), p.profile.String(), p.extensions)
-}
-
 func (p *Platform) getInfo(paramName clw.PlatformInfo) (string, error) {
 
 	var paramValueSize clw.Size
-	err := clw.GetPlatformInfo(p.id, paramName, 0, nil, &paramValueSize)
+	err := clw.GetPlatformInfo(p.ID, paramName, 0, nil, &paramValueSize)
 	if err != nil {
 		return "", err
 	}
 
 	buffer := make([]byte, paramValueSize)
-	err = clw.GetPlatformInfo(p.id, paramName, paramValueSize, clw.Pointer(buffer), nil)
+	err = clw.GetPlatformInfo(p.ID, paramName, paramValueSize, clw.Pointer(buffer), nil)
 	if err != nil {
 		return "", err
 	}
@@ -116,26 +117,14 @@ func (p *Platform) getProfile() error {
 	}
 	switch profile {
 	case "FULL_PROFILE":
-		p.profile = FullProfile
+		p.Profile = FullProfile
 	case "EMBEDDED_PROFILE":
-		p.profile = EmbeddedProfile
+		p.Profile = EmbeddedProfile
 	default:
-		p.profile = UnknownProfile
+		p.Profile = UnknownProfile
 		return errors.New("unknown platform profile")
 	}
 	return nil
-}
-
-func (p *Platform) Profile() PlatformProfile {
-
-	if p.profile == UnsetProfile {
-		err := p.getProfile()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	return p.profile
 }
 
 func (pp PlatformProfile) String() string {
@@ -157,7 +146,7 @@ func (p *Platform) getVersion() error {
 	if err != nil {
 		return err
 	}
-	n, err := fmt.Sscanf(version, "OpenCL %d.%d %s", &p.version.Major, &p.version.Minor, &p.version.Info)
+	n, err := fmt.Sscanf(version, "OpenCL %d.%d %s", &p.Version.Major, &p.Version.Minor, &p.Version.Info)
 
 	// May encounter EOF and only scan 2 items if there is no "info".
 	if err == io.EOF && n == 2 {
@@ -174,18 +163,6 @@ func (p *Platform) getVersion() error {
 	return nil
 }
 
-func (p *Platform) Version() PlatformVersion {
-
-	if p.version.Major == 0 {
-		err := p.getVersion()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	return p.version
-}
-
 func (pv PlatformVersion) String() string {
 	if pv.Info != "" {
 		return fmt.Sprint(pv.Major, ".", pv.Minor, " ", pv.Info)
@@ -195,44 +172,20 @@ func (pv PlatformVersion) String() string {
 
 func (p *Platform) getName() error {
 	var err error
-	p.name, err = p.getInfo(clw.PlatformName)
+	p.Name, err = p.getInfo(clw.PlatformName)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func (p *Platform) Name() string {
-
-	if p.name == "" {
-		err := p.getName()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	return p.name
 }
 
 func (p *Platform) getVendor() error {
 	var err error
-	p.vendor, err = p.getInfo(clw.PlatformVendor)
+	p.Vendor, err = p.getInfo(clw.PlatformVendor)
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func (p *Platform) Vendor() string {
-
-	if p.vendor == "" {
-		err := p.getVendor()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	return p.vendor
 }
 
 func (p *Platform) getExtensions() error {
@@ -240,33 +193,13 @@ func (p *Platform) getExtensions() error {
 	if err != nil {
 		return err
 	}
-	p.extensions = strings.Split(extensions, " ")
+	p.Extensions = strings.Split(extensions, " ")
 	return nil
 }
 
-func (p *Platform) Extensions() []string {
-
-	if p.extensions == nil {
-		err := p.getExtensions()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	return p.extensions
-}
-
 func (p *Platform) HasExtension(extension string) bool {
-
-	if p.extensions == nil {
-		err := p.getExtensions()
-		if err != nil {
-			panic(err)
-		}
-	}
-
-	for i := range p.extensions {
-		if p.extensions[i] == extension {
+	for i := range p.Extensions {
+		if p.Extensions[i] == extension {
 			return true
 		}
 	}
