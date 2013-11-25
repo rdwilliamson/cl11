@@ -12,11 +12,6 @@ func TestGetPlatforms(t *testing.T) {
 	}
 	fmt.Println(len(platforms), "platforms:")
 	for i := range platforms {
-		err = platforms[i].GetInfo()
-		if err != nil {
-			t.Error(err)
-			continue
-		}
-		fmt.Printf("\t%s\n", platforms[i].Name())
+		fmt.Printf("\t%s\n", platforms[i].Name)
 	}
 }
