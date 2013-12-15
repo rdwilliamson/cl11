@@ -6,6 +6,7 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 	"io"
 	"strings"
+	"unsafe"
 )
 
 type Platform struct {
@@ -96,7 +97,7 @@ func (p *Platform) getString(paramName clw.PlatformInfo) string {
 	}
 
 	buffer := make([]byte, paramValueSize)
-	err = clw.GetPlatformInfo(p.ID, paramName, paramValueSize, clw.Pointer(buffer), nil)
+	err = clw.GetPlatformInfo(p.ID, paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
 	if err != nil {
 		panic(err)
 	}

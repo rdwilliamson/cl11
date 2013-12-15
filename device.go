@@ -1,40 +1,56 @@
 package cl11
 
 import (
+	"fmt"
 	clw "github.com/rdwilliamson/clw11"
 	"strings"
 	"unsafe"
 )
 
 type Device struct {
-	ID                     clw.DeviceID
-	Available              bool
-	CompilerAvailable      bool
-	LittleEndian           bool
-	ErrorCorrectionSupport bool
-	ImageSupport           bool
-	UnifiedHostMemory      bool
-	AddressBits            uint32
-	GlobalMemCachelineSize uint32
-	MaxClockFrequency      uint32
-	MaxComputeUnits        uint32
-	MaxConstantArgs        uint32
-	MaxReadImageArgs       uint32
-	MaxSamplers            uint32
-	MaxWorkItemDimensions  uint32
-	MaxWriteImageArgs      uint32
-	MemBaseAddrAlign       uint32
-	MinDataTypeAlignSize   uint32
-	VendorID               uint32
-	PreferredVectorWidths  VectorWidths
-	NativeVectorWidths     VectorWidths
-	Extensions             string
-	Name                   string
-	Profile                string
-	Vendor                 string
-	Version                string
-	OpenclCVersion         string
-	DriverVersion          string
+	ID                       clw.DeviceID
+	Available                bool
+	CompilerAvailable        bool
+	LittleEndian             bool
+	ErrorCorrectionSupport   bool
+	ImageSupport             bool
+	UnifiedHostMemory        bool
+	AddressBits              uint32
+	GlobalMemCachelineSize   uint32
+	MaxClockFrequency        uint32
+	MaxComputeUnits          uint32
+	MaxConstantArgs          uint32
+	MaxReadImageArgs         uint32
+	MaxSamplers              uint32
+	MaxWorkItemDimensions    uint32
+	MaxWriteImageArgs        uint32
+	MemBaseAddrAlign         uint32
+	MinDataTypeAlignSize     uint32
+	VendorID                 uint32
+	PreferredVectorWidths    VectorWidths
+	NativeVectorWidths       VectorWidths
+	Extensions               string
+	Name                     string
+	Profile                  string
+	Vendor                   string
+	Version                  string
+	OpenclCVersion           string
+	DriverVersion            string
+	GlobalMemCacheSize       uint64
+	GlobalMemSize            uint64
+	LocalMemSize             uint64
+	MaxConstantBufferSize    uint64
+	MaxMemAllocSize          uint64
+	Image2dMaxHeight         uint
+	Image2dMaxWidth          uint
+	Image3dMaxDepth          uint
+	Image3dMaxHeight         uint
+	Image3dMaxWidth          uint
+	MaxParameterSize         uint
+	MaxWorkGroupSize         uint
+	ProfilingTimerResolution uint
+
+	MaxWorkItemSizes []uint
 }
 
 // Bitfield.
@@ -96,16 +112,12 @@ func (p *Platform) GetDevices() ([]Device, error) {
 	return p.Devices, nil
 }
 
-func (d Device) String() string {
-	return ""
-}
-
 func (d *Device) getAllInfo() (err error) {
-	defer func() {
-		if r := recover(); r != nil {
-			err = r.(error)
-		}
-	}()
+	// defer func() {
+	// 	if r := recover(); r != nil {
+	// 		err = r.(error)
+	// 	}
+	// }()
 
 	d.Available = d.getBool(clw.DeviceAvailable)
 	d.CompilerAvailable = d.getBool(clw.DeviceCompilerAvailable)
@@ -150,6 +162,23 @@ func (d *Device) getAllInfo() (err error) {
 	d.OpenclCVersion = d.getString(clw.DeviceOpenclCVersion)
 	d.DriverVersion = d.getString(clw.DriverVersion)
 
+	d.GlobalMemCacheSize = d.getUlong(clw.DeviceGlobalMemCacheSize)
+	d.GlobalMemSize = d.getUlong(clw.DeviceGlobalMemSize)
+	d.LocalMemSize = d.getUlong(clw.DeviceLocalMemSize)
+	d.MaxConstantBufferSize = d.getUlong(clw.DeviceMaxConstantBufferSize)
+	d.MaxMemAllocSize = d.getUlong(clw.DeviceMaxMemAllocSize)
+
+	d.Image2dMaxHeight = d.getSize(clw.DeviceImage2dMaxHeight)
+	d.Image2dMaxWidth = d.getSize(clw.DeviceImage2dMaxWidth)
+	d.Image3dMaxDepth = d.getSize(clw.DeviceImage3dMaxDepth)
+	d.Image3dMaxHeight = d.getSize(clw.DeviceImage3dMaxHeight)
+	d.Image3dMaxWidth = d.getSize(clw.DeviceImage3dMaxWidth)
+	d.MaxParameterSize = d.getSize(clw.DeviceMaxParameterSize)
+	d.MaxWorkGroupSize = d.getSize(clw.DeviceMaxWorkGroupSize)
+	d.ProfilingTimerResolution = d.getSize(clw.DeviceProfilingTimerResolution)
+
+	d.MaxWorkItemSizes = d.getSizeArray(clw.DeviceMaxWorkItemSizes)
+
 	return
 }
 
@@ -162,13 +191,6 @@ func (d *Device) getInfo(paramName clw.DeviceInfo) (interface{}, error) {
 
 	// exec_capabilities
 	case clw.DeviceExecutionCapabilities:
-
-	// ulong
-	case clw.DeviceGlobalMemCacheSize,
-		clw.DeviceGlobalMemSize,
-		clw.DeviceLocalMemSize,
-		clw.DeviceMaxConstantBufferSize,
-		clw.DeviceMaxMemAllocSize:
 
 	// mem_cache_type
 	case clw.DeviceGlobalMemCacheType:
@@ -226,7 +248,7 @@ func (d *Device) getString(paramName clw.DeviceInfo) string {
 	}
 
 	buffer := make([]byte, paramValueSize)
-	err = clw.GetDeviceInfo(d.ID, paramName, paramValueSize, clw.Pointer(buffer), nil)
+	err = clw.GetDeviceInfo(d.ID, paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
 	if err != nil {
 		panic(err)
 	}
@@ -251,4 +273,27 @@ func (d *Device) getSize(paramName clw.DeviceInfo) uint {
 		panic(err)
 	}
 	return uint(paramValue)
+}
+
+func (d *Device) getSizeArray(paramName clw.DeviceInfo) []uint {
+	var paramValueSize clw.Size
+	err := clw.GetDeviceInfo(d.ID, paramName, 0, nil, &paramValueSize)
+	if err != nil {
+		panic(err)
+	}
+
+	var a clw.Size
+	buffer := make([]clw.Size, paramValueSize/clw.Size(unsafe.Sizeof(a)))
+	fmt.Println(paramValueSize, len(buffer))
+	err = clw.GetDeviceInfo(d.ID, paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	results := make([]uint, len(buffer))
+	for i := range results {
+		results[i] = uint(buffer[i])
+	}
+
+	return results
 }

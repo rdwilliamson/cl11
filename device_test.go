@@ -18,6 +18,7 @@ func TestGetDevices(t *testing.T) {
 		}
 		for j := range devices {
 			fmt.Println(" ", devices[j].Name)
+			fmt.Printf("%+v\n", devices[j])
 		}
 	}
 }
