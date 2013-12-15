@@ -56,10 +56,10 @@ func GetPlatforms() ([]Platform, error) {
 			return nil, err
 		}
 
-		// platforms[i].Devices, err = platforms[i].GetDevices()
-		// if err != nil {
-		// 	return nil, err
-		// }
+		platforms[i].Devices, err = platforms[i].GetDevices()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	return platforms, nil

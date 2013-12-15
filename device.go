@@ -14,17 +14,57 @@ type Device struct {
 	ErrorCorrectionSupport bool
 	ImageSupport           bool
 	UnifiedHostMemory      bool
+	AddressBits            uint32
+	GlobalMemCachelineSize uint32
+	MaxClockFrequency      uint32
+	MaxComputeUnits        uint32
+	MaxConstantArgs        uint32
+	MaxReadImageArgs       uint32
+	MaxSamplers            uint32
+	MaxWorkItemDimensions  uint32
+	MaxWriteImageArgs      uint32
+	MemBaseAddrAlign       uint32
+	MinDataTypeAlignSize   uint32
+	VendorID               uint32
+	PreferredVectorWidths  VectorWidths
+	NativeVectorWidths     VectorWidths
+	Extensions             string
+	Name                   string
+	Profile                string
+	Vendor                 string
+	Version                string
+	OpenclCVersion         string
+	DriverVersion          string
 }
 
-type VectorSizes struct {
-	Char   uint32
-	Short  uint32
-	Int    uint32
-	Long   uint32
-	Float  uint32
-	Double uint32
-	Half   uint32
+type DeviceType clw.DeviceType
+
+// Bitfield.
+const (
+	DeviceTypeDefault     = clw.DeviceTypeDefault
+	DeviceTypeCpu         = clw.DeviceTypeCpu
+	DeviceTypeGpu         = clw.DeviceTypeGpu
+	DeviceTypeAccelerator = clw.DeviceTypeAccelerator
+	DeviceTypeAll         = clw.DeviceTypeAll
+)
+
+type VectorWidths struct {
+	Char   uint8
+	Short  uint8
+	Int    uint8
+	Long   uint8
+	Float  uint8
+	Double uint8
+	Half   uint8
 }
+
+type FPConfig uint8
+
+type MemCache uint8
+
+type LocalMem uint8
+
+type ExecCapabilities uint8
 
 func (p *Platform) GetDevices() ([]Device, error) {
 
@@ -76,20 +116,48 @@ func (d *Device) getAllInfo() (err error) {
 	d.ImageSupport = d.getBool(clw.DeviceImageSupport)
 	d.UnifiedHostMemory = d.getBool(clw.DeviceHostUnifiedMemory)
 
+	d.AddressBits = d.getUint(clw.DeviceAddressBits)
+	d.GlobalMemCachelineSize = d.getUint(clw.DeviceGlobalMemCachelineSize)
+	d.MaxClockFrequency = d.getUint(clw.DeviceMaxClockFrequency)
+	d.MaxComputeUnits = d.getUint(clw.DeviceMaxComputeUnits)
+	d.MaxConstantArgs = d.getUint(clw.DeviceMaxConstantArgs)
+	d.MaxReadImageArgs = d.getUint(clw.DeviceMaxReadImageArgs)
+	d.MaxSamplers = d.getUint(clw.DeviceMaxSamplers)
+	d.MaxWorkItemDimensions = d.getUint(clw.DeviceMaxWorkItemDimensions)
+	d.MaxWriteImageArgs = d.getUint(clw.DeviceMaxWriteImageArgs)
+	d.MemBaseAddrAlign = d.getUint(clw.DeviceMemBaseAddrAlign)
+	d.MinDataTypeAlignSize = d.getUint(clw.DeviceMinDataTypeAlignSize)
+	d.VendorID = d.getUint(clw.DeviceVendorID)
+
+	d.PreferredVectorWidths.Char = uint8(d.getUint(clw.DevicePreferredVectorWidthChar))
+	d.PreferredVectorWidths.Short = uint8(d.getUint(clw.DevicePreferredVectorWidthShort))
+	d.PreferredVectorWidths.Int = uint8(d.getUint(clw.DevicePreferredVectorWidthInt))
+	d.PreferredVectorWidths.Long = uint8(d.getUint(clw.DevicePreferredVectorWidthLong))
+	d.PreferredVectorWidths.Float = uint8(d.getUint(clw.DevicePreferredVectorWidthFloat))
+	d.PreferredVectorWidths.Double = uint8(d.getUint(clw.DevicePreferredVectorWidthDouble))
+	d.PreferredVectorWidths.Half = uint8(d.getUint(clw.DevicePreferredVectorWidthHalf))
+	d.NativeVectorWidths.Char = uint8(d.getUint(clw.DeviceNativeVectorWidthChar))
+	d.NativeVectorWidths.Short = uint8(d.getUint(clw.DeviceNativeVectorWidthShort))
+	d.NativeVectorWidths.Int = uint8(d.getUint(clw.DeviceNativeVectorWidthInt))
+	d.NativeVectorWidths.Long = uint8(d.getUint(clw.DeviceNativeVectorWidthLong))
+	d.NativeVectorWidths.Float = uint8(d.getUint(clw.DeviceNativeVectorWidthFloat))
+	d.NativeVectorWidths.Double = uint8(d.getUint(clw.DeviceNativeVectorWidthDouble))
+	d.NativeVectorWidths.Half = uint8(d.getUint(clw.DeviceNativeVectorWidthHalf))
+
+	d.Extensions = d.getString(clw.DeviceExtensions)
+	d.Name = d.getString(clw.DeviceName)
+	d.Profile = d.getString(clw.DeviceProfile)
+	d.Vendor = d.getString(clw.DeviceVendor)
+	d.Version = d.getString(clw.DeviceVersion)
+	d.OpenclCVersion = d.getString(clw.DeviceOpenclCVersion)
+	d.DriverVersion = d.getString(clw.DriverVersion)
+
 	return
 }
 
 func (d *Device) getInfo(paramName clw.DeviceInfo) (interface{}, error) {
 
 	switch paramName {
-
-	// bool
-	case clw.DeviceAvailable,
-		clw.DeviceCompilerAvailable,
-		clw.DeviceEndianLittle,
-		clw.DeviceErrorCorrectionSupport,
-		clw.DeviceImageSupport,
-		clw.DeviceHostUnifiedMemory:
 
 	// uint
 	case clw.DeviceAddressBits,
@@ -117,7 +185,7 @@ func (d *Device) getInfo(paramName clw.DeviceInfo) (interface{}, error) {
 		clw.DeviceNativeVectorWidthFloat,
 		clw.DeviceNativeVectorWidthDouble,
 		clw.DeviceNativeVectorWidthHalf,
-		clw.DeviceVendorId:
+		clw.DeviceVendorID:
 
 	// fp_config
 	case clw.DeviceSingleFpConfig:
@@ -160,7 +228,6 @@ func (d *Device) getInfo(paramName clw.DeviceInfo) (interface{}, error) {
 
 	// command_queue_properties
 	case clw.DeviceQueueProperties:
-		panic("not implemented yet")
 
 	// local_mem_type
 	case clw.DeviceLocalMemTypeInfo:
@@ -205,4 +272,22 @@ func (d *Device) getString(paramName clw.DeviceInfo) string {
 
 	// Trim space and trailing \0.
 	return strings.TrimSpace(string(buffer[:len(buffer)-1]))
+}
+
+func (d *Device) getUlong(paramName clw.DeviceInfo) uint64 {
+	var paramValue clw.Ulong
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)), unsafe.Pointer(&paramValue), nil)
+	if err != nil {
+		panic(err)
+	}
+	return uint64(paramValue)
+}
+
+func (d *Device) getSize(paramName clw.DeviceInfo) uint {
+	var paramValue clw.Size
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)), unsafe.Pointer(&paramValue), nil)
+	if err != nil {
+		panic(err)
+	}
+	return uint(paramValue)
 }
