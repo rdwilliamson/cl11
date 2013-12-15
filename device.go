@@ -159,48 +159,11 @@ func (d *Device) getInfo(paramName clw.DeviceInfo) (interface{}, error) {
 
 	switch paramName {
 
-	// uint
-	case clw.DeviceAddressBits,
-		clw.DeviceGlobalMemCachelineSize,
-		clw.DeviceMaxClockFrequency,
-		clw.DeviceMaxComputeUnits,
-		clw.DeviceMaxConstantArgs,
-		clw.DeviceMaxReadImageArgs,
-		clw.DeviceMaxSamplers,
-		clw.DeviceMaxWorkItemDimensions,
-		clw.DeviceMaxWriteImageArgs,
-		clw.DeviceMemBaseAddrAlign,
-		clw.DeviceMinDataTypeAlignSize,
-		clw.DevicePreferredVectorWidthChar,
-		clw.DevicePreferredVectorWidthShort,
-		clw.DevicePreferredVectorWidthInt,
-		clw.DevicePreferredVectorWidthLong,
-		clw.DevicePreferredVectorWidthFloat,
-		clw.DevicePreferredVectorWidthDouble,
-		clw.DevicePreferredVectorWidthHalf,
-		clw.DeviceNativeVectorWidthChar,
-		clw.DeviceNativeVectorWidthShort,
-		clw.DeviceNativeVectorWidthInt,
-		clw.DeviceNativeVectorWidthLong,
-		clw.DeviceNativeVectorWidthFloat,
-		clw.DeviceNativeVectorWidthDouble,
-		clw.DeviceNativeVectorWidthHalf,
-		clw.DeviceVendorID:
-
 	// fp_config
 	case clw.DeviceSingleFpConfig:
 
 	// exec_capabilities
 	case clw.DeviceExecutionCapabilities:
-
-	// char[]
-	case clw.DeviceExtensions,
-		clw.DeviceName,
-		clw.DeviceProfile,
-		clw.DeviceVendor,
-		clw.DeviceVersion,
-		clw.DriverVersion,
-		clw.DeviceOpenclCVersion:
 
 	// ulong
 	case clw.DeviceGlobalMemCacheSize,
