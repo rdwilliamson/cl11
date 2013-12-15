@@ -37,8 +37,6 @@ type Device struct {
 	DriverVersion          string
 }
 
-type DeviceType clw.DeviceType
-
 // Bitfield.
 const (
 	DeviceTypeDefault     = clw.DeviceTypeDefault
