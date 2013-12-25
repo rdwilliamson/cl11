@@ -219,26 +219,11 @@ func (d *Device) getInfo(paramName clw.DeviceInfo) (interface{}, error) {
 
 	switch paramName {
 
-	// fp_config
-	case clw.DeviceSingleFpConfig,
-		clw.DeviceDoubleFpConfig:
-
 	// exec_capabilities
 	case clw.DeviceExecutionCapabilities:
 
 	// mem_cache_type
 	case clw.DeviceGlobalMemCacheType:
-
-	// size_t
-	case clw.DeviceImage2dMaxHeight,
-		clw.DeviceImage2dMaxWidth,
-		clw.DeviceImage3dMaxDepth,
-		clw.DeviceImage3dMaxHeight,
-		clw.DeviceImage3dMaxWidth,
-		clw.DeviceMaxParameterSize,
-		clw.DeviceMaxWorkGroupSize,
-		clw.DeviceMaxWorkItemSizes,
-		clw.DeviceProfilingTimerResolution:
 
 	// device_type
 	case clw.DeviceTypeInfo:
@@ -248,9 +233,6 @@ func (d *Device) getInfo(paramName clw.DeviceInfo) (interface{}, error) {
 
 	// local_mem_type
 	case clw.DeviceLocalMemTypeInfo:
-
-	// platform_id
-	case clw.DevicePlatform:
 	}
 
 	return nil, nil
