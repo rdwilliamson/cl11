@@ -51,6 +51,9 @@ type Device struct {
 	ProfilingTimerResolution uint
 
 	MaxWorkItemSizes []uint
+
+	SingleFpConfig clw.DeviceFPConfig
+	DoubleFpConfig clw.DeviceFPConfig
 }
 
 // Bitfield.
@@ -179,6 +182,9 @@ func (d *Device) getAllInfo() (err error) {
 
 	d.MaxWorkItemSizes = d.getSizeArray(clw.DeviceMaxWorkItemSizes)
 
+	d.SingleFpConfig = d.getFpConfig(clw.DeviceSingleFpConfig)
+	d.DoubleFpConfig = d.getFpConfig(clw.DeviceDoubleFpConfig)
+
 	return
 }
 
@@ -187,7 +193,8 @@ func (d *Device) getInfo(paramName clw.DeviceInfo) (interface{}, error) {
 	switch paramName {
 
 	// fp_config
-	case clw.DeviceSingleFpConfig:
+	case clw.DeviceSingleFpConfig,
+		clw.DeviceDoubleFpConfig:
 
 	// exec_capabilities
 	case clw.DeviceExecutionCapabilities:
@@ -296,4 +303,13 @@ func (d *Device) getSizeArray(paramName clw.DeviceInfo) []uint {
 	}
 
 	return results
+}
+
+func (d *Device) getFpConfig(paramName clw.DeviceInfo) clw.DeviceFPConfig {
+	var paramValue clw.DeviceFPConfig
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)), unsafe.Pointer(&paramValue), nil)
+	if err != nil {
+		panic(err)
+	}
+	return paramValue
 }
