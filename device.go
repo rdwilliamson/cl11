@@ -304,7 +304,6 @@ func (d *Device) getSizeArray(paramName clw.DeviceInfo) []uint {
 
 	var a clw.Size
 	buffer := make([]clw.Size, paramValueSize/clw.Size(unsafe.Sizeof(a)))
-	fmt.Println(paramValueSize, len(buffer))
 	err = clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
 	if err != nil {
 		panic(err)
