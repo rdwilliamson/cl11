@@ -49,11 +49,10 @@ type Device struct {
 	MaxParameterSize         uint
 	MaxWorkGroupSize         uint
 	ProfilingTimerResolution uint
-
-	MaxWorkItemSizes []uint
-
-	SingleFpConfig FPConfig
-	DoubleFpConfig FPConfig
+	MaxWorkItemSizes         []uint
+	SingleFpConfig           FPConfig
+	DoubleFpConfig           FPConfig
+	ExecCapabilities         ExecCapabilities
 }
 
 type DeviceID clw.DeviceID
@@ -81,24 +80,24 @@ type VectorWidths struct {
 
 type FPConfig uint8
 
-func (v FPConfig) String() string {
+func (fpConfig FPConfig) String() string {
 	var configStrings []string
-	if v&FPDenorm != 0 {
+	if fpConfig&FPDenorm != 0 {
 		configStrings = append(configStrings, "CL_FP_DENORM")
 	}
-	if v&FPFma != 0 {
+	if fpConfig&FPFma != 0 {
 		configStrings = append(configStrings, "CL_FP_FMA")
 	}
-	if v&FPInfNan != 0 {
+	if fpConfig&FPInfNan != 0 {
 		configStrings = append(configStrings, "CL_FP_INF_NAN")
 	}
-	if v&FPRoundToInf != 0 {
+	if fpConfig&FPRoundToInf != 0 {
 		configStrings = append(configStrings, "CL_FP_ROUND_TO_INF")
 	}
-	if v&FPRoundToNearest != 0 {
+	if fpConfig&FPRoundToNearest != 0 {
 		configStrings = append(configStrings, "CL_FP_ROUND_TO_NEAREST")
 	}
-	if v&FPRoundToZero != 0 {
+	if fpConfig&FPRoundToZero != 0 {
 		configStrings = append(configStrings, "CL_FP_ROUND_TO_ZERO")
 	}
 	return "(" + strings.Join(configStrings, "|") + ")"
@@ -109,6 +108,23 @@ type MemCache uint8
 type LocalMem uint8
 
 type ExecCapabilities uint8
+
+// Bitfield.
+const (
+	ExecKernel = iota
+	ExecNativeKernel
+)
+
+func (exec ExecCapabilities) String() string {
+	var execStrings []string
+	if exec&ExecKernel != 0 {
+		execStrings = append(execStrings, "CL_EXEC_KERNEL")
+	}
+	if exec&ExecNativeKernel != 0 {
+		execStrings = append(execStrings, "CL_EXEC_NATIVE_KERNEL")
+	}
+	return "(" + strings.Join(execStrings, "|") + ")"
+}
 
 func (p *Platform) GetDevices() ([]Device, error) {
 
@@ -212,15 +228,14 @@ func (d *Device) getAllInfo() (err error) {
 	d.SingleFpConfig = d.getFpConfig(clw.DeviceSingleFpConfig)
 	d.DoubleFpConfig = d.getFpConfig(clw.DeviceDoubleFpConfig)
 
+	d.ExecCapabilities = d.getExecCapabilities(clw.DeviceExecutionCapabilities)
+
 	return
 }
 
 func (d *Device) getInfo(paramName clw.DeviceInfo) (interface{}, error) {
 
 	switch paramName {
-
-	// exec_capabilities
-	case clw.DeviceExecutionCapabilities:
 
 	// mem_cache_type
 	case clw.DeviceGlobalMemCacheType:
@@ -343,6 +358,24 @@ func (d *Device) getFpConfig(paramName clw.DeviceInfo) FPConfig {
 	}
 	if paramValue&clw.FPRoundToZero != 0 {
 		result |= FPRoundToZero
+	}
+	return result
+}
+
+func (d *Device) getExecCapabilities(paramName clw.DeviceInfo) ExecCapabilities {
+	var paramValue clw.DeviceExecCapabilities
+	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+		unsafe.Pointer(&paramValue), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	var result ExecCapabilities
+	if paramValue&clw.ExecKernel != 0 {
+		result |= ExecKernel
+	}
+	if paramValue&clw.ExecNativeKernel != 0 {
+		result |= ExecNativeKernel
 	}
 	return result
 }
