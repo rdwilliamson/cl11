@@ -1,7 +1,6 @@
 package cl11
 
 import (
-	"fmt"
 	clw "github.com/rdwilliamson/clw11"
 	"strings"
 	"unsafe"
@@ -9,6 +8,7 @@ import (
 
 type Device struct {
 	ID                       DeviceID
+	Type                     DeviceType
 	Available                bool
 	CompilerAvailable        bool
 	LittleEndian             bool
@@ -52,21 +52,39 @@ type Device struct {
 	MaxWorkItemSizes         []uint
 	SingleFpConfig           FPConfig
 	DoubleFpConfig           FPConfig
-	ExecCapabilities         ExecCapabilities
+	// HalfFpConfig             FPConfig
+	ExecCapabilities ExecCapabilities
 }
 
 type DeviceID clw.DeviceID
 
+type DeviceType uint8
+
 // Bitfield.
 const (
-	FPDenorm = iota
-	FPFma
-	FPInfNan
-	FPRoundToInf
-	FPRoundToNearest
-	FPRoundToZero
-	FPBits
+	DeviceTypeDefault     DeviceType = 1 << iota
+	DeviceTypeCpu         DeviceType = 1 << iota
+	DeviceTypeGpu         DeviceType = 1 << iota
+	DeviceTypeAccelerator DeviceType = 1 << iota
+	DeviceTypeAll         DeviceType = 1<<8 - 1
 )
+
+func (type_ DeviceType) String() string {
+	var typeStrings []string
+	if type_&DeviceTypeDefault != 0 {
+		typeStrings = append(typeStrings, "CL_DEVICE_TYPE_DEFAULT")
+	}
+	if type_&DeviceTypeCpu != 0 {
+		typeStrings = append(typeStrings, "CL_DEVICE_TYPE_CPU")
+	}
+	if type_&DeviceTypeGpu != 0 {
+		typeStrings = append(typeStrings, "CL_DEVICE_TYPE_GPU")
+	}
+	if type_&DeviceTypeAccelerator != 0 {
+		typeStrings = append(typeStrings, "CL_DEVICE_TYPE_ACCELERATOR")
+	}
+	return "(" + strings.Join(typeStrings, "|") + ")"
+}
 
 type VectorWidths struct {
 	Char   uint8
@@ -79,6 +97,16 @@ type VectorWidths struct {
 }
 
 type FPConfig uint8
+
+// Bitfield.
+const (
+	FPDenorm         FPConfig = 1 << iota
+	FPFma            FPConfig = 1 << iota
+	FPInfNan         FPConfig = 1 << iota
+	FPRoundToInf     FPConfig = 1 << iota
+	FPRoundToNearest FPConfig = 1 << iota
+	FPRoundToZero    FPConfig = 1 << iota
+)
 
 func (fpConfig FPConfig) String() string {
 	var configStrings []string
@@ -111,8 +139,8 @@ type ExecCapabilities uint8
 
 // Bitfield.
 const (
-	ExecKernel = iota
-	ExecNativeKernel
+	ExecKernel       ExecCapabilities = 1 << iota
+	ExecNativeKernel ExecCapabilities = 1 << iota
 )
 
 func (exec ExecCapabilities) String() string {
@@ -227,8 +255,11 @@ func (d *Device) getAllInfo() (err error) {
 
 	d.SingleFpConfig = d.getFpConfig(clw.DeviceSingleFpConfig)
 	d.DoubleFpConfig = d.getFpConfig(clw.DeviceDoubleFpConfig)
+	// d.HalfFpConfig = d.getFpConfig(clw.DeviceHalfFpConfig)
 
 	d.ExecCapabilities = d.getExecCapabilities(clw.DeviceExecutionCapabilities)
+
+	d.Type = d.getType(clw.DeviceTypeInfo)
 
 	return
 }
@@ -376,6 +407,30 @@ func (d *Device) getExecCapabilities(paramName clw.DeviceInfo) ExecCapabilities 
 	}
 	if paramValue&clw.ExecNativeKernel != 0 {
 		result |= ExecNativeKernel
+	}
+	return result
+}
+
+func (d *Device) getType(paramName clw.DeviceInfo) DeviceType {
+	var paramValue clw.DeviceType
+	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+		unsafe.Pointer(&paramValue), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	var result DeviceType
+	if paramValue&clw.DeviceTypeDefault != 0 {
+		result |= DeviceTypeDefault
+	}
+	if paramValue&clw.DeviceTypeCpu != 0 {
+		result |= DeviceTypeCpu
+	}
+	if paramValue&clw.DeviceTypeGpu != 0 {
+		result |= DeviceTypeGpu
+	}
+	if paramValue&clw.DeviceTypeAccelerator != 0 {
+		result |= DeviceTypeAccelerator
 	}
 	return result
 }
