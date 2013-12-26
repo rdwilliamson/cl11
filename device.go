@@ -53,7 +53,8 @@ type Device struct {
 	SingleFpConfig           FPConfig
 	DoubleFpConfig           FPConfig
 	// HalfFpConfig             FPConfig
-	ExecCapabilities ExecCapabilities
+	ExecCapabilities       ExecCapabilities
+	CommandQueueProperties CommandQueueProperties
 }
 
 type DeviceID clw.DeviceID
@@ -133,7 +134,40 @@ func (fpConfig FPConfig) String() string {
 
 type MemCache uint8
 
+const (
+	None           MemCache = iota
+	ReadOnlyCache  MemCache = iota
+	ReadWriteCache MemCache = iota
+)
+
+func (type_ MemCache) String() string {
+	switch type_ {
+	case None:
+		return "CL_NONE"
+	case ReadOnlyCache:
+		return "CL_READ_ONLY_CACHE"
+	case ReadWriteCache:
+		return "CL_READ_WRITE_CACHE"
+	}
+	panic("unreachable")
+}
+
 type LocalMem uint8
+
+const (
+	Global LocalMem = iota
+	Local  LocalMem = iota
+)
+
+func (type_ LocalMem) String() string {
+	switch type_ {
+	case Global:
+		return "CL_GLOBAL"
+	case Local:
+		return "CL_LOCAL"
+	}
+	panic("unreachable")
+}
 
 type ExecCapabilities uint8
 
@@ -261,6 +295,8 @@ func (d *Device) getAllInfo() (err error) {
 
 	d.Type = d.getType(clw.DeviceTypeInfo)
 
+	d.CommandQueueProperties = d.getCommandQueueProperties(clw.DeviceQueueProperties)
+
 	return
 }
 
@@ -270,9 +306,6 @@ func (d *Device) getInfo(paramName clw.DeviceInfo) (interface{}, error) {
 
 	// mem_cache_type
 	case clw.DeviceGlobalMemCacheType:
-
-	// device_type
-	case clw.DeviceTypeInfo:
 
 	// command_queue_properties
 	case clw.DeviceQueueProperties:
@@ -431,6 +464,24 @@ func (d *Device) getType(paramName clw.DeviceInfo) DeviceType {
 	}
 	if paramValue&clw.DeviceTypeAccelerator != 0 {
 		result |= DeviceTypeAccelerator
+	}
+	return result
+}
+
+func (d *Device) getCommandQueueProperties(paramName clw.DeviceInfo) CommandQueueProperties {
+	var paramValue clw.CommandQueueProperties
+	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+		unsafe.Pointer(&paramValue), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	var result CommandQueueProperties
+	if paramValue&clw.QueueOutOfOrderExecModeEnable != 0 {
+		result |= QueueOutOfOrderExecModeEnable
+	}
+	if paramValue&clw.QueueProfilingEnable != 0 {
+		result |= QueueProfilingEnable
 	}
 	return result
 }
