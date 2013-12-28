@@ -55,6 +55,8 @@ type Device struct {
 	// HalfFpConfig             FPConfig
 	ExecCapabilities       ExecCapabilities
 	CommandQueueProperties CommandQueueProperties
+	GlobalMemCacheType     GlobalMemCacheType
+	LocalMemTypeInfo       LocalMemTypeInfo
 }
 
 type DeviceID clw.DeviceID
@@ -132,15 +134,15 @@ func (fpConfig FPConfig) String() string {
 	return "(" + strings.Join(configStrings, "|") + ")"
 }
 
-type MemCache uint8
+type GlobalMemCacheType uint8
 
 const (
-	None           MemCache = iota
-	ReadOnlyCache  MemCache = iota
-	ReadWriteCache MemCache = iota
+	None           GlobalMemCacheType = iota
+	ReadOnlyCache  GlobalMemCacheType = iota
+	ReadWriteCache GlobalMemCacheType = iota
 )
 
-func (type_ MemCache) String() string {
+func (type_ GlobalMemCacheType) String() string {
 	switch type_ {
 	case None:
 		return "CL_NONE"
@@ -152,14 +154,14 @@ func (type_ MemCache) String() string {
 	panic("unreachable")
 }
 
-type LocalMem uint8
+type LocalMemTypeInfo uint8
 
 const (
-	Global LocalMem = iota
-	Local  LocalMem = iota
+	Global LocalMemTypeInfo = iota
+	Local  LocalMemTypeInfo = iota
 )
 
-func (type_ LocalMem) String() string {
+func (type_ LocalMemTypeInfo) String() string {
 	switch type_ {
 	case Global:
 		return "CL_GLOBAL"
@@ -297,24 +299,11 @@ func (d *Device) getAllInfo() (err error) {
 
 	d.CommandQueueProperties = d.getCommandQueueProperties(clw.DeviceQueueProperties)
 
+	d.GlobalMemCacheType = d.getGlobalMemCacheType(clw.DeviceGlobalMemCacheType)
+
+	d.LocalMemTypeInfo = d.getLocalMemTypeInfo(clw.DeviceLocalMemTypeInfo)
+
 	return
-}
-
-func (d *Device) getInfo(paramName clw.DeviceInfo) (interface{}, error) {
-
-	switch paramName {
-
-	// mem_cache_type
-	case clw.DeviceGlobalMemCacheType:
-
-	// command_queue_properties
-	case clw.DeviceQueueProperties:
-
-	// local_mem_type
-	case clw.DeviceLocalMemTypeInfo:
-	}
-
-	return nil, nil
 }
 
 func (d *Device) getBool(paramName clw.DeviceInfo) bool {
@@ -482,6 +471,44 @@ func (d *Device) getCommandQueueProperties(paramName clw.DeviceInfo) CommandQueu
 	}
 	if paramValue&clw.QueueProfilingEnable != 0 {
 		result |= QueueProfilingEnable
+	}
+	return result
+}
+
+func (d *Device) getGlobalMemCacheType(paramName clw.DeviceInfo) GlobalMemCacheType {
+	var paramValue clw.DeviceMemCacheType
+	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+		unsafe.Pointer(&paramValue), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	var result GlobalMemCacheType
+	switch paramValue {
+	case clw.None:
+		result = None
+	case clw.ReadOnlyCache:
+		result = ReadOnlyCache
+	case clw.ReadWriteCache:
+		result = ReadWriteCache
+	}
+	return result
+}
+
+func (d *Device) getLocalMemTypeInfo(paramName clw.DeviceInfo) LocalMemTypeInfo {
+	var paramValue clw.DeviceLocalMemType
+	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+		unsafe.Pointer(&paramValue), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	var result LocalMemTypeInfo
+	switch paramValue {
+	case clw.Global:
+		result = Global
+	case clw.Local:
+		result = Local
 	}
 	return result
 }
