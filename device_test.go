@@ -1,9 +1,6 @@
 package cl11
 
-import (
-	"fmt"
-	"testing"
-)
+import "testing"
 
 func TestGetDevices(t *testing.T) {
 	platforms, err := GetPlatforms()
@@ -11,14 +8,14 @@ func TestGetDevices(t *testing.T) {
 		t.Fatal(err)
 	}
 	for i := range platforms {
-		fmt.Println(platforms[i].Name)
-		devices, err := platforms[i].GetDevices()
+		// fmt.Println(platforms[i].Name)
+		/* devices */ _, err := platforms[i].GetDevices()
 		if err != nil {
 			t.Fatal(err)
 		}
-		for j := range devices {
-			fmt.Println(" ", devices[j].Name)
-			fmt.Printf("%+v\n", devices[j])
-		}
+		// for j := range devices {
+		// 	fmt.Println(" ", devices[j].Name)
+		// 	fmt.Printf("%+v\n", devices[j])
+		// }
 	}
 }
