@@ -13,7 +13,7 @@ func TestCreateContext(t *testing.T) {
 			t.Fatal(err)
 		}
 		for j := range devices {
-			_, err = CreateContext([]Device{devices[j]})
+			_, err = CreateContext(nil, []Device{devices[j]}, func(err string, data []byte) {})
 			if err != nil {
 				t.Error(err)
 			}

@@ -3,10 +3,11 @@ package cl11
 import (
 	"errors"
 	"fmt"
-	clw "github.com/rdwilliamson/clw11"
 	"io"
 	"strings"
 	"unsafe"
+
+	clw "github.com/rdwilliamson/clw11"
 )
 
 type Platform struct {
