@@ -4,12 +4,18 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
+type Context struct {
+	ID         ContextID
+	Devices    []*Device
+	Properties []ContextProperties
+}
+
 type (
-	Context           clw.Context
+	ContextID         clw.Context
 	ContextProperties clw.ContextProperties
 )
 
-func CreateContext(p []ContextProperties, d []Device, callback func(err string, data []byte)) (Context, error) {
+func CreateContext(p []ContextProperties, d []*Device, callback func(err string, data []byte)) (*Context, error) {
 
 	devices := make([]clw.DeviceID, len(d))
 	for i := range d {
@@ -24,8 +30,11 @@ func CreateContext(p []ContextProperties, d []Device, callback func(err string, 
 	}
 
 	result, err := clw.CreateContext(properties, devices, callback)
+	if err != nil {
+		return nil, err
+	}
 
-	return Context(result), err
+	return &Context{ContextID(result), d, p}, nil
 }
 
 // TODO CreateContextFromType RetainContext ReleaseContext

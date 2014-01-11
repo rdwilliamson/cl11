@@ -190,7 +190,7 @@ func (exec ExecCapabilities) String() string {
 	return "(" + strings.Join(execStrings, "|") + ")"
 }
 
-func (p *Platform) GetDevices() ([]Device, error) {
+func (p *Platform) GetDevices() ([]*Device, error) {
 
 	if p.Devices != nil {
 		return p.Devices, nil
@@ -208,10 +208,10 @@ func (p *Platform) GetDevices() ([]Device, error) {
 		return nil, err
 	}
 
-	p.Devices = make([]Device, len(deviceIDs))
+	p.Devices = make([]*Device, len(deviceIDs))
 	for i := range p.Devices {
 
-		p.Devices[i].ID = DeviceID(deviceIDs[i])
+		p.Devices[i] = &Device{ID: DeviceID(deviceIDs[i])}
 
 		err = p.Devices[i].getAllInfo()
 		if err != nil {

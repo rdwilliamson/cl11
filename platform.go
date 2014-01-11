@@ -12,7 +12,7 @@ import (
 
 type Platform struct {
 	ID         PlatformID
-	Devices    []Device
+	Devices    []*Device
 	Profile    PlatformProfile
 	Version    PlatformVersion
 	Name       string
@@ -36,7 +36,7 @@ type PlatformVersion struct {
 }
 
 // Get all the platforms on the system.
-func GetPlatforms() ([]Platform, error) {
+func GetPlatforms() ([]*Platform, error) {
 
 	var numPlatforms clw.Uint
 	err := clw.GetPlatformIDs(0, nil, &numPlatforms)
@@ -50,10 +50,10 @@ func GetPlatforms() ([]Platform, error) {
 		return nil, err
 	}
 
-	platforms := make([]Platform, len(platformIDs))
+	platforms := make([]*Platform, len(platformIDs))
 	for i := range platforms {
 
-		platforms[i].ID = PlatformID(platformIDs[i])
+		platforms[i] = &Platform{ID: PlatformID(platformIDs[i])}
 
 		err = platforms[i].getAllInfo()
 		if err != nil {
