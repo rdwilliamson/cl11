@@ -1,9 +1,10 @@
 package cl11
 
 import (
-	clw "github.com/rdwilliamson/clw11"
 	"strings"
 	"unsafe"
+
+	clw "github.com/rdwilliamson/clw11"
 )
 
 type Device struct {
@@ -57,6 +58,10 @@ type Device struct {
 	CommandQueueProperties CommandQueueProperties
 	GlobalMemCacheType     GlobalMemCacheType
 	LocalMemTypeInfo       LocalMemTypeInfo
+}
+
+func (d Device) String() string {
+	return d.Name
 }
 
 type DeviceID clw.DeviceID

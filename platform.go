@@ -72,7 +72,7 @@ func GetPlatforms() ([]*Platform, error) {
 // Prints platform info in the form of "vendor, name, version, profile,
 // extensions.""
 func (p Platform) String() string {
-	return fmt.Sprintf("%s, %s, %s, %s, %v", p.Vendor, p.Name, p.Version.String(), p.Profile.String(), p.Extensions)
+	return p.Name
 }
 
 func (p *Platform) getAllInfo() (err error) {

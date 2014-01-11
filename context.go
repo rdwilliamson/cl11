@@ -1,6 +1,8 @@
 package cl11
 
 import (
+	"fmt"
+
 	clw "github.com/rdwilliamson/clw11"
 )
 
@@ -8,6 +10,10 @@ type Context struct {
 	ID         ContextID
 	Devices    []*Device
 	Properties []ContextProperties
+}
+
+func (c Context) String() string {
+	return fmt.Sprintf("%x", c.ID)
 }
 
 type (
