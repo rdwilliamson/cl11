@@ -472,10 +472,10 @@ func (d *Device) getCommandQueueProperties(paramName clw.DeviceInfo) CommandQueu
 
 	var result CommandQueueProperties
 	if paramValue&clw.QueueOutOfOrderExecModeEnable != 0 {
-		result |= QueueOutOfOrderExecModeEnable
+		result.OutOfOrderExecution = true
 	}
 	if paramValue&clw.QueueProfilingEnable != 0 {
-		result |= QueueProfilingEnable
+		result.Profiling = true
 	}
 	return result
 }
