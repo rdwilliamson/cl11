@@ -44,3 +44,28 @@ func ExampleContext() {
 		}
 	}
 }
+
+// Creates all possible contexts.
+func createContexts(t *testing.T) []*Context {
+	var contexts []*Context
+	platforms, err := GetPlatforms()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for i := range platforms {
+		devices, err := platforms[i].GetDevices()
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+		for j := range devices {
+			c, err := CreateContext(nil, []*Device{devices[j]}, func(err string, data []byte) {})
+			if err != nil {
+				t.Error(err)
+				continue
+			}
+			contexts = append(contexts, c)
+		}
+	}
+	return contexts
+}
