@@ -6,9 +6,9 @@ import (
 )
 
 func Flush(cq CommandQueue) error {
-	return clw.Flush(cq.ID)
+	return clw.Flush(clw.CommandQueue(cq.ID))
 }
 
 func Finish(cq CommandQueue) error {
-	return clw.Finish(cq.ID)
+	return clw.Finish(clw.CommandQueue(cq.ID))
 }

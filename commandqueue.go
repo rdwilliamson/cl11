@@ -8,11 +8,13 @@ import (
 )
 
 type CommandQueue struct {
-	ID         clw.CommandQueue
+	ID         CommandQueueID
 	Context    *Context
 	Device     *Device
 	Properties CommandQueueProperties
 }
+
+type CommandQueueID clw.CommandQueue
 
 func (cq CommandQueue) String() string {
 	return fmt.Sprintf("%x", cq.ID)
@@ -47,5 +49,5 @@ func CreateCommandQueue(c *Context, d *Device, cqp CommandQueueProperties) (*Com
 	if err != nil {
 		return nil, err
 	}
-	return &CommandQueue{commandQueue, c, d, cqp}, nil
+	return &CommandQueue{CommandQueueID(commandQueue), c, d, cqp}, nil
 }
