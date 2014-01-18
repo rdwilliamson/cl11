@@ -318,7 +318,7 @@ func (d *Device) getBool(paramName clw.DeviceInfo) bool {
 	if err != nil {
 		panic(err)
 	}
-	return clw.ToGoBool(paramValue)
+	return paramValue.Bool()
 }
 
 func (d *Device) getUint(paramName clw.DeviceInfo) uint32 {
