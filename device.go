@@ -8,7 +8,7 @@ import (
 )
 
 type Device struct {
-	ID                       DeviceID
+	ID                       clw.DeviceID
 	Type                     DeviceType
 	Available                bool
 	CompilerAvailable        bool
@@ -63,8 +63,6 @@ type Device struct {
 func (d Device) String() string {
 	return d.Name
 }
-
-type DeviceID clw.DeviceID
 
 type DeviceType uint8
 
@@ -216,7 +214,7 @@ func (p *Platform) GetDevices() ([]*Device, error) {
 	p.Devices = make([]*Device, len(deviceIDs))
 	for i := range p.Devices {
 
-		p.Devices[i] = &Device{ID: DeviceID(deviceIDs[i])}
+		p.Devices[i] = &Device{ID: deviceIDs[i]}
 
 		err = p.Devices[i].getAllInfo()
 		if err != nil {

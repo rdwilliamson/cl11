@@ -11,7 +11,7 @@ import (
 )
 
 type Platform struct {
-	ID         PlatformID
+	ID         clw.PlatformID
 	Devices    []*Device
 	Profile    PlatformProfile
 	Version    PlatformVersion
@@ -19,8 +19,6 @@ type Platform struct {
 	Vendor     string
 	Extensions []string
 }
-
-type PlatformID clw.PlatformID
 
 type PlatformProfile int8
 
@@ -53,7 +51,7 @@ func GetPlatforms() ([]*Platform, error) {
 	platforms := make([]*Platform, len(platformIDs))
 	for i := range platforms {
 
-		platforms[i] = &Platform{ID: PlatformID(platformIDs[i])}
+		platforms[i] = &Platform{ID: platformIDs[i]}
 
 		err = platforms[i].getAllInfo()
 		if err != nil {

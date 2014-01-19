@@ -7,7 +7,7 @@ import (
 )
 
 type Context struct {
-	ID         ContextID
+	ID         clw.Context
 	Devices    []*Device
 	Properties []ContextProperties
 }
@@ -16,10 +16,7 @@ func (c Context) String() string {
 	return fmt.Sprintf("%x", c.ID)
 }
 
-type (
-	ContextID         clw.Context
-	ContextProperties clw.ContextProperties
-)
+type ContextProperties clw.ContextProperties
 
 func CreateContext(p []ContextProperties, d []*Device, callback func(err string, data []byte)) (*Context, error) {
 
@@ -35,13 +32,9 @@ func CreateContext(p []ContextProperties, d []*Device, callback func(err string,
 		}
 	}
 
-	result, err := clw.CreateContext(properties, devices, callback)
+	context, err := clw.CreateContext(properties, devices, callback)
 	if err != nil {
 		return nil, err
 	}
-
-	return &Context{ContextID(result), d, p}, nil
+	return &Context{context, d, p}, nil
 }
-
-// TODO CreateContextFromType RetainContext ReleaseContext
-// GetContextInfo only needs get reference count

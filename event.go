@@ -7,20 +7,18 @@ import (
 )
 
 type Event struct {
-	ID           EventID
+	ID           clw.Event
 	CommandQueue *CommandQueue
 	Context      *Context
 	Type         CommandType
 }
-
-type EventID clw.Event
 
 func CreateUserEvent(c *Context) (*Event, error) {
 	event, err := clw.CreateUserEvent(clw.Context(c.ID))
 	if err != nil {
 		return nil, err
 	}
-	return &Event{ID: EventID(event)}, nil
+	return &Event{ID: event}, nil
 }
 
 type CommandType int
