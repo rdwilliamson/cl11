@@ -9,32 +9,29 @@ import (
 type Context struct {
 	ID         clw.Context
 	Devices    []*Device
-	Properties []ContextProperties
+	Properties ContextProperties
 }
 
 func (c Context) String() string {
 	return fmt.Sprintf("%x", c.ID)
 }
 
-type ContextProperties clw.ContextProperties
+type ContextProperties struct {
+	// TODO add options.
+}
 
-func CreateContext(p []ContextProperties, d []*Device, callback func(err string, data []byte)) (*Context, error) {
+func CreateContext(d []*Device, cp ContextProperties, callback func(err string, data []byte)) (*Context, error) {
 
 	devices := make([]clw.DeviceID, len(d))
 	for i := range d {
 		devices[i] = clw.DeviceID(d[i].ID)
 	}
 	var properties []clw.ContextProperties
-	if p != nil {
-		properties = make([]clw.ContextProperties, len(p))
-		for i := range p {
-			properties[i] = clw.ContextProperties(p[i])
-		}
-	}
+	// TODO convert struct into C array of properties.
 
 	context, err := clw.CreateContext(properties, devices, callback)
 	if err != nil {
 		return nil, err
 	}
-	return &Context{context, d, p}, nil
+	return &Context{context, d, cp}, nil
 }

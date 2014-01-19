@@ -1,6 +1,7 @@
 package cl11
 
 import (
+	"fmt"
 	"log"
 
 	"testing"
@@ -17,7 +18,7 @@ func ExampleContext() {
 			log.Fatalln(err)
 		}
 		for j := range devices {
-			_, err = CreateContext(nil, []*Device{devices[j]}, func(err string, data []byte) {})
+			_, err = CreateContext([]*Device{devices[j]}, ContextProperties{}, func(err string, data []byte) {})
 			if err != nil {
 				log.Fatalln(err)
 			}
@@ -40,7 +41,10 @@ func createContexts(t *testing.T) []*Context {
 			continue
 		}
 		for j := range devices {
-			c, err := CreateContext(nil, []*Device{devices[j]}, func(err string, data []byte) {})
+			c, err := CreateContext([]*Device{devices[j]}, ContextProperties{}, func(err string, data []byte) {
+				fmt.Println(err)
+				fmt.Println(data)
+			})
 			if err != nil {
 				t.Error(err)
 				continue
