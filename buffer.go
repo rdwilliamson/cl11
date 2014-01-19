@@ -8,7 +8,7 @@ import clw "github.com/rdwilliamson/clw11"
 // 3. Host memory alloced by go
 type Buffer struct {
 	ID     MemoryID
-	Device bool
+	Device bool // Is the memory on the device.
 
 	// mapped  []byte
 	// Read    bool
@@ -61,4 +61,8 @@ func CreateHostBuffer(c *Context, size int, read, write bool) (*Buffer, error) {
 		return nil, err
 	}
 	return &Buffer{ID: MemoryID(memory), Device: false}, nil
+}
+
+func (b *Buffer) Release() error {
+	return clw.ReleaseMemObject(clw.Memory(b.ID))
 }
