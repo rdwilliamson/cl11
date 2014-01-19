@@ -47,7 +47,7 @@ func TestCreateBuffers(t *testing.T) {
 			continue
 		}
 
-		buffer, err = context.CreateHostBuffer(int(context.Devices[0].MaxMemAllocSize), MemoryFlags{})
+		buffer, err = context.CreateHostBuffer(len(host), MemoryFlags{})
 		if err != nil {
 			t.Error(err)
 			continue
