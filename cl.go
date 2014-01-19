@@ -2,6 +2,8 @@
 package cl11
 
 import (
+	"unsafe"
+
 	clw "github.com/rdwilliamson/clw11"
 )
 
@@ -11,4 +13,8 @@ func Flush(cq CommandQueue) error {
 
 func Finish(cq CommandQueue) error {
 	return clw.Finish(clw.CommandQueue(cq.ID))
+}
+
+func toEvents(in []Event) []clw.Event {
+	return *(*[]clw.Event)(unsafe.Pointer(&in))
 }

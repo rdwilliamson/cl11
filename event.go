@@ -6,19 +6,14 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
-type Event struct {
-	ID           clw.Event
-	CommandQueue *CommandQueue
-	Context      *Context
-	Type         CommandType
-}
+type Event clw.Event
 
-func (c *Context) CreateUserEvent() (*Event, error) {
+func (c *Context) CreateUserEvent() (Event, error) {
 	event, err := clw.CreateUserEvent(c.ID)
 	if err != nil {
 		return nil, err
 	}
-	return &Event{ID: event}, nil
+	return Event(event), nil
 }
 
 type CommandType int
@@ -120,9 +115,12 @@ func (ces CommandExecutionStatus) String() string {
 
 // Returns the events status, an error that caused the event to terminate, or an
 // error that occurred trying to retrieve the event status.
-func (e *Event) Status() (CommandExecutionStatus, error, error) {
+func EventStatus(e Event) (CommandExecutionStatus, error, error) {
+	// Not a method because the underlying C type is a pointer and throws a
+	// "invalid receiver type *Event (Event is a pointer type)" error.
+
 	var status clw.CommandExecutionStatus
-	err := clw.GetEventInfo(e.ID, clw.EventCommandExecutionStatus, clw.Size(unsafe.Sizeof(status)),
+	err := clw.GetEventInfo(clw.Event(e), clw.EventCommandExecutionStatus, clw.Size(unsafe.Sizeof(status)),
 		unsafe.Pointer(&status), nil)
 	if err != nil {
 		return 0, nil, err

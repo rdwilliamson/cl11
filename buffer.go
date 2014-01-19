@@ -76,3 +76,8 @@ func (c *Context) CreateHostBufferFromHost(mf MemoryFlags, host []byte) (*Buffer
 func (b *Buffer) Release() error {
 	return clw.ReleaseMemObject(b.ID)
 }
+
+func (cq *CommandQueue) CopyTo(src, dst *Buffer, srcOffset, dstOffset, size int, waitList []Event, e *Event) error {
+	return clw.EnqueueCopyBuffer(cq.ID, src.ID, dst.ID, clw.Size(srcOffset), clw.Size(dstOffset), clw.Size(size),
+		toEvents(waitList), (*clw.Event)(e))
+}
