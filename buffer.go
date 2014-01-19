@@ -2,64 +2,75 @@ package cl11
 
 import clw "github.com/rdwilliamson/clw11"
 
-// 3 cases:
-// 1. Device memory
-// 2. Host memory alloced by the CL
-// 3. Host memory alloced by go
 type Buffer struct {
-	ID     clw.Memory
-	Device bool   // Is the memory on the device.
-	Host   []byte // Host backed memory (if applicable).
-
-	// mapped  []byte
-	// Read    bool
-	// Write   bool
-	// Host    bool // is it on the host or device
-	// alloced bool // if the implementation alloced the memory
+	ID      clw.Memory
+	Context *Context
+	Size    int
+	Host    []byte
+	Flags   MemoryFlags
 }
 
-func CreateDeviceBuffer(c *Context, size int, read, write bool, host []byte, copyHost bool) (*Buffer, error) {
+type MemoryFlags struct {
+	Read  bool // Can a kernel read from this buffer.
+	Write bool // Can a kernel write to this buffer.
+}
+
+func (mf MemoryFlags) toBits() clw.MemoryFlags {
 	var flags clw.MemoryFlags
-	if read {
-		if write {
+	if mf.Read {
+		if mf.Write {
 			flags = clw.MemoryReadWrite
 		} else {
 			flags = clw.MemoryReadOnly
 		}
-	} else if write {
+	} else if mf.Write {
 		flags = clw.MemoryWriteOnly
 	}
+	return flags
+}
 
-	if copyHost {
-		flags |= clw.MemoryCopyHostPointer
-	}
-
-	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(size), host)
+func CreateDeviceBuffer(c *Context, size int, mf MemoryFlags) (*Buffer, error) {
+	memory, err := clw.CreateBuffer(c.ID, mf.toBits(), clw.Size(size), nil)
 	if err != nil {
 		return nil, err
 	}
-	return &Buffer{ID: memory, Device: true}, nil
+	return &Buffer{ID: memory, Context: c, Size: size, Flags: mf}, nil
 }
 
-func CreateHostBuffer(c *Context, size int, read, write bool) (*Buffer, error) {
-	flags := clw.MemoryAllocHostPointer
-
-	if read {
-		if write {
-			flags |= clw.MemoryReadWrite
-		} else {
-			flags |= clw.MemoryReadOnly
-		}
-
-	} else {
-		flags |= clw.MemoryWriteOnly
+func CreateDeviceBufferFromHost(c *Context, mf MemoryFlags, host []byte) (*Buffer, error) {
+	flags := mf.toBits() | clw.MemoryCopyHostPointer
+	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(len(host)), host)
+	if err != nil {
+		return nil, err
 	}
+	return &Buffer{ID: memory, Context: c, Size: len(host), Flags: mf}, nil
+}
 
+func CreateDeviceBufferOnHost(c *Context, mf MemoryFlags, host []byte) (*Buffer, error) {
+	flags := mf.toBits() | clw.MemoryUseHostPointer
+	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(len(host)), host)
+	if err != nil {
+		return nil, err
+	}
+	return &Buffer{ID: memory, Context: c, Size: len(host), Host: host, Flags: mf}, nil
+}
+
+func CreateHostBuffer(c *Context, size int, mf MemoryFlags) (*Buffer, error) {
+	flags := mf.toBits() | clw.MemoryAllocHostPointer
 	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(size), nil)
 	if err != nil {
 		return nil, err
 	}
-	return &Buffer{ID: memory, Device: false}, nil
+	return &Buffer{ID: memory, Context: c, Size: size, Flags: mf}, nil
+}
+
+func CreateHostBufferFromHost(c *Context, mf MemoryFlags, host []byte) (*Buffer, error) {
+	flags := mf.toBits() | clw.MemoryAllocHostPointer | clw.MemoryCopyHostPointer
+	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(len(host)), host)
+	if err != nil {
+		return nil, err
+	}
+	return &Buffer{ID: memory, Context: c, Size: len(host), Flags: mf}, nil
 }
 
 func (b *Buffer) Release() error {
