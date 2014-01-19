@@ -200,13 +200,13 @@ func (p *Platform) GetDevices() ([]*Device, error) {
 	}
 
 	var numEntries clw.Uint
-	err := clw.GetDeviceIDs(clw.PlatformID(p.ID), clw.DeviceTypeAll, 0, nil, &numEntries)
+	err := clw.GetDeviceIDs(p.ID, clw.DeviceTypeAll, 0, nil, &numEntries)
 	if err != nil {
 		return nil, err
 	}
 
 	deviceIDs := make([]clw.DeviceID, numEntries)
-	err = clw.GetDeviceIDs(clw.PlatformID(p.ID), clw.DeviceTypeAll, numEntries, &deviceIDs[0], nil)
+	err = clw.GetDeviceIDs(p.ID, clw.DeviceTypeAll, numEntries, &deviceIDs[0], nil)
 	if err != nil {
 		return nil, err
 	}
@@ -311,7 +311,7 @@ func (d *Device) getAllInfo() (err error) {
 
 func (d *Device) getBool(paramName clw.DeviceInfo) bool {
 	var paramValue clw.Bool
-	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)
@@ -321,7 +321,7 @@ func (d *Device) getBool(paramName clw.DeviceInfo) bool {
 
 func (d *Device) getUint(paramName clw.DeviceInfo) uint32 {
 	var paramValue clw.Uint
-	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)
@@ -331,13 +331,13 @@ func (d *Device) getUint(paramName clw.DeviceInfo) uint32 {
 
 func (d *Device) getString(paramName clw.DeviceInfo) string {
 	var paramValueSize clw.Size
-	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, 0, nil, &paramValueSize)
+	err := clw.GetDeviceInfo(d.ID, paramName, 0, nil, &paramValueSize)
 	if err != nil {
 		panic(err)
 	}
 
 	buffer := make([]byte, paramValueSize)
-	err = clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
+	err = clw.GetDeviceInfo(d.ID, paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
 	if err != nil {
 		panic(err)
 	}
@@ -348,7 +348,7 @@ func (d *Device) getString(paramName clw.DeviceInfo) string {
 
 func (d *Device) getUlong(paramName clw.DeviceInfo) uint64 {
 	var paramValue clw.Ulong
-	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)
@@ -358,7 +358,7 @@ func (d *Device) getUlong(paramName clw.DeviceInfo) uint64 {
 
 func (d *Device) getSize(paramName clw.DeviceInfo) uint {
 	var paramValue clw.Size
-	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)
@@ -368,14 +368,14 @@ func (d *Device) getSize(paramName clw.DeviceInfo) uint {
 
 func (d *Device) getSizeArray(paramName clw.DeviceInfo) []uint {
 	var paramValueSize clw.Size
-	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, 0, nil, &paramValueSize)
+	err := clw.GetDeviceInfo(d.ID, paramName, 0, nil, &paramValueSize)
 	if err != nil {
 		panic(err)
 	}
 
 	var a clw.Size
 	buffer := make([]clw.Size, paramValueSize/clw.Size(unsafe.Sizeof(a)))
-	err = clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
+	err = clw.GetDeviceInfo(d.ID, paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
 	if err != nil {
 		panic(err)
 	}
@@ -390,7 +390,7 @@ func (d *Device) getSizeArray(paramName clw.DeviceInfo) []uint {
 
 func (d *Device) getFpConfig(paramName clw.DeviceInfo) FPConfig {
 	var paramValue clw.DeviceFPConfig
-	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)
@@ -420,7 +420,7 @@ func (d *Device) getFpConfig(paramName clw.DeviceInfo) FPConfig {
 
 func (d *Device) getExecCapabilities(paramName clw.DeviceInfo) ExecCapabilities {
 	var paramValue clw.DeviceExecCapabilities
-	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)
@@ -438,7 +438,7 @@ func (d *Device) getExecCapabilities(paramName clw.DeviceInfo) ExecCapabilities 
 
 func (d *Device) getType(paramName clw.DeviceInfo) DeviceType {
 	var paramValue clw.DeviceType
-	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)
@@ -462,7 +462,7 @@ func (d *Device) getType(paramName clw.DeviceInfo) DeviceType {
 
 func (d *Device) getCommandQueueProperties(paramName clw.DeviceInfo) CommandQueueProperties {
 	var paramValue clw.CommandQueueProperties
-	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)
@@ -480,7 +480,7 @@ func (d *Device) getCommandQueueProperties(paramName clw.DeviceInfo) CommandQueu
 
 func (d *Device) getGlobalMemCacheType(paramName clw.DeviceInfo) GlobalMemCacheType {
 	var paramValue clw.DeviceMemCacheType
-	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)
@@ -500,7 +500,7 @@ func (d *Device) getGlobalMemCacheType(paramName clw.DeviceInfo) GlobalMemCacheT
 
 func (d *Device) getLocalMemTypeInfo(paramName clw.DeviceInfo) LocalMemTypeInfo {
 	var paramValue clw.DeviceLocalMemType
-	err := clw.GetDeviceInfo(clw.DeviceID(d.ID), paramName, clw.Size(unsafe.Sizeof(paramValue)),
+	err := clw.GetDeviceInfo(d.ID, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)

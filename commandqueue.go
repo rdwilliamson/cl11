@@ -43,7 +43,7 @@ func CreateCommandQueue(c *Context, d *Device, cqp CommandQueueProperties) (*Com
 		properties |= clw.QueueProfilingEnable
 	}
 
-	commandQueue, err := clw.CreateCommandQueue(clw.Context(c.ID), clw.DeviceID(d.ID), properties)
+	commandQueue, err := clw.CreateCommandQueue(c.ID, d.ID, properties)
 	if err != nil {
 		return nil, err
 	}

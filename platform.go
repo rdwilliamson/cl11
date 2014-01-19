@@ -92,13 +92,13 @@ func (p *Platform) getAllInfo() (err error) {
 func (p *Platform) getString(paramName clw.PlatformInfo) string {
 
 	var paramValueSize clw.Size
-	err := clw.GetPlatformInfo(clw.PlatformID(p.ID), paramName, 0, nil, &paramValueSize)
+	err := clw.GetPlatformInfo(p.ID, paramName, 0, nil, &paramValueSize)
 	if err != nil {
 		panic(err)
 	}
 
 	buffer := make([]byte, paramValueSize)
-	err = clw.GetPlatformInfo(clw.PlatformID(p.ID), paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
+	err = clw.GetPlatformInfo(p.ID, paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
 	if err != nil {
 		panic(err)
 	}

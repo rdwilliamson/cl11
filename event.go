@@ -14,7 +14,7 @@ type Event struct {
 }
 
 func CreateUserEvent(c *Context) (*Event, error) {
-	event, err := clw.CreateUserEvent(clw.Context(c.ID))
+	event, err := clw.CreateUserEvent(c.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +122,7 @@ func (ces CommandExecutionStatus) String() string {
 // error that occurred trying to retrieve the event status.
 func (e *Event) Status() (CommandExecutionStatus, error, error) {
 	var status clw.CommandExecutionStatus
-	err := clw.GetEventInfo(clw.Event(e.ID), clw.EventCommandExecutionStatus, clw.Size(unsafe.Sizeof(status)),
+	err := clw.GetEventInfo(e.ID, clw.EventCommandExecutionStatus, clw.Size(unsafe.Sizeof(status)),
 		unsafe.Pointer(&status), nil)
 	if err != nil {
 		return 0, nil, err
