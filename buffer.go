@@ -8,7 +8,8 @@ import clw "github.com/rdwilliamson/clw11"
 // 3. Host memory alloced by go
 type Buffer struct {
 	ID     clw.Memory
-	Device bool // Is the memory on the device.
+	Device bool   // Is the memory on the device.
+	Host   []byte // Host backed memory (if applicable).
 
 	// mapped  []byte
 	// Read    bool
