@@ -34,7 +34,7 @@ func (cqp CommandQueueProperties) String() string {
 	return "(" + strings.Join(propertiesStrings, "|") + ")"
 }
 
-func CreateCommandQueue(c *Context, d *Device, cqp CommandQueueProperties) (*CommandQueue, error) {
+func (c *Context) CreateCommandQueue(d *Device, cqp CommandQueueProperties) (*CommandQueue, error) {
 	var properties clw.CommandQueueProperties
 	if cqp.OutOfOrderExecution {
 		properties |= clw.QueueOutOfOrderExecModeEnable

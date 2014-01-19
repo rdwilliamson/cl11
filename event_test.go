@@ -7,7 +7,7 @@ import (
 func TestCreateUserEvent(t *testing.T) {
 	contexts := createContexts(t)
 	for _, context := range contexts {
-		_, err := CreateUserEvent(context)
+		_, err := context.CreateUserEvent()
 		if err != nil {
 			t.Error(err)
 		}

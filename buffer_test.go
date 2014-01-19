@@ -13,7 +13,7 @@ func TestCreateBuffers(t *testing.T) {
 		}
 		host = host[:int(context.Devices[0].MaxMemAllocSize)]
 
-		buffer, err := CreateDeviceBuffer(context, len(host), MemoryFlags{})
+		buffer, err := context.CreateDeviceBuffer(len(host), MemoryFlags{})
 		if err != nil {
 			t.Error(err)
 			continue
@@ -23,7 +23,7 @@ func TestCreateBuffers(t *testing.T) {
 			t.Error(err)
 		}
 
-		buffer, err = CreateDeviceBufferFromHost(context, MemoryFlags{}, host)
+		buffer, err = context.CreateDeviceBufferFromHost(MemoryFlags{}, host)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -33,7 +33,7 @@ func TestCreateBuffers(t *testing.T) {
 			t.Error(err)
 		}
 
-		buffer, err = CreateDeviceBufferOnHost(context, MemoryFlags{}, host)
+		buffer, err = context.CreateDeviceBufferOnHost(MemoryFlags{}, host)
 		if err != nil {
 			t.Error(err)
 			continue
@@ -47,7 +47,7 @@ func TestCreateBuffers(t *testing.T) {
 			continue
 		}
 
-		buffer, err = CreateHostBuffer(context, int(context.Devices[0].MaxMemAllocSize), MemoryFlags{})
+		buffer, err = context.CreateHostBuffer(int(context.Devices[0].MaxMemAllocSize), MemoryFlags{})
 		if err != nil {
 			t.Error(err)
 			continue
@@ -57,7 +57,7 @@ func TestCreateBuffers(t *testing.T) {
 			t.Error(err)
 		}
 
-		buffer, err = CreateHostBufferFromHost(context, MemoryFlags{}, host)
+		buffer, err = context.CreateHostBufferFromHost(MemoryFlags{}, host)
 		if err != nil {
 			t.Error(err)
 			continue

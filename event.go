@@ -13,7 +13,7 @@ type Event struct {
 	Type         CommandType
 }
 
-func CreateUserEvent(c *Context) (*Event, error) {
+func (c *Context) CreateUserEvent() (*Event, error) {
 	event, err := clw.CreateUserEvent(c.ID)
 	if err != nil {
 		return nil, err

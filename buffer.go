@@ -29,7 +29,7 @@ func (mf MemoryFlags) toBits() clw.MemoryFlags {
 	return flags
 }
 
-func CreateDeviceBuffer(c *Context, size int, mf MemoryFlags) (*Buffer, error) {
+func (c *Context) CreateDeviceBuffer(size int, mf MemoryFlags) (*Buffer, error) {
 	memory, err := clw.CreateBuffer(c.ID, mf.toBits(), clw.Size(size), nil)
 	if err != nil {
 		return nil, err
@@ -37,7 +37,7 @@ func CreateDeviceBuffer(c *Context, size int, mf MemoryFlags) (*Buffer, error) {
 	return &Buffer{ID: memory, Context: c, Size: size, Flags: mf}, nil
 }
 
-func CreateDeviceBufferFromHost(c *Context, mf MemoryFlags, host []byte) (*Buffer, error) {
+func (c *Context) CreateDeviceBufferFromHost(mf MemoryFlags, host []byte) (*Buffer, error) {
 	flags := mf.toBits() | clw.MemoryCopyHostPointer
 	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(len(host)), host)
 	if err != nil {
@@ -46,7 +46,7 @@ func CreateDeviceBufferFromHost(c *Context, mf MemoryFlags, host []byte) (*Buffe
 	return &Buffer{ID: memory, Context: c, Size: len(host), Flags: mf}, nil
 }
 
-func CreateDeviceBufferOnHost(c *Context, mf MemoryFlags, host []byte) (*Buffer, error) {
+func (c *Context) CreateDeviceBufferOnHost(mf MemoryFlags, host []byte) (*Buffer, error) {
 	flags := mf.toBits() | clw.MemoryUseHostPointer
 	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(len(host)), host)
 	if err != nil {
@@ -55,7 +55,7 @@ func CreateDeviceBufferOnHost(c *Context, mf MemoryFlags, host []byte) (*Buffer,
 	return &Buffer{ID: memory, Context: c, Size: len(host), Host: host, Flags: mf}, nil
 }
 
-func CreateHostBuffer(c *Context, size int, mf MemoryFlags) (*Buffer, error) {
+func (c *Context) CreateHostBuffer(size int, mf MemoryFlags) (*Buffer, error) {
 	flags := mf.toBits() | clw.MemoryAllocHostPointer
 	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(size), nil)
 	if err != nil {
@@ -64,7 +64,7 @@ func CreateHostBuffer(c *Context, size int, mf MemoryFlags) (*Buffer, error) {
 	return &Buffer{ID: memory, Context: c, Size: size, Flags: mf}, nil
 }
 
-func CreateHostBufferFromHost(c *Context, mf MemoryFlags, host []byte) (*Buffer, error) {
+func (c *Context) CreateHostBufferFromHost(mf MemoryFlags, host []byte) (*Buffer, error) {
 	flags := mf.toBits() | clw.MemoryAllocHostPointer | clw.MemoryCopyHostPointer
 	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(len(host)), host)
 	if err != nil {
