@@ -7,7 +7,9 @@ import clw "github.com/rdwilliamson/clw11"
 // 2. Host memory alloced by the CL
 // 3. Host memory alloced by go
 type Buffer struct {
-	ID clw.Memory
+	ID     MemoryID
+	Device bool
+
 	// mapped  []byte
 	// Read    bool
 	// Write   bool
@@ -15,7 +17,9 @@ type Buffer struct {
 	// alloced bool // if the implementation alloced the memory
 }
 
-func CreateBuffer(c *Context, size int, read, write, useHost, alloc, copyHost bool, host []byte) (*Buffer, error) {
+type MemoryID clw.Memory
+
+func CreateDeviceBuffer(c *Context, size int, read, write bool, host []byte, copyHost bool) (*Buffer, error) {
 	var flags clw.MemoryFlags
 	if read {
 		if write {
@@ -27,10 +31,34 @@ func CreateBuffer(c *Context, size int, read, write, useHost, alloc, copyHost bo
 		flags = clw.MemoryWriteOnly
 	}
 
+	if copyHost {
+		flags |= clw.MemoryCopyHostPointer
+	}
+
 	memory, err := clw.CreateBuffer(clw.Context(c.ID), flags, clw.Size(size), host)
 	if err != nil {
 		return nil, err
 	}
+	return &Buffer{ID: MemoryID(memory), Device: true}, nil
+}
 
-	return &Buffer{memory}, nil
+func CreateHostBuffer(c *Context, size int, read, write bool) (*Buffer, error) {
+	flags := clw.MemoryAllocHostPointer
+
+	if read {
+		if write {
+			flags |= clw.MemoryReadWrite
+		} else {
+			flags |= clw.MemoryReadOnly
+		}
+
+	} else {
+		flags |= clw.MemoryWriteOnly
+	}
+
+	memory, err := clw.CreateBuffer(clw.Context(c.ID), flags, clw.Size(size), nil)
+	if err != nil {
+		return nil, err
+	}
+	return &Buffer{ID: MemoryID(memory), Device: false}, nil
 }
