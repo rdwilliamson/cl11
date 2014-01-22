@@ -113,6 +113,10 @@ func (ces CommandExecutionStatus) String() string {
 	panic("unknown command execution status")
 }
 
+func toEvents(in []Event) []clw.Event {
+	return *(*[]clw.Event)(unsafe.Pointer(&in))
+}
+
 // Returns the events status, an error that caused the event to terminate, or an
 // error that occurred trying to retrieve the event status.
 func EventStatus(e Event) (CommandExecutionStatus, error, error) {
