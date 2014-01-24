@@ -10,10 +10,13 @@ type Buffer struct {
 	Flags   MemoryFlags
 }
 
-type MemoryFlags struct {
-	Read  bool // Can a kernel read from this buffer.
-	Write bool // Can a kernel write to this buffer.
-}
+type MemoryFlags uint8
+
+const (
+	MemoryReadWrite MemoryFlags = MemoryFlags(clw.MemoryReadOnly)
+	MemoryWriteOnly MemoryFlags = MemoryFlags(clw.MemoryReadOnly)
+	MemoryReadOnly  MemoryFlags = MemoryFlags(clw.MemoryReadOnly)
+)
 
 type MapFlags uint8
 
@@ -27,22 +30,8 @@ const (
 	NonBlocking = false
 )
 
-func (mf MemoryFlags) toBits() clw.MemoryFlags {
-	var flags clw.MemoryFlags
-	if mf.Read {
-		if mf.Write {
-			flags = clw.MemoryReadWrite
-		} else {
-			flags = clw.MemoryReadOnly
-		}
-	} else if mf.Write {
-		flags = clw.MemoryWriteOnly
-	}
-	return flags
-}
-
 func (c *Context) CreateDeviceBuffer(size int, mf MemoryFlags) (*Buffer, error) {
-	memory, err := clw.CreateBuffer(c.ID, mf.toBits(), clw.Size(size), nil)
+	memory, err := clw.CreateBuffer(c.ID, clw.MemoryFlags(mf), clw.Size(size), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +39,7 @@ func (c *Context) CreateDeviceBuffer(size int, mf MemoryFlags) (*Buffer, error) 
 }
 
 func (c *Context) CreateDeviceBufferFromHost(mf MemoryFlags, host []byte) (*Buffer, error) {
-	flags := mf.toBits() | clw.MemoryCopyHostPointer
+	flags := clw.MemoryFlags(mf) | clw.MemoryCopyHostPointer
 	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(len(host)), host)
 	if err != nil {
 		return nil, err
@@ -59,7 +48,7 @@ func (c *Context) CreateDeviceBufferFromHost(mf MemoryFlags, host []byte) (*Buff
 }
 
 func (c *Context) CreateDeviceBufferOnHost(mf MemoryFlags, host []byte) (*Buffer, error) {
-	flags := mf.toBits() | clw.MemoryUseHostPointer
+	flags := clw.MemoryFlags(mf) | clw.MemoryUseHostPointer
 	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(len(host)), host)
 	if err != nil {
 		return nil, err
@@ -68,7 +57,7 @@ func (c *Context) CreateDeviceBufferOnHost(mf MemoryFlags, host []byte) (*Buffer
 }
 
 func (c *Context) CreateHostBuffer(size int, mf MemoryFlags) (*Buffer, error) {
-	flags := mf.toBits() | clw.MemoryAllocHostPointer
+	flags := clw.MemoryFlags(mf) | clw.MemoryAllocHostPointer
 	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(size), nil)
 	if err != nil {
 		return nil, err
@@ -77,7 +66,7 @@ func (c *Context) CreateHostBuffer(size int, mf MemoryFlags) (*Buffer, error) {
 }
 
 func (c *Context) CreateHostBufferFromHost(mf MemoryFlags, host []byte) (*Buffer, error) {
-	flags := mf.toBits() | clw.MemoryAllocHostPointer | clw.MemoryCopyHostPointer
+	flags := clw.MemoryFlags(mf) | clw.MemoryAllocHostPointer | clw.MemoryCopyHostPointer
 	memory, err := clw.CreateBuffer(c.ID, flags, clw.Size(len(host)), host)
 	if err != nil {
 		return nil, err
