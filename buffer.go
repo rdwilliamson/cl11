@@ -10,22 +10,17 @@ type Buffer struct {
 	Flags   MemoryFlags
 }
 
-type MappedBuffer struct {
-	b     *Buffer // Buffer from which data was mapped.
-	data  []byte  // Entire range of mapped data.
-	start int     // Where data will be read from, -1 if not mapped for reading.
-	end   int     // Where data will be written to, -1 of not mapped for writing.
-}
-
 type MemoryFlags struct {
 	Read  bool // Can a kernel read from this buffer.
 	Write bool // Can a kernel write to this buffer.
 }
 
-type MapFlags struct {
-	Read  bool
-	Write bool
-}
+type MapFlags uint8
+
+const (
+	MapRead  MapFlags = MapFlags(clw.MapRead)
+	MapWrite MapFlags = MapFlags(clw.MapWrite)
+)
 
 const (
 	Blocking    = true
@@ -102,16 +97,8 @@ func (cq *CommandQueue) CopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size 
 func (cq *CommandQueue) MapBuffer(b *Buffer, blocking bool, flags MapFlags, offset, size int, waitList []Event,
 	e *Event) ([]byte, error) {
 
-	var mapFlags clw.MapFlags
-	if flags.Read {
-		mapFlags |= clw.MapRead
-	}
-	if flags.Write {
-		mapFlags |= clw.MapWrite
-	}
-
-	mapped, err := clw.EnqueueMapBuffer(cq.ID, b.ID, clw.ToBool(blocking), mapFlags, clw.Size(offset), clw.Size(size),
-		toEvents(waitList), (*clw.Event)(e))
+	mapped, err := clw.EnqueueMapBuffer(cq.ID, b.ID, clw.ToBool(blocking), clw.MapFlags(flags), clw.Size(offset),
+		clw.Size(size), toEvents(waitList), (*clw.Event)(e))
 	if err != nil {
 		return nil, err
 	}
