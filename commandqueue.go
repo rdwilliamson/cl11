@@ -51,9 +51,9 @@ func (c *Context) CreateCommandQueue(d *Device, cqp CommandQueueProperties) (*Co
 }
 
 func (cq *CommandQueue) Flush() error {
-	return clw.Flush(clw.CommandQueue(cq.ID))
+	return clw.Flush(cq.ID)
 }
 
 func (cq *CommandQueue) Finish() error {
-	return clw.Finish(clw.CommandQueue(cq.ID))
+	return clw.Finish(cq.ID)
 }
