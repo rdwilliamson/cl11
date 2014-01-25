@@ -6,14 +6,17 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
-type Event clw.Event
+type Event struct {
+	ID          clw.Event
+	CommandType CommandType
+}
 
-func (c *Context) CreateUserEvent() (Event, error) {
+func (c *Context) CreateUserEvent() (*Event, error) {
 	event, err := clw.CreateUserEvent(c.ID)
 	if err != nil {
 		return nil, err
 	}
-	return Event(event), nil
+	return &Event{ID: event}, nil
 }
 
 type CommandType int
@@ -113,24 +116,31 @@ func (ces CommandExecutionStatus) String() string {
 	panic("unknown command execution status")
 }
 
-func toEvents(in []Event) []clw.Event {
-	return *(*[]clw.Event)(unsafe.Pointer(&in))
+func toEvents(in []*Event) []clw.Event {
+
+	if in == nil {
+		return nil
+	}
+
+	// TODO avoid allocating memory.
+	out := make([]clw.Event, len(in))
+	for i := range in {
+		out[i] = in[i].ID
+	}
+	return out
 }
 
 // Returns the events status, an error that caused the event to terminate, or an
 // error that occurred trying to retrieve the event status.
-func EventStatus(e Event) (CommandExecutionStatus, error, error) {
-	// Not a method because the underlying C type is a pointer and throws a
-	// "invalid receiver type *Event (Event is a pointer type)" error.
-
+func (e *Event) Status() (CommandExecutionStatus, error, error) {
 	var status clw.CommandExecutionStatus
-	err := clw.GetEventInfo(clw.Event(e), clw.EventCommandExecutionStatus, clw.Size(unsafe.Sizeof(status)),
+	err := clw.GetEventInfo(e.ID, clw.EventCommandExecutionStatus, clw.Size(unsafe.Sizeof(status)),
 		unsafe.Pointer(&status), nil)
 	if err != nil {
 		return 0, nil, err
 	}
 
-	if status < clw.CommandExecutionStatus(0) {
+	if status < 0 {
 		return 0, clw.CodeToError(clw.Int(status)), nil
 	}
 
