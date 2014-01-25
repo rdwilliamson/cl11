@@ -45,52 +45,32 @@ const (
 	CommandUser                 = CommandType(clw.CommandUser)
 )
 
+var commandTypeMap = map[CommandType]string{
+	CommandNDRangeKernel:        "ND range kernel",
+	CommandTask:                 "task",
+	CommandNativeKernel:         "native kernel",
+	CommandReadBuffer:           "read buffer",
+	CommandWriteBuffer:          "write buffer",
+	CommandCopyBuffer:           "copy buffer",
+	CommandReadImage:            "read image",
+	CommandWriteImage:           "write image",
+	CommandCopyImage:            "copy image",
+	CommandCopyImageToBuffer:    "copy image to buffer",
+	CommandCopyBufferToImage:    "copy buffer to image",
+	CommandMapBuffer:            "map buffer",
+	CommandMapImage:             "map image",
+	CommandUnmapMemoryObject:    "unmap memory object",
+	CommandMarker:               "marker",
+	CommandAcquireGlObjects:     "acquire GL objects",
+	CommandReleaseGlObjects:     "release GL objects",
+	CommandReadBufferRectangle:  "read buffer rectangle",
+	CommandWriteBufferRectangle: "write buffer rectangle",
+	CommandCopyBufferRectangle:  "copy buffer rectangle",
+	CommandUser:                 "user",
+}
+
 func (ct CommandType) String() string {
-	switch ct {
-	case CommandNDRangeKernel:
-		return "ND range kernel"
-	case CommandTask:
-		return "task"
-	case CommandNativeKernel:
-		return "native kernel"
-	case CommandReadBuffer:
-		return "read buffer"
-	case CommandWriteBuffer:
-		return "write buffer"
-	case CommandCopyBuffer:
-		return "copy buffer"
-	case CommandReadImage:
-		return "read image"
-	case CommandWriteImage:
-		return "write image"
-	case CommandCopyImage:
-		return "copy image"
-	case CommandCopyImageToBuffer:
-		return "copy image to buffer"
-	case CommandCopyBufferToImage:
-		return "copy buffer to image"
-	case CommandMapBuffer:
-		return "map buffer"
-	case CommandMapImage:
-		return "map image"
-	case CommandUnmapMemoryObject:
-		return "unmap memory object"
-	case CommandMarker:
-		return "marker"
-	case CommandAcquireGlObjects:
-		return "acquire GL objects"
-	case CommandReleaseGlObjects:
-		return "release GL objects"
-	case CommandReadBufferRectangle:
-		return "read buffer rectangle"
-	case CommandWriteBufferRectangle:
-		return "write buffer rectangle"
-	case CommandCopyBufferRectangle:
-		return "copy buffer rectangle"
-	case CommandUser:
-		return "user"
-	}
-	panic("unknown command type")
+	return commandTypeMap[ct]
 }
 
 type CommandExecutionStatus int8
