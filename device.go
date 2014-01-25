@@ -74,16 +74,16 @@ const (
 func (type_ DeviceType) String() string {
 	var typeStrings []string
 	if type_&DeviceTypeDefault != 0 {
-		typeStrings = append(typeStrings, "CL_DEVICE_TYPE_DEFAULT")
+		typeStrings = append(typeStrings, "default")
 	}
 	if type_&DeviceTypeCpu != 0 {
-		typeStrings = append(typeStrings, "CL_DEVICE_TYPE_CPU")
+		typeStrings = append(typeStrings, "CPU")
 	}
 	if type_&DeviceTypeGpu != 0 {
-		typeStrings = append(typeStrings, "CL_DEVICE_TYPE_GPU")
+		typeStrings = append(typeStrings, "GPU")
 	}
 	if type_&DeviceTypeAccelerator != 0 {
-		typeStrings = append(typeStrings, "CL_DEVICE_TYPE_ACCELERATOR")
+		typeStrings = append(typeStrings, "accelerator")
 	}
 	return "(" + strings.Join(typeStrings, "|") + ")"
 }
