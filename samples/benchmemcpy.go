@@ -34,9 +34,10 @@ func main() {
 
 			size := int(d.MaxMemAllocSize)
 
-			host, err := c.CreateHostBuffer(size, cl.MemoryFlags{})
+			host, err := c.CreateHostBuffer(size, 0)
 			check(err)
-			device, err := c.CreateDeviceBuffer(size, cl.MemoryFlags{})
+
+			device, err := c.CreateDeviceBuffer(size, 0)
 			check(err)
 
 			start := time.Now()
