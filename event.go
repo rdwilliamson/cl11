@@ -19,27 +19,27 @@ func (c *Context) CreateUserEvent() (Event, error) {
 type CommandType int
 
 const (
-	CommandNDRangeKernel        CommandType = iota
-	CommandTask                 CommandType = iota
-	CommandNativeKernel         CommandType = iota
-	CommandReadBuffer           CommandType = iota
-	CommandWriteBuffer          CommandType = iota
-	CommandCopyBuffer           CommandType = iota
-	CommandReadImage            CommandType = iota
-	CommandWriteImage           CommandType = iota
-	CommandCopyImage            CommandType = iota
-	CommandCopyImageToBuffer    CommandType = iota
-	CommandCopyBufferToImage    CommandType = iota
-	CommandMapBuffer            CommandType = iota
-	CommandMapImage             CommandType = iota
-	CommandUnmapMemoryObject    CommandType = iota
-	CommandMarker               CommandType = iota
-	CommandAcquireGlObjects     CommandType = iota
-	CommandReleaseGlObjects     CommandType = iota
-	CommandReadBufferRectangle  CommandType = iota
-	CommandWriteBufferRectangle CommandType = iota
-	CommandCopyBufferRectangle  CommandType = iota
-	CommandUser                 CommandType = iota
+	CommandNDRangeKernel        = CommandType(clw.CommandNdrangeKernel)
+	CommandTask                 = CommandType(clw.CommandTask)
+	CommandNativeKernel         = CommandType(clw.CommandNativeKernel)
+	CommandReadBuffer           = CommandType(clw.CommandReadBuffer)
+	CommandWriteBuffer          = CommandType(clw.CommandWriteBuffer)
+	CommandCopyBuffer           = CommandType(clw.CommandCopyBuffer)
+	CommandReadImage            = CommandType(clw.CommandReadImage)
+	CommandWriteImage           = CommandType(clw.CommandWriteImage)
+	CommandCopyImage            = CommandType(clw.CommandCopyImage)
+	CommandCopyImageToBuffer    = CommandType(clw.CommandCopyImageToBuffer)
+	CommandCopyBufferToImage    = CommandType(clw.CommandCopyBufferToImage)
+	CommandMapBuffer            = CommandType(clw.CommandMapBuffer)
+	CommandMapImage             = CommandType(clw.CommandMapImage)
+	CommandUnmapMemoryObject    = CommandType(clw.CommandUnmapMemoryObject)
+	CommandMarker               = CommandType(clw.CommandMarker)
+	CommandAcquireGlObjects     = CommandType(clw.CommandAcquireGlObjects)
+	CommandReleaseGlObjects     = CommandType(clw.CommandReleaseGlObjects)
+	CommandReadBufferRectangle  = CommandType(clw.CommandReadBufferRectangle)
+	CommandWriteBufferRectangle = CommandType(clw.CommandWriteBufferRectangle)
+	CommandCopyBufferRectangle  = CommandType(clw.CommandCopyBufferRectangle)
+	CommandUser                 = CommandType(clw.CommandUser)
 )
 
 func (ct CommandType) String() string {
@@ -90,13 +90,13 @@ func (ct CommandType) String() string {
 	panic("unknown command type")
 }
 
-type CommandExecutionStatus int
+type CommandExecutionStatus int8
 
 const (
-	Complete  CommandExecutionStatus = iota
-	Running   CommandExecutionStatus = iota
-	Submitted CommandExecutionStatus = iota
-	Queued    CommandExecutionStatus = iota
+	Complete  = CommandExecutionStatus(clw.Complete)
+	Running   = CommandExecutionStatus(clw.Running)
+	Submitted = CommandExecutionStatus(clw.Submitted)
+	Queued    = CommandExecutionStatus(clw.Queued)
 )
 
 func (ces CommandExecutionStatus) String() string {
@@ -134,16 +134,5 @@ func EventStatus(e Event) (CommandExecutionStatus, error, error) {
 		return 0, clw.CodeToError(clw.Int(status)), nil
 	}
 
-	switch status {
-	case clw.Complete:
-		return Complete, nil, nil
-	case clw.Running:
-		return Running, nil, nil
-	case clw.Submitted:
-		return Submitted, nil, nil
-	case clw.Queued:
-		return Queued, nil, nil
-	}
-
-	panic("unknown command execution status")
+	return CommandExecutionStatus(status), nil, nil
 }
