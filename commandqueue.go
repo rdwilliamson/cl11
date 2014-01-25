@@ -8,11 +8,10 @@ import (
 
 // Not thread safe.
 type CommandQueue struct {
-	ID         clw.CommandQueue
+	id         clw.CommandQueue
 	Context    *Context
 	Device     *Device
 	Properties CommandQueueProperties
-
 	// Scratch space to avoid allocating memory when converting a wait list.
 	eventsScratch []clw.Event
 }
@@ -46,15 +45,15 @@ func (c *Context) CreateCommandQueue(d *Device, cqp CommandQueueProperties) (*Co
 	if err != nil {
 		return nil, err
 	}
-	return &CommandQueue{ID: commandQueue, Context: c, Device: d, Properties: cqp}, nil
+	return &CommandQueue{id: commandQueue, Context: c, Device: d, Properties: cqp}, nil
 }
 
 func (cq *CommandQueue) Flush() error {
-	return clw.Flush(cq.ID)
+	return clw.Flush(cq.id)
 }
 
 func (cq *CommandQueue) Finish() error {
-	return clw.Finish(cq.ID)
+	return clw.Finish(cq.id)
 }
 
 func (cq *CommandQueue) toEvents(in []*Event) []clw.Event {

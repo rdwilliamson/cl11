@@ -102,7 +102,7 @@ func (cq *CommandQueue) CopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size 
 		e.CommandType = CommandCopyBuffer
 	}
 
-	return clw.EnqueueCopyBuffer(cq.ID, src.ID, dst.ID, clw.Size(srcOffset), clw.Size(dstOffset), clw.Size(size),
+	return clw.EnqueueCopyBuffer(cq.id, src.ID, dst.ID, clw.Size(srcOffset), clw.Size(dstOffset), clw.Size(size),
 		cq.toEvents(waitList), event)
 }
 
@@ -115,7 +115,7 @@ func (cq *CommandQueue) MapBuffer(b *Buffer, blocking bool, flags MapFlags, offs
 		e.CommandType = CommandMapBuffer
 	}
 
-	mapped, err := clw.EnqueueMapBuffer(cq.ID, b.ID, clw.ToBool(blocking), clw.MapFlags(flags), clw.Size(offset),
+	mapped, err := clw.EnqueueMapBuffer(cq.id, b.ID, clw.ToBool(blocking), clw.MapFlags(flags), clw.Size(offset),
 		clw.Size(size), cq.toEvents(waitList), event)
 	if err != nil {
 		return nil, err
@@ -131,5 +131,5 @@ func (cq *CommandQueue) UnmapBuffer(b *Buffer, mapped []byte, waitList []*Event,
 		e.CommandType = CommandUnmapMemoryObject
 	}
 
-	return clw.EnqueueUnmapMemObject(cq.ID, b.ID, mapped, cq.toEvents(waitList), event)
+	return clw.EnqueueUnmapMemObject(cq.id, b.ID, mapped, cq.toEvents(waitList), event)
 }
