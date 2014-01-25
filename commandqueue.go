@@ -16,35 +16,32 @@ type CommandQueue struct {
 	eventsScratch []clw.Event
 }
 
-type CommandQueueProperties struct {
-	OutOfOrderExecution bool
-	Profiling           bool
-}
+type CommandQueueProperties uint8
+
+// Bitfield.
+const (
+	QueueOutOfOrderExecution = CommandQueueProperties(clw.QueueOutOfOrderExecModeEnable)
+	QueueProfilingEnable     = CommandQueueProperties(clw.QueueProfilingEnable)
+)
 
 func (cqp CommandQueueProperties) String() string {
 	var propertiesStrings []string
-	if cqp.OutOfOrderExecution {
-		propertiesStrings = append(propertiesStrings, "CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE")
+	if cqp&QueueOutOfOrderExecution != 0 {
+		propertiesStrings = append(propertiesStrings, "out of order execution enable")
 	}
-	if cqp.Profiling {
-		propertiesStrings = append(propertiesStrings, "CL_QUEUE_PROFILING_ENABLE")
+	if cqp&QueueProfilingEnable != 0 {
+		propertiesStrings = append(propertiesStrings, "profiling enable")
 	}
 	return "(" + strings.Join(propertiesStrings, "|") + ")"
 }
 
 func (c *Context) CreateCommandQueue(d *Device, cqp CommandQueueProperties) (*CommandQueue, error) {
-	var properties clw.CommandQueueProperties
-	if cqp.OutOfOrderExecution {
-		properties |= clw.QueueOutOfOrderExecModeEnable
-	}
-	if cqp.Profiling {
-		properties |= clw.QueueProfilingEnable
-	}
 
-	commandQueue, err := clw.CreateCommandQueue(c.ID, d.ID, properties)
+	commandQueue, err := clw.CreateCommandQueue(c.ID, d.ID, clw.CommandQueueProperties(cqp))
 	if err != nil {
 		return nil, err
 	}
+
 	return &CommandQueue{id: commandQueue, Context: c, Device: d, Properties: cqp}, nil
 }
 

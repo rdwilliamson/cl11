@@ -449,15 +449,7 @@ func (d *Device) getCommandQueueProperties(paramName clw.DeviceInfo) CommandQueu
 	if err != nil {
 		panic(err)
 	}
-
-	var result CommandQueueProperties
-	if paramValue&clw.QueueOutOfOrderExecModeEnable != 0 {
-		result.OutOfOrderExecution = true
-	}
-	if paramValue&clw.QueueProfilingEnable != 0 {
-		result.Profiling = true
-	}
-	return result
+	return CommandQueueProperties(paramValue)
 }
 
 func (d *Device) getGlobalMemCacheType(paramName clw.DeviceInfo) GlobalMemCacheType {
