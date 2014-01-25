@@ -60,10 +60,6 @@ type Device struct {
 	LocalMemTypeInfo       LocalMemTypeInfo
 }
 
-func (d Device) String() string {
-	return d.Name
-}
-
 type DeviceType uint8
 
 // Bitfield.

@@ -67,12 +67,6 @@ func GetPlatforms() ([]*Platform, error) {
 	return platforms, nil
 }
 
-// Prints platform info in the form of "vendor, name, version, profile,
-// extensions.""
-func (p Platform) String() string {
-	return p.Name
-}
-
 func (p *Platform) getAllInfo() (err error) {
 	defer func() {
 		if r := recover(); r != nil {
