@@ -6,11 +6,15 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
+// Not thread safe.
 type CommandQueue struct {
 	ID         clw.CommandQueue
 	Context    *Context
 	Device     *Device
 	Properties CommandQueueProperties
+
+	// TODO some scratch space to avoid allocating memory when converting from
+	// []cl.Event to []clw.Event. Should it be thread safe?
 }
 
 type CommandQueueProperties struct {
@@ -42,7 +46,7 @@ func (c *Context) CreateCommandQueue(d *Device, cqp CommandQueueProperties) (*Co
 	if err != nil {
 		return nil, err
 	}
-	return &CommandQueue{commandQueue, c, d, cqp}, nil
+	return &CommandQueue{ID: commandQueue, Context: c, Device: d, Properties: cqp}, nil
 }
 
 func (cq *CommandQueue) Flush() error {

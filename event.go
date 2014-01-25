@@ -7,7 +7,7 @@ import (
 )
 
 type Event struct {
-	ID          clw.Event
+	id          clw.Event
 	CommandType CommandType
 }
 
@@ -16,7 +16,7 @@ func (c *Context) CreateUserEvent() (*Event, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Event{ID: event}, nil
+	return &Event{id: event}, nil
 }
 
 type CommandType int
@@ -105,7 +105,7 @@ func toEvents(in []*Event) []clw.Event {
 	// TODO avoid allocating memory.
 	out := make([]clw.Event, len(in))
 	for i := range in {
-		out[i] = in[i].ID
+		out[i] = in[i].id
 	}
 	return out
 }
@@ -114,7 +114,7 @@ func toEvents(in []*Event) []clw.Event {
 // error that occurred trying to retrieve the event status.
 func (e *Event) Status() (CommandExecutionStatus, error, error) {
 	var status clw.CommandExecutionStatus
-	err := clw.GetEventInfo(e.ID, clw.EventCommandExecutionStatus, clw.Size(unsafe.Sizeof(status)),
+	err := clw.GetEventInfo(e.id, clw.EventCommandExecutionStatus, clw.Size(unsafe.Sizeof(status)),
 		unsafe.Pointer(&status), nil)
 	if err != nil {
 		return 0, nil, err
