@@ -37,7 +37,7 @@ func (cqp CommandQueueProperties) String() string {
 
 func (c *Context) CreateCommandQueue(d *Device, cqp CommandQueueProperties) (*CommandQueue, error) {
 
-	commandQueue, err := clw.CreateCommandQueue(c.ID, d.ID, clw.CommandQueueProperties(cqp))
+	commandQueue, err := clw.CreateCommandQueue(c.id, d.id, clw.CommandQueueProperties(cqp))
 	if err != nil {
 		return nil, err
 	}

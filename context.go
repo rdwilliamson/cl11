@@ -1,19 +1,11 @@
 package cl11
 
-import (
-	"fmt"
-
-	clw "github.com/rdwilliamson/clw11"
-)
+import clw "github.com/rdwilliamson/clw11"
 
 type Context struct {
-	ID         clw.Context
+	id         clw.Context
 	Devices    []*Device
 	Properties ContextProperties
-}
-
-func (c Context) String() string {
-	return fmt.Sprintf("%x", c.ID)
 }
 
 type ContextProperties struct {
@@ -24,7 +16,7 @@ func CreateContext(d []*Device, cp ContextProperties, callback func(err string, 
 
 	devices := make([]clw.DeviceID, len(d))
 	for i := range d {
-		devices[i] = clw.DeviceID(d[i].ID)
+		devices[i] = clw.DeviceID(d[i].id)
 	}
 	var properties []clw.ContextProperties
 	// TODO convert struct into C array of properties.

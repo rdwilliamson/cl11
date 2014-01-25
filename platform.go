@@ -11,7 +11,7 @@ import (
 )
 
 type Platform struct {
-	ID         clw.PlatformID
+	id         clw.PlatformID
 	Devices    []*Device
 	Profile    PlatformProfile
 	Version    PlatformVersion
@@ -51,7 +51,7 @@ func GetPlatforms() ([]*Platform, error) {
 	platforms := make([]*Platform, len(platformIDs))
 	for i := range platforms {
 
-		platforms[i] = &Platform{ID: platformIDs[i]}
+		platforms[i] = &Platform{id: platformIDs[i]}
 
 		err = platforms[i].getAllInfo()
 		if err != nil {
@@ -86,13 +86,13 @@ func (p *Platform) getAllInfo() (err error) {
 func (p *Platform) getString(paramName clw.PlatformInfo) string {
 
 	var paramValueSize clw.Size
-	err := clw.GetPlatformInfo(p.ID, paramName, 0, nil, &paramValueSize)
+	err := clw.GetPlatformInfo(p.id, paramName, 0, nil, &paramValueSize)
 	if err != nil {
 		panic(err)
 	}
 
 	buffer := make([]byte, paramValueSize)
-	err = clw.GetPlatformInfo(p.ID, paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
+	err = clw.GetPlatformInfo(p.id, paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
 	if err != nil {
 		panic(err)
 	}

@@ -12,7 +12,7 @@ type Event struct {
 }
 
 func (c *Context) CreateUserEvent() (*Event, error) {
-	event, err := clw.CreateUserEvent(c.ID)
+	event, err := clw.CreateUserEvent(c.id)
 	if err != nil {
 		return nil, err
 	}
