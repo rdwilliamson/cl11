@@ -64,11 +64,11 @@ type DeviceType uint8
 
 // Bitfield.
 const (
-	DeviceTypeDefault     DeviceType = 1 << iota
-	DeviceTypeCpu         DeviceType = 1 << iota
-	DeviceTypeGpu         DeviceType = 1 << iota
-	DeviceTypeAccelerator DeviceType = 1 << iota
-	DeviceTypeAll         DeviceType = 1<<8 - 1
+	DeviceTypeDefault     = DeviceType(clw.DeviceTypeDefault)
+	DeviceTypeCpu         = DeviceType(clw.DeviceTypeCpu)
+	DeviceTypeGpu         = DeviceType(clw.DeviceTypeGpu)
+	DeviceTypeAccelerator = DeviceType(clw.DeviceTypeAccelerator)
+	DeviceTypeAll         = DeviceType(0xFF)
 )
 
 func (type_ DeviceType) String() string {
@@ -439,21 +439,7 @@ func (d *Device) getType(paramName clw.DeviceInfo) DeviceType {
 	if err != nil {
 		panic(err)
 	}
-
-	var result DeviceType
-	if paramValue&clw.DeviceTypeDefault != 0 {
-		result |= DeviceTypeDefault
-	}
-	if paramValue&clw.DeviceTypeCpu != 0 {
-		result |= DeviceTypeCpu
-	}
-	if paramValue&clw.DeviceTypeGpu != 0 {
-		result |= DeviceTypeGpu
-	}
-	if paramValue&clw.DeviceTypeAccelerator != 0 {
-		result |= DeviceTypeAccelerator
-	}
-	return result
+	return DeviceType(paramValue)
 }
 
 func (d *Device) getCommandQueueProperties(paramName clw.DeviceInfo) CommandQueueProperties {
