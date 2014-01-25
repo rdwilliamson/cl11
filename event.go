@@ -96,20 +96,6 @@ func (ces CommandExecutionStatus) String() string {
 	panic("unknown command execution status")
 }
 
-func toEvents(in []*Event) []clw.Event {
-
-	if in == nil {
-		return nil
-	}
-
-	// TODO avoid allocating memory.
-	out := make([]clw.Event, len(in))
-	for i := range in {
-		out[i] = in[i].id
-	}
-	return out
-}
-
 // Returns the events status, an error that caused the event to terminate, or an
 // error that occurred trying to retrieve the event status.
 func (e *Event) Status() (CommandExecutionStatus, error, error) {

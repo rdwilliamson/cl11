@@ -13,8 +13,8 @@ type CommandQueue struct {
 	Device     *Device
 	Properties CommandQueueProperties
 
-	// TODO some scratch space to avoid allocating memory when converting from
-	// []cl.Event to []clw.Event. Should it be thread safe?
+	// Scratch space to avoid allocating memory when converting a wait list.
+	eventsScratch []clw.Event
 }
 
 type CommandQueueProperties struct {
@@ -55,4 +55,21 @@ func (cq *CommandQueue) Flush() error {
 
 func (cq *CommandQueue) Finish() error {
 	return clw.Finish(cq.ID)
+}
+
+func (cq *CommandQueue) toEvents(in []*Event) []clw.Event {
+
+	if in == nil {
+		return nil
+	}
+
+	if len(cq.eventsScratch) < len(in) {
+		cq.eventsScratch = make([]clw.Event, len(in))
+	}
+
+	for i := range in {
+		cq.eventsScratch[i] = in[i].id
+	}
+
+	return cq.eventsScratch[:len(in)]
 }
