@@ -1,7 +1,6 @@
 package cl11
 
 import (
-	"fmt"
 	"strings"
 
 	clw "github.com/rdwilliamson/clw11"
@@ -12,10 +11,6 @@ type CommandQueue struct {
 	Context    *Context
 	Device     *Device
 	Properties CommandQueueProperties
-}
-
-func (cq CommandQueue) String() string {
-	return fmt.Sprintf("%x", cq.ID)
 }
 
 type CommandQueueProperties struct {
