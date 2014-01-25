@@ -50,7 +50,7 @@ func main() {
 			transfered := float64(size) / 1024 / 1024
 			transferSpeed := transfered / duration.Seconds() / 1024
 
-			fmt.Printf("%v: %.2f MiB in %v (%.2f GiB/s)\n", d, transfered, duration, transferSpeed)
+			fmt.Printf("%s: %.2f MiB in %v (%.2f GiB/s)\n", d.Name, transfered, duration, transferSpeed)
 
 			check(host.Release())
 			check(device.Release())
