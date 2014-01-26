@@ -33,7 +33,6 @@ const (
 func (c *Context) CreateDeviceBuffer(size int, mf MemoryFlags) (*Buffer, error) {
 
 	memory, err := clw.CreateBuffer(c.id, clw.MemoryFlags(mf), clw.Size(size), nil)
-
 	if err != nil {
 		return nil, err
 	}
@@ -99,7 +98,9 @@ func (cq *CommandQueue) CopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size 
 	var event *clw.Event
 	if e != nil {
 		event = &e.id
+		e.Context = cq.Context
 		e.CommandType = CommandCopyBuffer
+		e.CommandQueue = cq
 	}
 
 	return clw.EnqueueCopyBuffer(cq.id, src.id, dst.id, clw.Size(srcOffset), clw.Size(dstOffset), clw.Size(size),
@@ -112,7 +113,9 @@ func (cq *CommandQueue) MapBuffer(b *Buffer, blocking bool, flags MapFlags, offs
 	var event *clw.Event
 	if e != nil {
 		event = &e.id
+		e.Context = cq.Context
 		e.CommandType = CommandMapBuffer
+		e.CommandQueue = cq
 	}
 
 	mapped, err := clw.EnqueueMapBuffer(cq.id, b.id, clw.ToBool(blocking), clw.MapFlags(flags), clw.Size(offset),
@@ -128,7 +131,9 @@ func (cq *CommandQueue) UnmapBuffer(b *Buffer, mapped []byte, waitList []*Event,
 	var event *clw.Event
 	if e != nil {
 		event = &e.id
+		e.Context = cq.Context
 		e.CommandType = CommandUnmapMemoryObject
+		e.CommandQueue = cq
 	}
 
 	return clw.EnqueueUnmapMemObject(cq.id, b.id, mapped, cq.toEvents(waitList), event)

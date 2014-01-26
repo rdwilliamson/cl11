@@ -7,16 +7,20 @@ import (
 )
 
 type Event struct {
-	id          clw.Event
-	CommandType CommandType
+	id           clw.Event
+	Context      *Context
+	CommandType  CommandType
+	CommandQueue *CommandQueue
 }
 
 func (c *Context) CreateUserEvent() (*Event, error) {
+
 	event, err := clw.CreateUserEvent(c.id)
 	if err != nil {
 		return nil, err
 	}
-	return &Event{id: event}, nil
+
+	return &Event{id: event, Context: c, CommandType: CommandUser}, nil
 }
 
 type CommandType int
@@ -93,12 +97,13 @@ func (ces CommandExecutionStatus) String() string {
 	case Queued:
 		return "queued"
 	}
-	panic("unknown command execution status")
+	return ""
 }
 
 // Returns the events status, an error that caused the event to terminate, or an
 // error that occurred trying to retrieve the event status.
 func (e *Event) Status() (CommandExecutionStatus, error, error) {
+
 	var status clw.CommandExecutionStatus
 	err := clw.GetEventInfo(e.id, clw.EventCommandExecutionStatus, clw.Size(unsafe.Sizeof(status)),
 		unsafe.Pointer(&status), nil)
