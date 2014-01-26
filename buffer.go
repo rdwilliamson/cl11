@@ -27,9 +27,11 @@ const (
 	MapWrite MapFlags = MapFlags(clw.MapWrite)
 )
 
+type BlockingCall clw.Bool
+
 const (
-	Blocking    = true
-	NonBlocking = false
+	Blocking    = BlockingCall(clw.True)
+	NonBlocking = BlockingCall(clw.False)
 )
 
 func (c *Context) CreateDeviceBuffer(size int, mf MemoryFlags) (*Buffer, error) {
@@ -109,7 +111,7 @@ func (cq *CommandQueue) CopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size 
 		cq.toEvents(waitList), event)
 }
 
-func (cq *CommandQueue) MapBuffer(b *Buffer, blocking bool, flags MapFlags, offset, size int, waitList []*Event,
+func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, offset, size int, waitList []*Event,
 	e *Event) ([]byte, error) {
 
 	var event *clw.Event
@@ -120,7 +122,7 @@ func (cq *CommandQueue) MapBuffer(b *Buffer, blocking bool, flags MapFlags, offs
 		e.CommandQueue = cq
 	}
 
-	mapped, err := clw.EnqueueMapBuffer(cq.id, b.id, clw.ToBool(blocking), clw.MapFlags(flags), clw.Size(offset),
+	mapped, err := clw.EnqueueMapBuffer(cq.id, b.id, clw.Bool(bc), clw.MapFlags(flags), clw.Size(offset),
 		clw.Size(size), cq.toEvents(waitList), event)
 	if err != nil {
 		return nil, err
