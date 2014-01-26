@@ -26,10 +26,7 @@ func main() {
 			c, err := cl.CreateContext([]*cl.Device{d}, cl.ContextProperties{}, nil)
 			check(err)
 
-			cq, err := c.CreateCommandQueue(d, cl.CommandQueueProperties{Profiling: true})
-			check(err)
-
-			e, err := c.CreateUserEvent()
+			cq, err := c.CreateCommandQueue(d, cl.QueueProfilingEnable)
 			check(err)
 
 			size := int(d.MaxMemAllocSize)
@@ -42,6 +39,7 @@ func main() {
 
 			start := time.Now()
 
+			var e cl.Event
 			check(cq.CopyBuffer(host, device, 0, 0, size, nil, &e))
 			check(cq.Finish())
 
