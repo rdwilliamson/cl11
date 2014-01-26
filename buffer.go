@@ -12,14 +12,16 @@ type Buffer struct {
 
 type MemoryFlags uint8
 
+// Bitfield.
 const (
-	MemoryReadWrite MemoryFlags = MemoryFlags(clw.MemoryReadOnly)
-	MemoryWriteOnly MemoryFlags = MemoryFlags(clw.MemoryReadOnly)
+	MemoryReadWrite MemoryFlags = MemoryFlags(clw.MemoryReadWrite)
+	MemoryWriteOnly MemoryFlags = MemoryFlags(clw.MemoryWriteOnly)
 	MemoryReadOnly  MemoryFlags = MemoryFlags(clw.MemoryReadOnly)
 )
 
 type MapFlags uint8
 
+// Bitfield.
 const (
 	MapRead  MapFlags = MapFlags(clw.MapRead)
 	MapWrite MapFlags = MapFlags(clw.MapWrite)
