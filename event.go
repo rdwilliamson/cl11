@@ -13,6 +13,14 @@ type Event struct {
 	CommandQueue *CommandQueue
 }
 
+// Device counter times in nanoseconds.
+type EventProfilingInfo struct {
+	Queued uint64
+	Submit uint64
+	Start  uint64
+	End    uint64
+}
+
 func (c *Context) CreateUserEvent() (*Event, error) {
 
 	event, err := clw.CreateUserEvent(c.id)
@@ -116,4 +124,37 @@ func (e *Event) Status() (CommandExecutionStatus, error, error) {
 	}
 
 	return CommandExecutionStatus(status), nil, nil
+}
+
+func (e *Event) ProfilingInfo() (*EventProfilingInfo, error) {
+
+	var queued clw.Ulong
+	err := clw.GetEventProfilingInfo(e.id, clw.ProfilingCommandQueued, clw.Size(unsafe.Sizeof(queued)),
+		unsafe.Pointer(&queued), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var submit clw.Ulong
+	err = clw.GetEventProfilingInfo(e.id, clw.ProfilingCommandSubmit, clw.Size(unsafe.Sizeof(submit)),
+		unsafe.Pointer(&submit), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var start clw.Ulong
+	err = clw.GetEventProfilingInfo(e.id, clw.ProfilingCommandStart, clw.Size(unsafe.Sizeof(start)),
+		unsafe.Pointer(&start), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	var end clw.Ulong
+	err = clw.GetEventProfilingInfo(e.id, clw.ProfilingCommandEnd, clw.Size(unsafe.Sizeof(end)),
+		unsafe.Pointer(&end), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &EventProfilingInfo{uint64(queued), uint64(submit), uint64(start), uint64(end)}, nil
 }
