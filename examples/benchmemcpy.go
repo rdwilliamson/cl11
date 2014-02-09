@@ -37,10 +37,30 @@ func main() {
 			device, err := c.CreateDeviceBuffer(size, 0)
 			check(err)
 
+			callbackChan := make(chan interface{})
+			sendFunc := func(e *cl.Event, userData interface{}) {
+
+				check(e.GetProfilingInfo())
+
+				name := userData.(string)
+				transfered := float64(size) / 1024 / 1024
+				duration := time.Duration(e.End - e.Start)
+				transferSpeed := transfered / duration.Seconds() / 1024
+
+				callbackChan <- fmt.Sprintf("Callback: %s: %.2f MiB in %v (%.2f GiB/s)", name, transfered, duration,
+					transferSpeed)
+			}
+			recieveFunc := func() {
+				fmt.Println(<-callbackChan)
+			}
+			go recieveFunc()
+
 			start := time.Now()
 
 			var e cl.Event
 			check(cq.CopyBuffer(host, device, 0, 0, size, nil, &e))
+			e.SetCallback(sendFunc, d.Name)
+
 			check(cq.Finish())
 
 			duration := time.Since(start)
@@ -48,7 +68,7 @@ func main() {
 			transfered := float64(size) / 1024 / 1024
 			transferSpeed := transfered / duration.Seconds() / 1024
 
-			fmt.Printf("%s: %.2f MiB in %v (%.2f GiB/s)\n", d.Name, transfered, duration, transferSpeed)
+			fmt.Printf("Go: %s: %.2f MiB in %v (%.2f GiB/s)\n", d.Name, transfered, duration, transferSpeed)
 
 			check(host.Release())
 			check(device.Release())

@@ -156,3 +156,12 @@ func (e *Event) GetProfilingInfo() error {
 
 	return nil
 }
+
+func (e *Event) SetCallback(callback func(e *Event, userData interface{}), userData interface{}) error {
+
+	return clw.SetEventCallback(e.id, clw.Complete,
+		func(event clw.Event, ces clw.CommandExecutionStatus, _userData interface{}) {
+			callback(e, _userData)
+		},
+		userData)
+}
