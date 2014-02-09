@@ -10,7 +10,7 @@ type Buffer struct {
 	Flags   MemoryFlags
 }
 
-type MemoryFlags uint8
+type MemoryFlags int
 
 // Bitfield.
 const (
@@ -19,7 +19,7 @@ const (
 	MemoryReadOnly  MemoryFlags = MemoryFlags(clw.MemoryReadOnly)
 )
 
-type MapFlags uint8
+type MapFlags int
 
 // Bitfield.
 const (

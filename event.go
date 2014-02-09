@@ -15,10 +15,10 @@ type Event struct {
 
 // Device counter times in nanoseconds.
 type EventProfilingInfo struct {
-	Queued uint64
-	Submit uint64
-	Start  uint64
-	End    uint64
+	Queued int64
+	Submit int64
+	Start  int64
+	End    int64
 }
 
 func (c *Context) CreateUserEvent() (*Event, error) {
@@ -85,7 +85,7 @@ func (ct CommandType) String() string {
 	return commandTypeMap[ct]
 }
 
-type CommandExecutionStatus int8
+type CommandExecutionStatus int
 
 const (
 	Complete  = CommandExecutionStatus(clw.Complete)
@@ -156,5 +156,5 @@ func (e *Event) ProfilingInfo() (*EventProfilingInfo, error) {
 		return nil, err
 	}
 
-	return &EventProfilingInfo{uint64(queued), uint64(submit), uint64(start), uint64(end)}, nil
+	return &EventProfilingInfo{int64(queued), int64(submit), int64(start), int64(end)}, nil
 }
