@@ -11,10 +11,7 @@ type Event struct {
 	Context      *Context
 	CommandType  CommandType
 	CommandQueue *CommandQueue
-}
 
-// Device counter times in nanoseconds.
-type EventProfilingInfo struct {
 	Queued int64
 	Submit int64
 	Start  int64
@@ -126,35 +123,36 @@ func (e *Event) Status() (CommandExecutionStatus, error, error) {
 	return CommandExecutionStatus(status), nil, nil
 }
 
-func (e *Event) ProfilingInfo() (*EventProfilingInfo, error) {
+func (e *Event) GetProfilingInfo() error {
 
-	var queued clw.Ulong
-	err := clw.GetEventProfilingInfo(e.id, clw.ProfilingCommandQueued, clw.Size(unsafe.Sizeof(queued)),
-		unsafe.Pointer(&queued), nil)
+	var value clw.Ulong
+	err := clw.GetEventProfilingInfo(e.id, clw.ProfilingCommandQueued, clw.Size(unsafe.Sizeof(value)),
+		unsafe.Pointer(&value), nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	e.Queued = int64(value)
 
-	var submit clw.Ulong
-	err = clw.GetEventProfilingInfo(e.id, clw.ProfilingCommandSubmit, clw.Size(unsafe.Sizeof(submit)),
-		unsafe.Pointer(&submit), nil)
+	err = clw.GetEventProfilingInfo(e.id, clw.ProfilingCommandSubmit, clw.Size(unsafe.Sizeof(value)),
+		unsafe.Pointer(&value), nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	e.Submit = int64(value)
 
-	var start clw.Ulong
-	err = clw.GetEventProfilingInfo(e.id, clw.ProfilingCommandStart, clw.Size(unsafe.Sizeof(start)),
-		unsafe.Pointer(&start), nil)
+	err = clw.GetEventProfilingInfo(e.id, clw.ProfilingCommandStart, clw.Size(unsafe.Sizeof(value)),
+		unsafe.Pointer(&value), nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	e.Start = int64(value)
 
-	var end clw.Ulong
-	err = clw.GetEventProfilingInfo(e.id, clw.ProfilingCommandEnd, clw.Size(unsafe.Sizeof(end)),
-		unsafe.Pointer(&end), nil)
+	err = clw.GetEventProfilingInfo(e.id, clw.ProfilingCommandEnd, clw.Size(unsafe.Sizeof(value)),
+		unsafe.Pointer(&value), nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	e.End = int64(value)
 
-	return &EventProfilingInfo{int64(queued), int64(submit), int64(start), int64(end)}, nil
+	return nil
 }
