@@ -52,6 +52,7 @@ func main() {
 			}
 			recieveFunc := func() {
 				fmt.Println(<-callbackChan)
+				callbackChan <- ""
 			}
 			go recieveFunc()
 
@@ -72,6 +73,8 @@ func main() {
 
 			check(host.Release())
 			check(device.Release())
+
+			<-callbackChan
 		}
 	}
 }
