@@ -110,3 +110,30 @@ func (k *Kernel) getWorkGroupUlong(d *Device, paramName clw.KernelWorkGroupInfo)
 	}
 	return param
 }
+
+func (cq *CommandQueue) EnqueueNDRangeKernel(k *Kernel, globalOffset, globalSize, localSize []int,
+	waitList []*Event, e *Event) error {
+
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandNDRangeKernel
+		e.CommandQueue = cq
+	}
+
+	dims := len(globalSize)
+	sizes := make([]clw.Size, dims*3)
+	if globalOffset != nil {
+		for i := 0; i < dims; i++ {
+			sizes[i] = clw.Size(globalOffset[i])
+		}
+	}
+	for i := 0; i < dims; i++ {
+		sizes[dims+i] = clw.Size(globalSize[i])
+		sizes[2*dims+i] = clw.Size(localSize[i])
+	}
+
+	return clw.EnqueueNDRangeKernel(cq.id, k.id, sizes[:dims], sizes[dims:2*dims], sizes[2*dims:],
+		cq.toEvents(waitList), event)
+}

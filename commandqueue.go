@@ -12,6 +12,7 @@ type CommandQueue struct {
 	Context    *Context
 	Device     *Device
 	Properties CommandQueueProperties
+
 	// Scratch space to avoid allocating memory when converting a wait list.
 	eventsScratch []clw.Event
 }
