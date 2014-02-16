@@ -19,9 +19,9 @@ type KernelWorkGroupInfo struct {
 	Device                         *Device
 	WorkGroupSize                  int
 	CompileWorkGroupSize           [3]int
-	LocalMemorySize                int
+	LocalMemSize                   int
 	PreferredWorkGroupSizeMultiple int
-	PrivateMemorySize              int
+	PrivateMemSize                 int
 }
 
 func (p *Program) CreateKernel(name string) (*Kernel, error) {
@@ -58,10 +58,10 @@ func (k *Kernel) getAllInfo() (err error) {
 		wgi := &k.WorkGroupInfo[i]
 
 		wgi.WorkGroupSize = int(k.getWorkGroupSize(wgi.Device, clw.KernelWorkGroupSize))
-		wgi.LocalMemorySize = int(k.getWorkGroupUlong(wgi.Device, clw.KernelLocalMemSize))
+		wgi.LocalMemSize = int(k.getWorkGroupUlong(wgi.Device, clw.KernelLocalMemSize))
 		wgi.PreferredWorkGroupSizeMultiple =
 			int(k.getWorkGroupSize(wgi.Device, clw.KernelPreferredWorkGroupSizeMultiple))
-		wgi.PrivateMemorySize = int(k.getWorkGroupUlong(wgi.Device, clw.KernelPrivateMemSize))
+		wgi.PrivateMemSize = int(k.getWorkGroupUlong(wgi.Device, clw.KernelPrivateMemSize))
 
 		cwgs := k.getWorkGroupSize3(wgi.Device, clw.KernelCompileWorkGroupSize)
 		wgi.CompileWorkGroupSize[0] = int(cwgs[0])
