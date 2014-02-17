@@ -21,6 +21,7 @@ func toByteSlice(p unsafe.Pointer, size int) []byte {
 	return *(*[]byte)(unsafe.Pointer(&header))
 }
 
+/*
 // Scratch must be (at least) 8 bytes of scratch space.
 func toBytes(x interface{}, scratch unsafe.Pointer) []byte {
 	pointer, size := getPointerAndSize(x, scratch)
@@ -72,3 +73,4 @@ func addressablePointerAndSize(v reflect.Value) (unsafe.Pointer, int) {
 	}
 	panic("unsupported kind")
 }
+*/

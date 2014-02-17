@@ -1,6 +1,8 @@
 package cl11
 
 import (
+	"fmt"
+	"reflect"
 	"unsafe"
 
 	clw "github.com/rdwilliamson/clw11"
@@ -13,6 +15,7 @@ type Kernel struct {
 	Context       *Context
 	Program       *Program
 	WorkGroupInfo []KernelWorkGroupInfo
+	argScratch    [][8]byte
 }
 
 type KernelWorkGroupInfo struct {
@@ -23,6 +26,8 @@ type KernelWorkGroupInfo struct {
 	PreferredWorkGroupSizeMultiple int
 	PrivateMemSize                 int
 }
+
+type LocalSpaceArg int
 
 func (p *Program) CreateKernel(name string) (*Kernel, error) {
 
@@ -53,6 +58,7 @@ func (k *Kernel) getAllInfo() (err error) {
 	}()
 
 	k.Arguments = int(k.getUint(clw.KernelNumArgs))
+	k.argScratch = make([][8]byte, k.Arguments)
 
 	for i := range k.WorkGroupInfo {
 		wgi := &k.WorkGroupInfo[i]
@@ -109,6 +115,50 @@ func (k *Kernel) getWorkGroupUlong(d *Device, paramName clw.KernelWorkGroupInfo)
 		panic(err)
 	}
 	return param
+}
+
+func (k *Kernel) SetArgument(index int, arg interface{}) error {
+
+	var size uintptr
+	var pointer unsafe.Pointer
+
+	switch v := arg.(type) {
+
+	case *Buffer:
+		pointer = unsafe.Pointer(&v.id)
+		size = unsafe.Sizeof(v.id)
+
+	case LocalSpaceArg:
+		pointer = nil
+		size = uintptr(v)
+
+	default:
+		value := reflect.ValueOf(arg)
+		kind := value.Kind()
+		for kind == reflect.Ptr || kind == reflect.Interface {
+			value = value.Elem()
+			kind = value.Kind()
+		}
+
+		switch kind {
+
+		case /*reflect.Bool, reflect.Int,*/ reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, /*reflect.Uint,*/
+			reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
+
+			localType := value.Type()
+
+			pointer = unsafe.Pointer(&k.argScratch[index][0])
+			size = localType.Size()
+
+			localCopy := reflect.NewAt(localType, pointer)
+			localCopy.Set(value)
+
+		default:
+			return wrapError(fmt.Errorf("invaild argument kind: %s", kind.String()))
+		}
+	}
+
+	return clw.SetKernelArg(k.id, clw.Uint(index), clw.Size(size), pointer)
 }
 
 func (cq *CommandQueue) EnqueueNDRangeKernel(k *Kernel, globalOffset, globalSize, localSize []int,
