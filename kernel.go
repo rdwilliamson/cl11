@@ -142,8 +142,33 @@ func (k *Kernel) SetArgument(index int, arg interface{}) error {
 
 		switch kind {
 
-		case /*reflect.Bool, reflect.Int,*/ reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, /*reflect.Uint,*/
-			reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Float32, reflect.Float64:
+		case reflect.Bool:
+			pointer = unsafe.Pointer(&k.argScratch[index][0])
+			size = int32Size
+
+			localCopy := reflect.NewAt(int32Type, pointer)
+			if value.Bool() {
+				localCopy.SetInt(1)
+			} else {
+				localCopy.SetInt(0)
+			}
+
+		case reflect.Int:
+			pointer = unsafe.Pointer(&k.argScratch[index][0])
+			size = int32Size
+
+			localCopy := reflect.NewAt(int32Type, pointer)
+			localCopy.SetInt(value.Int())
+
+		case reflect.Uint:
+			pointer = unsafe.Pointer(&k.argScratch[index][0])
+			size = uint32Size
+
+			localCopy := reflect.NewAt(uint32Type, pointer)
+			localCopy.SetUint(value.Uint())
+
+		case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint8, reflect.Uint16, reflect.Uint32,
+			reflect.Uint64, reflect.Float32, reflect.Float64:
 
 			localType := value.Type()
 
