@@ -8,7 +8,7 @@ import (
 
 type Kernel struct {
 	id            clw.Kernel
-	Arguemnts     int
+	Arguments     int
 	FunctionName  string
 	Context       *Context
 	Program       *Program
@@ -52,7 +52,7 @@ func (k *Kernel) getAllInfo() (err error) {
 		}
 	}()
 
-	k.Arguemnts = int(k.getUint(clw.KernelNumArgs))
+	k.Arguments = int(k.getUint(clw.KernelNumArgs))
 
 	for i := range k.WorkGroupInfo {
 		wgi := &k.WorkGroupInfo[i]
