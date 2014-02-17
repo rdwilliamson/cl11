@@ -140,11 +140,11 @@ func (k *Kernel) SetArgument(index int, arg interface{}) error {
 			kind = value.Kind()
 		}
 
+		pointer = unsafe.Pointer(&k.argScratch[index][0])
+
 		switch kind {
 
 		case reflect.Bool:
-			pointer = unsafe.Pointer(&k.argScratch[index][0])
-			size = int32Size
 
 			localCopy := reflect.NewAt(int32Type, pointer)
 			if value.Bool() {
@@ -153,30 +153,30 @@ func (k *Kernel) SetArgument(index int, arg interface{}) error {
 				localCopy.SetInt(0)
 			}
 
-		case reflect.Int:
-			pointer = unsafe.Pointer(&k.argScratch[index][0])
 			size = int32Size
+
+		case reflect.Int:
 
 			localCopy := reflect.NewAt(int32Type, pointer)
 			localCopy.SetInt(value.Int())
 
+			size = int32Size
+
 		case reflect.Uint:
-			pointer = unsafe.Pointer(&k.argScratch[index][0])
-			size = uint32Size
 
 			localCopy := reflect.NewAt(uint32Type, pointer)
 			localCopy.SetUint(value.Uint())
+
+			size = uint32Size
 
 		case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint8, reflect.Uint16, reflect.Uint32,
 			reflect.Uint64, reflect.Float32, reflect.Float64:
 
 			localType := value.Type()
-
-			pointer = unsafe.Pointer(&k.argScratch[index][0])
-			size = localType.Size()
-
 			localCopy := reflect.NewAt(localType, pointer)
 			localCopy.Set(value)
+
+			size = localType.Size()
 
 		default:
 			return wrapError(fmt.Errorf("invaild argument kind: %s", kind.String()))
