@@ -1,6 +1,10 @@
 package cl11
 
-import clw "github.com/rdwilliamson/clw11"
+import (
+	"unsafe"
+
+	clw "github.com/rdwilliamson/clw11"
+)
 
 type Buffer struct {
 	id      clw.Memory
@@ -48,7 +52,7 @@ func (c *Context) CreateDeviceBufferFromHost(mf MemoryFlags, host []byte) (*Buff
 
 	flags := clw.MemoryFlags(mf) | clw.MemoryCopyHostPointer
 
-	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(len(host)), host)
+	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(len(host)), unsafe.Pointer(&host[0]))
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +64,7 @@ func (c *Context) CreateDeviceBufferOnHost(mf MemoryFlags, host []byte) (*Buffer
 
 	flags := clw.MemoryFlags(mf) | clw.MemoryUseHostPointer
 
-	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(len(host)), host)
+	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(len(host)), unsafe.Pointer(&host[0]))
 	if err != nil {
 		return nil, err
 	}
@@ -84,7 +88,7 @@ func (c *Context) CreateHostBufferFromHost(mf MemoryFlags, host []byte) (*Buffer
 
 	flags := clw.MemoryFlags(mf) | clw.MemoryAllocHostPointer | clw.MemoryCopyHostPointer
 
-	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(len(host)), host)
+	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(len(host)), unsafe.Pointer(&host[0]))
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +131,8 @@ func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, of
 	if err != nil {
 		return nil, err
 	}
-	return mapped, nil
+
+	return toByteSlice(mapped, size), nil
 }
 
 func (cq *CommandQueue) UnmapBuffer(b *Buffer, mapped []byte, waitList []*Event, e *Event) error {
@@ -140,5 +145,5 @@ func (cq *CommandQueue) UnmapBuffer(b *Buffer, mapped []byte, waitList []*Event,
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueUnmapMemObject(cq.id, b.id, mapped, cq.toEvents(waitList), event)
+	return clw.EnqueueUnmapMemObject(cq.id, b.id, unsafe.Pointer(&mapped[0]), cq.toEvents(waitList), event)
 }
