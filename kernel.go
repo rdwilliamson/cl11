@@ -146,7 +146,7 @@ func (k *Kernel) SetArgument(index int, arg interface{}) error {
 
 		case reflect.Bool:
 
-			localCopy := reflect.NewAt(int32Type, pointer)
+			localCopy := reflect.NewAt(int32Type, pointer).Elem()
 			if value.Bool() {
 				localCopy.SetInt(1)
 			} else {
@@ -157,14 +157,14 @@ func (k *Kernel) SetArgument(index int, arg interface{}) error {
 
 		case reflect.Int:
 
-			localCopy := reflect.NewAt(int32Type, pointer)
+			localCopy := reflect.NewAt(int32Type, pointer).Elem()
 			localCopy.SetInt(value.Int())
 
 			size = int32Size
 
 		case reflect.Uint:
 
-			localCopy := reflect.NewAt(uint32Type, pointer)
+			localCopy := reflect.NewAt(uint32Type, pointer).Elem()
 			localCopy.SetUint(value.Uint())
 
 			size = uint32Size
@@ -173,7 +173,7 @@ func (k *Kernel) SetArgument(index int, arg interface{}) error {
 			reflect.Uint64, reflect.Float32, reflect.Float64:
 
 			localType := value.Type()
-			localCopy := reflect.NewAt(localType, pointer)
+			localCopy := reflect.NewAt(localType, pointer).Elem()
 			localCopy.Set(value)
 
 			size = localType.Size()

@@ -132,7 +132,7 @@ func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, of
 		return nil, err
 	}
 
-	return toByteSlice(mapped, size), nil
+	return toByteSlice(mapped, uintptr(size)), nil
 }
 
 func (cq *CommandQueue) UnmapBuffer(b *Buffer, mapped []byte, waitList []*Event, e *Event) error {

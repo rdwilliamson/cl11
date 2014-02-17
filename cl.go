@@ -14,24 +14,23 @@ var (
 	uint32Size = uint32Type.Size()
 )
 
-func toByteSlice(p unsafe.Pointer, size int) []byte {
+func toByteSlice(p unsafe.Pointer, size uintptr) []byte {
 
 	var header reflect.SliceHeader
 	header.Data = uintptr(p)
-	header.Len = size
-	header.Cap = size
+	header.Len = int(size)
+	header.Cap = int(size)
 
 	return *(*[]byte)(unsafe.Pointer(&header))
 }
 
-/*
 // Scratch must be (at least) 8 bytes of scratch space.
-func toBytes(x interface{}, scratch unsafe.Pointer) []byte {
+func ToBytes(x interface{}, scratch unsafe.Pointer) []byte {
 	pointer, size := getPointerAndSize(x, scratch)
 	return toByteSlice(pointer, size)
 }
 
-func getPointerAndSize(x interface{}, scratch unsafe.Pointer) (unsafe.Pointer, int) {
+func getPointerAndSize(x interface{}, scratch unsafe.Pointer) (unsafe.Pointer, uintptr) {
 
 	value := reflect.ValueOf(x)
 	switch value.Kind() {
@@ -58,7 +57,7 @@ func getPointerAndSize(x interface{}, scratch unsafe.Pointer) (unsafe.Pointer, i
 	panic("unsupported kind")
 }
 
-func addressablePointerAndSize(v reflect.Value) (unsafe.Pointer, int) {
+func addressablePointerAndSize(v reflect.Value) (unsafe.Pointer, uintptr) {
 
 	switch v.Kind() {
 
@@ -66,14 +65,13 @@ func addressablePointerAndSize(v reflect.Value) (unsafe.Pointer, int) {
 		return unsafe.Pointer(v.UnsafeAddr()), int32Size
 
 	case reflect.Int32:
-		return unsafe.Pointer(v.UnsafeAddr()), int(v.Type().Size())
+		return unsafe.Pointer(v.UnsafeAddr()), v.Type().Size()
 
 	case reflect.Slice:
 		pointer := unsafe.Pointer(&(*reflect.SliceHeader)(unsafe.Pointer(v.Pointer())).Data)
-		size := int(v.Type().Elem().Size()) * v.Len()
+		size := v.Type().Elem().Size() * uintptr(v.Len())
 		return pointer, size
 
 	}
 	panic("unsupported kind")
 }
-*/
