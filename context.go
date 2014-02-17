@@ -25,5 +25,5 @@ func CreateContext(d []*Device, cp ContextProperties, callback func(err string, 
 	if err != nil {
 		return nil, err
 	}
-	return &Context{context, d, cp}, nil
+	return &Context{id: context, Devices: d, Properties: cp}, nil
 }
