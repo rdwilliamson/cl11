@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/rdwilliamson/snippets"
+
 	cl "github.com/rdwilliamson/cl11"
 	"github.com/rdwilliamson/cl11/examples/utils"
 )
@@ -44,7 +46,10 @@ func main() {
 			kernel, err := progam.CreateKernel("reduce")
 			check(err)
 
-			size := int(d.MaxMemAllocSize) / 4
+			size := 256 * 1024 * 1024 / 4
+			if size > int(d.MaxMemAllocSize) {
+				size = int(d.MaxMemAllocSize)
+			}
 			values := utils.RandomFloat32(size)
 
 			data, err := c.CreateDeviceBufferFromHost(cl.MemoryReadOnly, cl.ToBytes(values, nil))
@@ -63,16 +68,14 @@ func main() {
 			check(err)
 
 			var event cl.Event
-			err = cq.EnqueueNDRangeKernel(kernel, nil, []int{size},
-				[]int{kernel.WorkGroupInfo[0].PreferredWorkGroupSizeMultiple}, nil, &event)
+			err = cq.EnqueueNDRangeKernel(kernel, nil, []int{size}, []int{int(d.MaxWorkGroupSize)}, nil, &event)
 			check(err)
 
-			err = cl.WaitForEvents(&event)
-			check(err)
+			check(event.Wait())
 
 			check(event.GetProfilingInfo())
 
-			fmt.Println(d.Name, time.Duration(event.End-event.Start))
+			fmt.Println(d.Name, time.Duration(event.End-event.Start), snippets.PrintBytes(int64(size*4)))
 		}
 	}
 }
