@@ -18,7 +18,7 @@ type Buffer struct {
 type MappedBuffer struct {
 	pointer unsafe.Pointer
 	size    int
-	b       *Buffer
+	buffer  *Buffer
 }
 
 type MemoryFlags int
@@ -155,7 +155,7 @@ func (cq *CommandQueue) UnmapBuffer(mb *MappedBuffer, waitList []*Event, e *Even
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueUnmapMemObject(cq.id, mb.b.id, mb.pointer, cq.toEvents(waitList), event)
+	return clw.EnqueueUnmapMemObject(cq.id, mb.buffer.id, mb.pointer, cq.toEvents(waitList), event)
 }
 
 func (bm *MappedBuffer) Float32Slice() []float32 {
