@@ -15,7 +15,7 @@ type Kernel struct {
 	Context       *Context
 	Program       *Program
 	WorkGroupInfo []KernelWorkGroupInfo
-	argScratch    [][8]byte
+	argScratch    [][scratchSize]byte
 }
 
 type KernelWorkGroupInfo struct {

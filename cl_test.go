@@ -25,7 +25,7 @@ func TestIntToBytes(t *testing.T) {
 	scratch := unsafe.Pointer(&scratchSpace[0])
 
 	var anInt int = 1
-	bytes := toBytes(anInt, scratch)
+	bytes := ToBytes(anInt, scratch)
 
 	sizeCheck(4, len(bytes), t)
 	pointerCheck(scratch, unsafe.Pointer(&bytes[0]), t)
@@ -57,7 +57,7 @@ func TestPtrToBytes(t *testing.T) {
 	scratch := unsafe.Pointer(&scratchSpace[0])
 
 	var anInt int
-	bytes := toBytes(&anInt, scratch)
+	bytes := ToBytes(&anInt, scratch)
 
 	sizeCheck(4, len(bytes), t)
 	pointerCheck(unsafe.Pointer(&anInt), unsafe.Pointer(&bytes[0]), t)
@@ -69,7 +69,7 @@ func TestSliceToBytes(t *testing.T) {
 	scratch := unsafe.Pointer(&scratchSpace[0])
 
 	slice := []float32{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
-	bytes := toBytes(slice, scratch)
+	bytes := ToBytes(slice, scratch)
 
 	sizeCheck(len(slice)*4, len(bytes), t)
 	pointerCheck(unsafe.Pointer(&slice[0]), unsafe.Pointer(&bytes[0]), t)

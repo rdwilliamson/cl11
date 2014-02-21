@@ -6,12 +6,18 @@ import (
 	"unsafe"
 )
 
+const (
+	scratchSize = 8
+)
+
 // TODO move?
 var (
-	int32Type  = reflect.TypeOf(int32(0))
-	int32Size  = int32Type.Size()
-	uint32Type = reflect.TypeOf(uint32(0))
-	uint32Size = uint32Type.Size()
+	int32Type   = reflect.TypeOf(int32(0))
+	int32Size   = int32Type.Size()
+	uint32Type  = reflect.TypeOf(uint32(0))
+	uint32Size  = uint32Type.Size()
+	float32Type = reflect.TypeOf(float32(0))
+	float32Size = float32Type.Size()
 )
 
 func toByteSlice(p unsafe.Pointer, size uintptr) []byte {
