@@ -52,11 +52,11 @@ func main() {
 			}
 			values := utils.RandomFloat32(size)
 
-			data, err := c.CreateDeviceBufferFromHost(cl.MemoryReadOnly, cl.ToBytes(values, nil))
+			data, err := c.CreateDeviceBufferInitializedBy(cl.MemoryReadOnly, values)
 			check(err)
 
 			var resultMem [4]byte
-			_, err = c.CreateDeviceBufferOnHost(cl.MemoryWriteOnly, resultMem[:])
+			_, err = c.CreateDeviceBufferFromHostMemory(cl.MemoryWriteOnly, resultMem[:])
 			check(err)
 
 			err = kernel.SetArgument(0, data)
@@ -67,8 +67,14 @@ func main() {
 			cq, err := c.CreateCommandQueue(d, cl.QueueProfilingEnable)
 			check(err)
 
+			if size%int(d.MaxWorkGroupSize) > 0 {
+				size = (size/int(d.MaxWorkGroupSize) + 1) * int(d.MaxWorkGroupSize)
+			}
+			globalSize := []int{size}
+			localSize := []int{int(d.MaxWorkGroupSize)}
+
 			var event cl.Event
-			err = cq.EnqueueNDRangeKernel(kernel, nil, []int{size}, []int{int(d.MaxWorkGroupSize)}, nil, &event)
+			err = cq.EnqueueNDRangeKernel(kernel, nil, globalSize, localSize, nil, &event)
 			check(err)
 
 			check(event.Wait())
