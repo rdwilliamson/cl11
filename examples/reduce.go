@@ -47,8 +47,8 @@ func main() {
 			check(err)
 
 			size := 256 * 1024 * 1024 / 4
-			if size > int(d.MaxMemAllocSize) {
-				size = int(d.MaxMemAllocSize)
+			if size*4 > int(d.MaxMemAllocSize) {
+				size = int(d.MaxMemAllocSize) / 4
 			}
 			values := utils.RandomFloat32(size)
 
@@ -67,14 +67,14 @@ func main() {
 			cq, err := c.CreateCommandQueue(d, cl.QueueProfilingEnable)
 			check(err)
 
-			if size%int(d.MaxWorkGroupSize) > 0 {
-				size = (size/int(d.MaxWorkGroupSize) + 1) * int(d.MaxWorkGroupSize)
+			localSize := kernel.WorkGroupInfo[0].PreferredWorkGroupSizeMultiple
+			globalSize := size
+			if size%localSize > 0 {
+				globalSize = (globalSize/localSize + 1) * localSize
 			}
-			globalSize := []int{size}
-			localSize := []int{int(d.MaxWorkGroupSize)}
 
 			var event cl.Event
-			err = cq.EnqueueNDRangeKernel(kernel, nil, globalSize, localSize, nil, &event)
+			err = cq.EnqueueNDRangeKernel(kernel, nil, []int{globalSize}, []int{localSize}, nil, &event)
 			check(err)
 
 			check(event.Wait())
