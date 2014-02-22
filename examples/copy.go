@@ -58,11 +58,7 @@ func main() {
 			outData, err := c.CreateDeviceBuffer(size*4, cl.MemoryWriteOnly)
 			check(err)
 
-			err = kernel.SetArgument(0, inData)
-			check(err)
-			err = kernel.SetArgument(1, outData)
-			check(err)
-			err = kernel.SetArgument(2, size)
+			err = kernel.SetArguments(inData, outData, size)
 			check(err)
 
 			cq, err := c.CreateCommandQueue(d, cl.QueueProfilingEnable)

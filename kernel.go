@@ -186,6 +186,22 @@ func (k *Kernel) SetArgument(index int, arg interface{}) error {
 	return clw.SetKernelArg(k.id, clw.Uint(index), clw.Size(size), pointer)
 }
 
+func (k *Kernel) SetArguments(args ...interface{}) error {
+
+	if len(args) != k.Arguments {
+		return wrapError(fmt.Errorf("invalid number of arguments: expecting %d, got %d", k.Arguments, len(args)))
+	}
+
+	for i := range args {
+		err := k.SetArgument(i, args[i])
+		if err != nil {
+			return wrapError(fmt.Errorf("setting argument %d: %s", i, err.Error()))
+		}
+	}
+
+	return nil
+}
+
 func (cq *CommandQueue) EnqueueNDRangeKernel(k *Kernel, globalOffset, globalSize, localSize []int,
 	waitList []*Event, e *Event) error {
 
