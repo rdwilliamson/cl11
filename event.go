@@ -167,13 +167,13 @@ func (e *Event) SetCallback(callback func(e *Event, userData interface{}), userD
 }
 
 func (e *Event) Wait() error {
-	return clw.WaitForEvents(1, &e.id)
+	return clw.WaitForEvents([]clw.Event{e.id})
 }
 
 func WaitForEvents(events ...*Event) error {
-	e := make([]clw.Event, len(events))
+	waitList := make([]clw.Event, len(events))
 	for i := range events {
-		e[i] = events[i].id
+		waitList[i] = events[i].id
 	}
-	return clw.WaitForEvents(clw.Uint(len(e)), &e[0])
+	return clw.WaitForEvents(waitList)
 }
