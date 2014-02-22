@@ -1,31 +1,23 @@
 package cl11
 
 import (
+	"fmt"
 	"unsafe"
 
 	clw "github.com/rdwilliamson/clw11"
 )
 
+//
 type Event struct {
 	id           clw.Event
 	Context      *Context
 	CommandType  CommandType
 	CommandQueue *CommandQueue
 
-	Queued int64
-	Submit int64
-	Start  int64
-	End    int64
-}
-
-func (c *Context) CreateUserEvent() (*Event, error) {
-
-	event, err := clw.CreateUserEvent(c.id)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Event{id: event, Context: c, CommandType: CommandUser}, nil
+	Queued int64 // Profiling information.
+	Submit int64 // Profiling information.
+	Start  int64 // Profiling information.
+	End    int64 // Profiling information.
 }
 
 type CommandType int
@@ -105,24 +97,48 @@ func (ces CommandExecutionStatus) String() string {
 	return ""
 }
 
-// Returns the events status, an error that caused the event to terminate, or an
-// error that occurred trying to retrieve the event status.
-func (e *Event) Status() (CommandExecutionStatus, error, error) {
+// Creates a user event object.
+//
+// User events allow applications to enqueue commands that wait on a user event
+// to finish before the command is executed by the device. The execution status
+// of the user event object created is set to Submitted.
+func (c *Context) CreateUserEvent() (*Event, error) {
 
-	var status clw.CommandExecutionStatus
-	err := clw.GetEventInfo(e.id, clw.EventCommandExecutionStatus, clw.Size(unsafe.Sizeof(status)),
-		unsafe.Pointer(&status), nil)
+	event, err := clw.CreateUserEvent(c.id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Event{id: event, Context: c, CommandType: CommandUser}, nil
+}
+
+// Return the execution status of the command identified by event.
+//
+// Statuses are: Queued (command has been enqueued in the command-queue),
+// Submitted (enqueued command has been submitted by the host to the device
+// associated with the command-queue), Running (device is currently executing
+// this command), Complete (the command has completed).
+//
+// An eventErr is an error that cause the event to abnormally terminate. A
+// getStatusErr is an error that occurred while trying to retrieve the event's
+// status.
+func (e *Event) Status() (ces CommandExecutionStatus, eventErr, getStatusErr error) {
+
+	err := clw.GetEventInfo(e.id, clw.EventCommandExecutionStatus, clw.Size(unsafe.Sizeof(ces)),
+		unsafe.Pointer(&ces), nil)
 	if err != nil {
 		return 0, nil, err
 	}
 
-	if status < 0 {
-		return 0, clw.CodeToError(clw.Int(status)), nil
+	if ces < 0 {
+		return 0, fmt.Errorf("event abnormally terminated: %s", clw.CodeToError(clw.Int(ces)).Error()), nil
 	}
 
-	return CommandExecutionStatus(status), nil, nil
+	return CommandExecutionStatus(ces), nil, nil
 }
 
+// Gets profiling information for the command associated with event if profiling
+// is enabled.
 func (e *Event) GetProfilingInfo() error {
 
 	var value clw.Ulong
