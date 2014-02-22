@@ -5,10 +5,9 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/rdwilliamson/snippets"
-
 	cl "github.com/rdwilliamson/cl11"
 	"github.com/rdwilliamson/cl11/examples/utils"
+	"github.com/rdwilliamson/snippets"
 )
 
 func check(err error) {
@@ -38,7 +37,7 @@ func main() {
 			c, err := cl.CreateContext([]*cl.Device{d}, cl.ContextProperties{}, nil)
 			check(err)
 
-			progam, err := c.CreateProgramWithSource([][]byte{[]byte(kernel)})
+			progam, err := c.CreateProgramWithSource([]byte(kernel))
 			check(err)
 
 			err = progam.Build([]*cl.Device{d}, "")

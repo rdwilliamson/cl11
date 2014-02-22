@@ -12,7 +12,8 @@ type Program struct {
 	Devices []*Device
 }
 
-func (c *Context) CreateProgramWithSource(sources [][]byte) (*Program, error) {
+func (c *Context) CreateProgramWithSource(sources ...[]byte) (*Program, error) {
+
 	program, err := clw.CreateProgramWithSource(c.id, sources)
 	if err != nil {
 		return nil, err
