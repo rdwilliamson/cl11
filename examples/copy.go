@@ -46,11 +46,11 @@ func main() {
 			kernel, err := progam.CreateKernel("copy")
 			check(err)
 
-			size := 256 * 1024 * 1024 / 4
-			if size*4 > int(d.MaxMemAllocSize)/2 {
-				size = int(d.MaxMemAllocSize) / 2 / 4
+			size := int64(256 * 1024 * 1024 / 4)
+			if size*4 > d.MaxMemAllocSize/2 {
+				size = d.MaxMemAllocSize / 2 / 4
 			}
-			values := utils.RandomFloat32(size)
+			values := utils.RandomFloat32(int(size))
 
 			inData, err := c.CreateDeviceBufferInitializedBy(cl.MemoryReadOnly, values)
 			check(err)
@@ -64,8 +64,8 @@ func main() {
 			check(err)
 
 			localSize := kernel.WorkGroupInfo[0].PreferredWorkGroupSizeMultiple
-			globalSize := size
-			if size%localSize > 0 {
+			globalSize := int(size)
+			if globalSize%localSize > 0 {
 				globalSize = (globalSize/localSize + 1) * localSize
 			}
 
