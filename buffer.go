@@ -10,14 +10,14 @@ import (
 type Buffer struct {
 	id      clw.Memory
 	Context *Context
-	Size    int
+	Size    int64
 	Host    []byte // The host backed memory for the buffer.
 	Flags   MemoryFlags
 }
 
 type MappedBuffer struct {
 	pointer unsafe.Pointer
-	size    int
+	size    int64
 	buffer  *Buffer
 }
 
@@ -45,7 +45,7 @@ const (
 	NonBlocking = BlockingCall(clw.False)
 )
 
-func (c *Context) CreateDeviceBuffer(size int, mf MemoryFlags) (*Buffer, error) {
+func (c *Context) CreateDeviceBuffer(size int64, mf MemoryFlags) (*Buffer, error) {
 
 	memory, err := clw.CreateBuffer(c.id, clw.MemoryFlags(mf), clw.Size(size), nil)
 	if err != nil {
@@ -67,7 +67,7 @@ func (c *Context) CreateDeviceBufferInitializedBy(mf MemoryFlags, value interfac
 		return nil, err
 	}
 
-	return &Buffer{id: memory, Context: c, Size: int(size), Flags: mf}, nil
+	return &Buffer{id: memory, Context: c, Size: int64(size), Flags: mf}, nil
 }
 
 func (c *Context) CreateDeviceBufferFromHostMemory(mf MemoryFlags, host []byte) (*Buffer, error) {
@@ -79,10 +79,10 @@ func (c *Context) CreateDeviceBufferFromHostMemory(mf MemoryFlags, host []byte) 
 		return nil, err
 	}
 
-	return &Buffer{id: memory, Context: c, Size: len(host), Host: host, Flags: mf}, nil
+	return &Buffer{id: memory, Context: c, Size: int64(len(host)), Host: host, Flags: mf}, nil
 }
 
-func (c *Context) CreateHostBuffer(size int, mf MemoryFlags) (*Buffer, error) {
+func (c *Context) CreateHostBuffer(size int64, mf MemoryFlags) (*Buffer, error) {
 
 	flags := clw.MemoryFlags(mf) | clw.MemoryAllocHostPointer
 
@@ -103,14 +103,14 @@ func (c *Context) CreateHostBufferFromHost(mf MemoryFlags, host []byte) (*Buffer
 		return nil, err
 	}
 
-	return &Buffer{id: memory, Context: c, Size: len(host), Flags: mf}, nil
+	return &Buffer{id: memory, Context: c, Size: int64(len(host)), Flags: mf}, nil
 }
 
 func (b *Buffer) Release() error {
 	return clw.ReleaseMemObject(b.id)
 }
 
-func (cq *CommandQueue) CopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size int, waitList []*Event,
+func (cq *CommandQueue) CopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size int64, waitList []*Event,
 	e *Event) error {
 
 	var event *clw.Event
@@ -125,7 +125,7 @@ func (cq *CommandQueue) CopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size 
 		cq.toEvents(waitList), event)
 }
 
-func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, offset, size int, waitList []*Event,
+func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, offset, size int64, waitList []*Event,
 	e *Event) (*MappedBuffer, error) {
 
 	var event *clw.Event
@@ -162,7 +162,7 @@ func (bm *MappedBuffer) Float32Slice() []float32 {
 
 	var header reflect.SliceHeader
 	header.Data = uintptr(bm.pointer)
-	size := bm.size / int(float32Size)
+	size := int(bm.size / int64(float32Size))
 	header.Len = size
 	header.Cap = size
 
