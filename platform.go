@@ -20,7 +20,7 @@ type Platform struct {
 	Extensions []string
 }
 
-type PlatformProfile int8
+type PlatformProfile int
 
 const (
 	FullProfile     PlatformProfile = iota
@@ -28,8 +28,8 @@ const (
 )
 
 type PlatformVersion struct {
-	Major int8
-	Minor int8
+	Major int
+	Minor int
 	Info  string
 }
 
