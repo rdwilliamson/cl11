@@ -68,6 +68,7 @@ func GetPlatforms() ([]*Platform, error) {
 }
 
 func (p *Platform) getAllInfo() (err error) {
+
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
@@ -124,6 +125,7 @@ func (pp PlatformProfile) String() string {
 }
 
 func (p *Platform) getVersion() {
+
 	version := p.getString(clw.PlatformVersion)
 	n, err := fmt.Sscanf(version, "OpenCL %d.%d %s", &p.Version.Major, &p.Version.Minor, &p.Version.Info)
 

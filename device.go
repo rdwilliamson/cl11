@@ -16,18 +16,18 @@ type Device struct {
 	ErrorCorrectionSupport   bool
 	ImageSupport             bool
 	UnifiedHostMemory        bool
-	AddressBits              uint32
-	GlobalMemCachelineSize   uint32
-	MaxClockFrequency        uint32
-	MaxComputeUnits          uint32
-	MaxConstantArgs          uint32
-	MaxReadImageArgs         uint32
-	MaxSamplers              uint32
-	MaxWorkItemDimensions    uint32
-	MaxWriteImageArgs        uint32
-	MemBaseAddrAlign         uint32
-	MinDataTypeAlignSize     uint32
-	VendorID                 uint32
+	AddressBits              int
+	GlobalMemCachelineSize   int
+	MaxClockFrequency        int
+	MaxComputeUnits          int
+	MaxConstantArgs          int
+	MaxReadImageArgs         int
+	MaxSamplers              int
+	MaxWorkItemDimensions    int
+	MaxWriteImageArgs        int
+	MemBaseAddrAlign         int
+	MinDataTypeAlignSize     int
+	VendorID                 int
 	PreferredVectorWidths    VectorWidths
 	NativeVectorWidths       VectorWidths
 	Extensions               string
@@ -37,20 +37,20 @@ type Device struct {
 	Version                  string
 	OpenclCVersion           string
 	DriverVersion            string
-	GlobalMemCacheSize       uint64
-	GlobalMemSize            uint64
-	LocalMemSize             uint64
-	MaxConstantBufferSize    uint64
-	MaxMemAllocSize          uint64
-	Image2dMaxHeight         uint
-	Image2dMaxWidth          uint
-	Image3dMaxDepth          uint
-	Image3dMaxHeight         uint
-	Image3dMaxWidth          uint
-	MaxParameterSize         uint
-	MaxWorkGroupSize         uint
-	ProfilingTimerResolution uint
-	MaxWorkItemSizes         []uint
+	GlobalMemCacheSize       int64
+	GlobalMemSize            int64
+	LocalMemSize             int64
+	MaxConstantBufferSize    int64
+	MaxMemAllocSize          int64
+	Image2dMaxHeight         int
+	Image2dMaxWidth          int
+	Image3dMaxDepth          int
+	Image3dMaxHeight         int
+	Image3dMaxWidth          int
+	MaxParameterSize         int
+	MaxWorkGroupSize         int
+	ProfilingTimerResolution int
+	MaxWorkItemSizes         []int
 	SingleFpConfig           FPConfig
 	DoubleFpConfig           FPConfig
 	// HalfFpConfig             FPConfig
@@ -60,7 +60,7 @@ type Device struct {
 	LocalMemTypeInfo       LocalMemTypeInfo
 }
 
-type DeviceType uint8
+type DeviceType uint32
 
 // Bitfield.
 const (
@@ -68,46 +68,45 @@ const (
 	DeviceTypeCpu         = DeviceType(clw.DeviceTypeCpu)
 	DeviceTypeGpu         = DeviceType(clw.DeviceTypeGpu)
 	DeviceTypeAccelerator = DeviceType(clw.DeviceTypeAccelerator)
-	DeviceTypeAll         = DeviceType(0xFF)
+	DeviceTypeAll         = DeviceType(clw.DeviceTypeAll)
 )
 
-func (type_ DeviceType) String() string {
-	var typeStrings []string
-	if type_&DeviceTypeDefault != 0 {
-		typeStrings = append(typeStrings, "default")
+func (dt DeviceType) String() string {
+	switch dt {
+	case DeviceTypeDefault:
+		return "default"
+	case DeviceTypeCpu:
+		return "CPU"
+	case DeviceTypeGpu:
+		return "GPU"
+	case DeviceTypeAccelerator:
+		return "accelerator"
+	case DeviceTypeAll:
+		return "all"
 	}
-	if type_&DeviceTypeCpu != 0 {
-		typeStrings = append(typeStrings, "CPU")
-	}
-	if type_&DeviceTypeGpu != 0 {
-		typeStrings = append(typeStrings, "GPU")
-	}
-	if type_&DeviceTypeAccelerator != 0 {
-		typeStrings = append(typeStrings, "accelerator")
-	}
-	return "(" + strings.Join(typeStrings, "|") + ")"
+	panic("unknown device type")
 }
 
 type VectorWidths struct {
-	Char   uint8
-	Short  uint8
-	Int    uint8
-	Long   uint8
-	Float  uint8
-	Double uint8
-	Half   uint8
+	Char   int
+	Short  int
+	Int    int
+	Long   int
+	Float  int
+	Double int
+	Half   int
 }
 
-type FPConfig uint8
+type FPConfig uint32
 
 // Bitfield.
 const (
-	FPDenorm         FPConfig = 1 << iota
-	FPFma            FPConfig = 1 << iota
-	FPInfNan         FPConfig = 1 << iota
-	FPRoundToInf     FPConfig = 1 << iota
-	FPRoundToNearest FPConfig = 1 << iota
-	FPRoundToZero    FPConfig = 1 << iota
+	FPDenorm         = FPConfig(clw.FPDenorm)
+	FPFma            = FPConfig(clw.FPFma)
+	FPInfNan         = FPConfig(clw.FPInfNan)
+	FPRoundToInf     = FPConfig(clw.FPRoundToInf)
+	FPRoundToNearest = FPConfig(clw.FPRoundToNearest)
+	FPRoundToZero    = FPConfig(clw.FPRoundToZero)
 )
 
 func (fpConfig FPConfig) String() string {
@@ -133,58 +132,58 @@ func (fpConfig FPConfig) String() string {
 	return "(" + strings.Join(configStrings, "|") + ")"
 }
 
-type GlobalMemCacheType uint8
+type GlobalMemCacheType uint32
 
 const (
-	None           GlobalMemCacheType = iota
-	ReadOnlyCache  GlobalMemCacheType = iota
-	ReadWriteCache GlobalMemCacheType = iota
+	None           = GlobalMemCacheType(clw.None)
+	ReadOnlyCache  = GlobalMemCacheType(clw.ReadOnlyCache)
+	ReadWriteCache = GlobalMemCacheType(clw.ReadWriteCache)
 )
 
-func (type_ GlobalMemCacheType) String() string {
-	switch type_ {
+func (gmct GlobalMemCacheType) String() string {
+	switch gmct {
 	case None:
-		return "CL_NONE"
+		return "none"
 	case ReadOnlyCache:
-		return "CL_READ_ONLY_CACHE"
+		return "read only"
 	case ReadWriteCache:
-		return "CL_READ_WRITE_CACHE"
+		return "read write"
 	}
-	panic("unreachable")
+	panic("unknown global mem cache type")
 }
 
-type LocalMemTypeInfo uint8
+type LocalMemTypeInfo uint32
 
 const (
-	Global LocalMemTypeInfo = iota
-	Local  LocalMemTypeInfo = iota
+	Global = LocalMemTypeInfo(clw.Global)
+	Local  = LocalMemTypeInfo(clw.Local)
 )
 
-func (type_ LocalMemTypeInfo) String() string {
-	switch type_ {
+func (lmti LocalMemTypeInfo) String() string {
+	switch lmti {
 	case Global:
-		return "CL_GLOBAL"
+		return "global"
 	case Local:
-		return "CL_LOCAL"
+		return "local"
 	}
-	panic("unreachable")
+	panic("unknown local mem type")
 }
 
-type ExecCapabilities uint8
+type ExecCapabilities uint32
 
 // Bitfield.
 const (
-	ExecKernel       ExecCapabilities = 1 << iota
-	ExecNativeKernel ExecCapabilities = 1 << iota
+	ExecKernel       = ExecCapabilities(clw.ExecKernel)
+	ExecNativeKernel = ExecCapabilities(clw.ExecNativeKernel)
 )
 
-func (exec ExecCapabilities) String() string {
+func (ec ExecCapabilities) String() string {
 	var execStrings []string
-	if exec&ExecKernel != 0 {
-		execStrings = append(execStrings, "CL_EXEC_KERNEL")
+	if ec&ExecKernel != 0 {
+		execStrings = append(execStrings, "kernel")
 	}
-	if exec&ExecNativeKernel != 0 {
-		execStrings = append(execStrings, "CL_EXEC_NATIVE_KERNEL")
+	if ec&ExecNativeKernel != 0 {
+		execStrings = append(execStrings, "native kernel")
 	}
 	return "(" + strings.Join(execStrings, "|") + ")"
 }
@@ -222,6 +221,7 @@ func (p *Platform) GetDevices() ([]*Device, error) {
 }
 
 func (d *Device) getAllInfo() (err error) {
+
 	defer func() {
 		if r := recover(); r != nil {
 			err = r.(error)
@@ -248,20 +248,20 @@ func (d *Device) getAllInfo() (err error) {
 	d.MinDataTypeAlignSize = d.getUint(clw.DeviceMinDataTypeAlignSize)
 	d.VendorID = d.getUint(clw.DeviceVendorID)
 
-	d.PreferredVectorWidths.Char = uint8(d.getUint(clw.DevicePreferredVectorWidthChar))
-	d.PreferredVectorWidths.Short = uint8(d.getUint(clw.DevicePreferredVectorWidthShort))
-	d.PreferredVectorWidths.Int = uint8(d.getUint(clw.DevicePreferredVectorWidthInt))
-	d.PreferredVectorWidths.Long = uint8(d.getUint(clw.DevicePreferredVectorWidthLong))
-	d.PreferredVectorWidths.Float = uint8(d.getUint(clw.DevicePreferredVectorWidthFloat))
-	d.PreferredVectorWidths.Double = uint8(d.getUint(clw.DevicePreferredVectorWidthDouble))
-	d.PreferredVectorWidths.Half = uint8(d.getUint(clw.DevicePreferredVectorWidthHalf))
-	d.NativeVectorWidths.Char = uint8(d.getUint(clw.DeviceNativeVectorWidthChar))
-	d.NativeVectorWidths.Short = uint8(d.getUint(clw.DeviceNativeVectorWidthShort))
-	d.NativeVectorWidths.Int = uint8(d.getUint(clw.DeviceNativeVectorWidthInt))
-	d.NativeVectorWidths.Long = uint8(d.getUint(clw.DeviceNativeVectorWidthLong))
-	d.NativeVectorWidths.Float = uint8(d.getUint(clw.DeviceNativeVectorWidthFloat))
-	d.NativeVectorWidths.Double = uint8(d.getUint(clw.DeviceNativeVectorWidthDouble))
-	d.NativeVectorWidths.Half = uint8(d.getUint(clw.DeviceNativeVectorWidthHalf))
+	d.PreferredVectorWidths.Char = d.getUint(clw.DevicePreferredVectorWidthChar)
+	d.PreferredVectorWidths.Short = d.getUint(clw.DevicePreferredVectorWidthShort)
+	d.PreferredVectorWidths.Int = d.getUint(clw.DevicePreferredVectorWidthInt)
+	d.PreferredVectorWidths.Long = d.getUint(clw.DevicePreferredVectorWidthLong)
+	d.PreferredVectorWidths.Float = d.getUint(clw.DevicePreferredVectorWidthFloat)
+	d.PreferredVectorWidths.Double = d.getUint(clw.DevicePreferredVectorWidthDouble)
+	d.PreferredVectorWidths.Half = d.getUint(clw.DevicePreferredVectorWidthHalf)
+	d.NativeVectorWidths.Char = d.getUint(clw.DeviceNativeVectorWidthChar)
+	d.NativeVectorWidths.Short = d.getUint(clw.DeviceNativeVectorWidthShort)
+	d.NativeVectorWidths.Int = d.getUint(clw.DeviceNativeVectorWidthInt)
+	d.NativeVectorWidths.Long = d.getUint(clw.DeviceNativeVectorWidthLong)
+	d.NativeVectorWidths.Float = d.getUint(clw.DeviceNativeVectorWidthFloat)
+	d.NativeVectorWidths.Double = d.getUint(clw.DeviceNativeVectorWidthDouble)
+	d.NativeVectorWidths.Half = d.getUint(clw.DeviceNativeVectorWidthHalf)
 
 	d.Extensions = d.getString(clw.DeviceExtensions)
 	d.Name = d.getString(clw.DeviceName)
@@ -315,17 +315,18 @@ func (d *Device) getBool(paramName clw.DeviceInfo) bool {
 	return paramValue != clw.False
 }
 
-func (d *Device) getUint(paramName clw.DeviceInfo) uint32 {
+func (d *Device) getUint(paramName clw.DeviceInfo) int {
 	var paramValue clw.Uint
 	err := clw.GetDeviceInfo(d.id, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)
 	}
-	return uint32(paramValue)
+	return int(paramValue)
 }
 
 func (d *Device) getString(paramName clw.DeviceInfo) string {
+
 	var paramValueSize clw.Size
 	err := clw.GetDeviceInfo(d.id, paramName, 0, nil, &paramValueSize)
 	if err != nil {
@@ -342,27 +343,28 @@ func (d *Device) getString(paramName clw.DeviceInfo) string {
 	return strings.TrimSpace(string(buffer[:len(buffer)-1]))
 }
 
-func (d *Device) getUlong(paramName clw.DeviceInfo) uint64 {
+func (d *Device) getUlong(paramName clw.DeviceInfo) int64 {
 	var paramValue clw.Ulong
 	err := clw.GetDeviceInfo(d.id, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)
 	}
-	return uint64(paramValue)
+	return int64(paramValue)
 }
 
-func (d *Device) getSize(paramName clw.DeviceInfo) uint {
+func (d *Device) getSize(paramName clw.DeviceInfo) int {
 	var paramValue clw.Size
 	err := clw.GetDeviceInfo(d.id, paramName, clw.Size(unsafe.Sizeof(paramValue)),
 		unsafe.Pointer(&paramValue), nil)
 	if err != nil {
 		panic(err)
 	}
-	return uint(paramValue)
+	return int(paramValue)
 }
 
-func (d *Device) getSizeArray(paramName clw.DeviceInfo) []uint {
+func (d *Device) getSizeArray(paramName clw.DeviceInfo) []int {
+
 	var paramValueSize clw.Size
 	err := clw.GetDeviceInfo(d.id, paramName, 0, nil, &paramValueSize)
 	if err != nil {
@@ -376,9 +378,9 @@ func (d *Device) getSizeArray(paramName clw.DeviceInfo) []uint {
 		panic(err)
 	}
 
-	results := make([]uint, len(buffer))
+	results := make([]int, len(buffer))
 	for i := range results {
-		results[i] = uint(buffer[i])
+		results[i] = int(buffer[i])
 	}
 
 	return results
@@ -391,27 +393,7 @@ func (d *Device) getFpConfig(paramName clw.DeviceInfo) FPConfig {
 	if err != nil {
 		panic(err)
 	}
-
-	var result FPConfig
-	if paramValue&clw.FPDenorm != 0 {
-		result |= FPDenorm
-	}
-	if paramValue&clw.FPFma != 0 {
-		result |= FPFma
-	}
-	if paramValue&clw.FPInfNan != 0 {
-		result |= FPInfNan
-	}
-	if paramValue&clw.FPRoundToInf != 0 {
-		result |= FPRoundToInf
-	}
-	if paramValue&clw.FPRoundToNearest != 0 {
-		result |= FPRoundToNearest
-	}
-	if paramValue&clw.FPRoundToZero != 0 {
-		result |= FPRoundToZero
-	}
-	return result
+	return FPConfig(paramValue)
 }
 
 func (d *Device) getExecCapabilities(paramName clw.DeviceInfo) ExecCapabilities {
@@ -421,15 +403,7 @@ func (d *Device) getExecCapabilities(paramName clw.DeviceInfo) ExecCapabilities 
 	if err != nil {
 		panic(err)
 	}
-
-	var result ExecCapabilities
-	if paramValue&clw.ExecKernel != 0 {
-		result |= ExecKernel
-	}
-	if paramValue&clw.ExecNativeKernel != 0 {
-		result |= ExecNativeKernel
-	}
-	return result
+	return ExecCapabilities(paramValue)
 }
 
 func (d *Device) getType(paramName clw.DeviceInfo) DeviceType {
@@ -459,17 +433,7 @@ func (d *Device) getGlobalMemCacheType(paramName clw.DeviceInfo) GlobalMemCacheT
 	if err != nil {
 		panic(err)
 	}
-
-	var result GlobalMemCacheType
-	switch paramValue {
-	case clw.None:
-		result = None
-	case clw.ReadOnlyCache:
-		result = ReadOnlyCache
-	case clw.ReadWriteCache:
-		result = ReadWriteCache
-	}
-	return result
+	return GlobalMemCacheType(paramValue)
 }
 
 func (d *Device) getLocalMemTypeInfo(paramName clw.DeviceInfo) LocalMemTypeInfo {
@@ -479,13 +443,5 @@ func (d *Device) getLocalMemTypeInfo(paramName clw.DeviceInfo) LocalMemTypeInfo 
 	if err != nil {
 		panic(err)
 	}
-
-	var result LocalMemTypeInfo
-	switch paramValue {
-	case clw.Global:
-		result = Global
-	case clw.Local:
-		result = Local
-	}
-	return result
+	return LocalMemTypeInfo(paramValue)
 }
