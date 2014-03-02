@@ -7,7 +7,13 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
+// Event objects can be used to refer to a kernel execution command, read,
+// write, map and copy commands on memory objects, EnqueueMarker, or user
+// events.
 //
+// An event object can be used to track the execution status of a command. The
+// API calls that enqueue commands to a command-queue create a new event object
+// that is returned in the event argument.
 type Event struct {
 	id           clw.Event
 	Context      *Context
@@ -77,10 +83,10 @@ func (ct CommandType) String() string {
 type CommandExecutionStatus int
 
 const (
-	Complete  = CommandExecutionStatus(clw.Complete)
-	Running   = CommandExecutionStatus(clw.Running)
-	Submitted = CommandExecutionStatus(clw.Submitted)
 	Queued    = CommandExecutionStatus(clw.Queued)
+	Submitted = CommandExecutionStatus(clw.Submitted)
+	Running   = CommandExecutionStatus(clw.Running)
+	Complete  = CommandExecutionStatus(clw.Complete)
 )
 
 func (ces CommandExecutionStatus) String() string {
@@ -139,6 +145,19 @@ func (e *Event) Status() (ces CommandExecutionStatus, eventErr, getStatusErr err
 
 // Gets profiling information for the command associated with event if profiling
 // is enabled.
+//
+// The 64-bit values can be used to measure the time in nano-seconds consumed by
+// OpenCL commands.
+//
+// OpenCL devices are required to correctly track time across changes in device
+// frequency and power states. The Device.ProfilingTimerResolution specifies the
+// resolution of the timer i.e. the number of nanoseconds elapsed before the
+// timer is incremented.
+//
+// Event objects can be used to capture profiling information that measure
+// execution time of a command. Profiling of OpenCL commands can be enabled
+// either by using a command-queue created with QueueProfilingEnable flag set in
+// properties argument to CreateCommandQueue.
 func (e *Event) GetProfilingInfo() error {
 
 	var value clw.Ulong
@@ -173,6 +192,20 @@ func (e *Event) GetProfilingInfo() error {
 	return nil
 }
 
+// Registers a user callback function for a specific command execution status.
+//
+// The registered callback function will be called when the execution status of
+// command associated with event changes to Complete.
+//
+// Each call to SetCallback registers the specified user callback
+// function on a callback stack associated with event. The order in which the
+// registered user callback functions are called is undefined.
+//
+// All callbacks registered for an event object must be called. All enqueued
+// callbacks shall be called before the event object is destroyed. Callbacks
+// must return promptly. The behavior of calling expensive system routines,
+// OpenCL API calls to create contexts or command-queues, or blocking OpenCL
+// operations, in a callback is undefined.
 func (e *Event) SetCallback(callback func(e *Event, userData interface{}), userData interface{}) error {
 
 	return clw.SetEventCallback(e.id, clw.Complete,
@@ -182,10 +215,24 @@ func (e *Event) SetCallback(callback func(e *Event, userData interface{}), userD
 		userData)
 }
 
+// Waits on the host thread for the event to complete. See WaitForEvents for
+// more info.
 func (e *Event) Wait() error {
 	return clw.WaitForEvents([]clw.Event{e.id})
 }
 
+// Waits on the host thread for commands identified by event objects to
+// complete.
+//
+// Waits on the host thread for commands identified by event objects in
+// event_list to complete. A command is considered complete if its execution
+// status is "complete" or abnormally terminated (an error occured).
+//
+// If the cl_khr_gl_event extension is enabled, event objects can also be used
+// to reflect the status of an OpenGL sync object. The sync object in turn
+// refers to a fence command executing in an OpenGL command stream. This
+// provides another method of coordinating sharing of buffers and images between
+// OpenGL and OpenCL.
 func WaitForEvents(events ...*Event) error {
 	waitList := make([]clw.Event, len(events))
 	for i := range events {
