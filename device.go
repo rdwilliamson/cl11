@@ -7,10 +7,15 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
-// Device configuration information and used to create Contexts.
+// Device configuration information, also used to create Contexts.
 type Device struct {
 	id clw.DeviceID
 
+	// A device type can be a CPU, a host processor that runs the OpenCL
+	// implementation. A GPU, a device can also be used to accelerate a 3D API
+	// such as OpenGL or DirectX. A dedicated OpenCL accelerator (for example
+	// the IBM CELL Blade), these devices communicate with the host processor
+	// using a peripheral interconnect such as PCIe.
 	Type DeviceType
 
 	// True if the device is available.
@@ -91,11 +96,6 @@ type Device struct {
 	LocalMemTypeInfo       LocalMemTypeInfo
 }
 
-// A device type can be a CPU, a host processor that runs the OpenCL
-// implementation. A GPU, a device can also be used to accelerate a 3D API such
-// as OpenGL or DirectX. A dedicated OpenCL accelerator (for example the IBM
-// CELL Blade), these devices communicate with the host processor using a
-// peripheral interconnect such as PCIe.
 type DeviceType int
 
 // Bitfield.
@@ -149,7 +149,7 @@ const (
 func (fpConfig FPConfig) String() string {
 	var configStrings []string
 	if fpConfig&FPDenorm != 0 {
-		configStrings = append(configStrings, "denorms")
+		configStrings = append(configStrings, "denormalized numbers")
 	}
 	if fpConfig&FPFma != 0 {
 		configStrings = append(configStrings, "fused multiply-add ")

@@ -18,8 +18,11 @@ type Platform struct {
 	// Devices available on the platform.
 	Devices []*Device
 
+	// The profile name supported by the implementation, either the full profile or
+	// a subset of each OpenCL version (embedded profile).
 	Profile PlatformProfile
 
+	// A Platform's version.
 	Version PlatformVersion
 
 	// Platform's name.
@@ -32,8 +35,6 @@ type Platform struct {
 	Extensions []string
 }
 
-// The profile name supported by the implementation, either the full profile or
-// a subset of each OpenCL version (embedded profile).
 type PlatformProfile int
 
 const (
@@ -41,7 +42,6 @@ const (
 	EmbeddedProfile PlatformProfile = iota
 )
 
-// A Platform's version.
 type PlatformVersion struct {
 	Major int
 	Minor int
