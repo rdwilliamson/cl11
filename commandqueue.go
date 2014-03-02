@@ -28,12 +28,12 @@ const (
 func (cqp CommandQueueProperties) String() string {
 	var propertiesStrings []string
 	if cqp&QueueOutOfOrderExecution != 0 {
-		propertiesStrings = append(propertiesStrings, "out of order execution enable")
+		propertiesStrings = append(propertiesStrings, "out of order execution")
 	}
 	if cqp&QueueProfilingEnable != 0 {
-		propertiesStrings = append(propertiesStrings, "profiling enable")
+		propertiesStrings = append(propertiesStrings, "profiling")
 	}
-	return "(" + strings.Join(propertiesStrings, "|") + ")"
+	return "{" + strings.Join(propertiesStrings, ", ") + "}"
 }
 
 func (c *Context) CreateCommandQueue(d *Device, cqp CommandQueueProperties) (*CommandQueue, error) {

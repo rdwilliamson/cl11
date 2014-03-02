@@ -152,7 +152,7 @@ func (fpConfig FPConfig) String() string {
 		configStrings = append(configStrings, "denormalized numbers")
 	}
 	if fpConfig&FPFma != 0 {
-		configStrings = append(configStrings, "fused multiply-add ")
+		configStrings = append(configStrings, "fused multiply-add")
 	}
 	if fpConfig&FPInfNan != 0 {
 		configStrings = append(configStrings, "inf and nan")
@@ -169,7 +169,7 @@ func (fpConfig FPConfig) String() string {
 	if fpConfig&FPSoftFloat != 0 {
 		configStrings = append(configStrings, "soft float")
 	}
-	return "(" + strings.Join(configStrings, "|") + ")"
+	return "{" + strings.Join(configStrings, ", ") + "}"
 }
 
 type GlobalMemCacheType int
@@ -187,7 +187,7 @@ func (gmct GlobalMemCacheType) String() string {
 	case ReadOnlyCache:
 		return "read only"
 	case ReadWriteCache:
-		return "read write"
+		return "read and write"
 	}
 	panic("unknown global mem cache type")
 }
@@ -225,10 +225,10 @@ func (ec ExecCapabilities) String() string {
 	if ec&ExecNativeKernel != 0 {
 		execStrings = append(execStrings, "native kernel")
 	}
-	return "(" + strings.Join(execStrings, "|") + ")"
+	return "{" + strings.Join(execStrings, ", ") + "}"
 }
 
-func (p *Platform) GetDevices() ([]*Device, error) {
+func (p *Platform) getDevices() ([]*Device, error) {
 
 	if p.Devices != nil {
 		return p.Devices, nil

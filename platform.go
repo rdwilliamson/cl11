@@ -73,7 +73,7 @@ func GetPlatforms() ([]*Platform, error) {
 			return nil, err
 		}
 
-		platforms[i].Devices, err = platforms[i].GetDevices()
+		platforms[i].Devices, err = platforms[i].getDevices()
 		if err != nil {
 			return nil, err
 		}
