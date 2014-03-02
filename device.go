@@ -9,15 +9,34 @@ import (
 
 // Device configuration information and used to create Contexts.
 type Device struct {
-	id                       clw.DeviceID
-	Type                     DeviceType
-	Available                bool
-	CompilerAvailable        bool
-	LittleEndian             bool
-	ErrorCorrectionSupport   bool
-	ImageSupport             bool
-	UnifiedHostMemory        bool
-	AddressBits              int
+	id clw.DeviceID
+
+	Type DeviceType
+
+	// True if the device is available.
+	Available bool
+
+	// False if the implementation does not have a compiler available to compile
+	// the program source. Can only be false on an embedded platform.
+	CompilerAvailable bool
+
+	// True if the device is little endian.
+	LittleEndian bool
+
+	// True if the device implements error correction for all accesses to
+	// compute device memory (global and constant).
+	ErrorCorrectionSupport bool
+
+	// True if if images are supported.
+	ImageSupport bool
+
+	// True if the device and the host have a unified memory subsystem.
+	UnifiedHostMemory bool
+
+	// The default compute device address space size in bits. Currently
+	// supported values are 32 or 64 bits.
+	AddressBits int
+
 	GlobalMemCachelineSize   int
 	MaxClockFrequency        int
 	MaxComputeUnits          int
@@ -52,15 +71,31 @@ type Device struct {
 	MaxWorkGroupSize         int
 	ProfilingTimerResolution int
 	MaxWorkItemSizes         []int
-	SingleFpConfig           FPConfig
-	DoubleFpConfig           FPConfig
-	// HalfFpConfig             FPConfig
+
+	// Describes single precision floating-point capability of the device. The
+	// mandated minimum capability is round to nearest and infinity and NaN
+	// supported. Basic operations can be implemented in software (soft floats).
+	SingleFpConfig FPConfig
+
+	// Describes optional double precision floating-point capability of the
+	// device. The mandated minimum capability is fused multiply-add, round the
+	// nearest, round to zero, round to infinity, infinity and NaN support, and
+	// denormalized numbers.
+	DoubleFpConfig FPConfig
+
+	// HalfFpConfig   FPConfig
+
 	ExecCapabilities       ExecCapabilities
 	CommandQueueProperties CommandQueueProperties
 	GlobalMemCacheType     GlobalMemCacheType
 	LocalMemTypeInfo       LocalMemTypeInfo
 }
 
+// A device type can be a CPU, a host processor that runs the OpenCL
+// implementation. A GPU, a device can also be used to accelerate a 3D API such
+// as OpenGL or DirectX. A dedicated OpenCL accelerator (for example the IBM
+// CELL Blade), these devices communicate with the host processor using a
+// peripheral interconnect such as PCIe.
 type DeviceType int
 
 // Bitfield.

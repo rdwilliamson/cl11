@@ -13,15 +13,27 @@ import (
 // Platforms implement specific features and allow applications to query
 // devices.
 type Platform struct {
-	id         clw.PlatformID
-	Devices    []*Device
-	Profile    PlatformProfile
-	Version    PlatformVersion
-	Name       string
-	Vendor     string
+	id clw.PlatformID
+
+	// Devices available on the platform.
+	Devices []*Device
+
+	Profile PlatformProfile
+
+	Version PlatformVersion
+
+	// Platform's name.
+	Name string
+
+	// Vendor's name.
+	Vendor string
+
+	// Extensions supported by all devices associated with the platform.
 	Extensions []string
 }
 
+// The profile name supported by the implementation, either the full profile or
+// a subset of each OpenCL version (embedded profile).
 type PlatformProfile int
 
 const (
@@ -29,6 +41,7 @@ const (
 	EmbeddedProfile PlatformProfile = iota
 )
 
+// A Platform's version.
 type PlatformVersion struct {
 	Major int
 	Minor int
