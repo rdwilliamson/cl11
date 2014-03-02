@@ -1,6 +1,7 @@
 package cl11
 
 import (
+	"fmt"
 	"reflect"
 	"unsafe"
 
@@ -11,8 +12,8 @@ type Buffer struct {
 	id      clw.Memory
 	Context *Context
 	Size    int64
-	Host    []byte // The host backed memory for the buffer.
 	Flags   MemoryFlags
+	Host    interface{} // The host backed memory for the buffer.
 }
 
 type MappedBuffer struct {
@@ -70,16 +71,29 @@ func (c *Context) CreateDeviceBufferInitializedBy(mf MemoryFlags, value interfac
 	return &Buffer{id: memory, Context: c, Size: int64(size), Flags: mf}, nil
 }
 
-func (c *Context) CreateDeviceBufferFromHostMemory(mf MemoryFlags, host []byte) (*Buffer, error) {
+func (c *Context) CreateDeviceBufferFromHostMemory(mf MemoryFlags, host interface{}) (*Buffer, error) {
 
 	flags := clw.MemoryFlags(mf) | clw.MemoryUseHostPointer
 
-	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(len(host)), unsafe.Pointer(&host[0]))
+	value := reflect.ValueOf(host)
+	if kind := value.Kind(); kind != reflect.Ptr && kind != reflect.Slice {
+		return nil, wrapError(fmt.Errorf("host value not addressable"))
+	} else if kind == reflect.Ptr {
+		for {
+			value = value.Elem()
+			if value.Kind() != reflect.Ptr {
+				break
+			}
+		}
+	}
+	pointer, size := addressablePointerAndSize(value)
+
+	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(size), pointer)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Buffer{id: memory, Context: c, Size: int64(len(host)), Host: host, Flags: mf}, nil
+	return &Buffer{id: memory, Context: c, Size: int64(size), Host: host, Flags: mf}, nil
 }
 
 func (c *Context) CreateHostBuffer(size int64, mf MemoryFlags) (*Buffer, error) {
@@ -94,16 +108,19 @@ func (c *Context) CreateHostBuffer(size int64, mf MemoryFlags) (*Buffer, error) 
 	return &Buffer{id: memory, Context: c, Size: size, Flags: mf}, nil
 }
 
-func (c *Context) CreateHostBufferFromHost(mf MemoryFlags, host []byte) (*Buffer, error) {
+func (c *Context) CreateHostBufferInitializedBy(mf MemoryFlags, value interface{}) (*Buffer, error) {
 
 	flags := clw.MemoryFlags(mf) | clw.MemoryAllocHostPointer | clw.MemoryCopyHostPointer
 
-	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(len(host)), unsafe.Pointer(&host[0]))
+	var scratch [scratchSize]byte
+	pointer, size := getPointerAndSize(value, unsafe.Pointer(&scratch[0]))
+
+	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(size), pointer)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Buffer{id: memory, Context: c, Size: int64(len(host)), Flags: mf}, nil
+	return &Buffer{id: memory, Context: c, Size: int64(size), Flags: mf}, nil
 }
 
 func (b *Buffer) Release() error {

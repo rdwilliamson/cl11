@@ -47,7 +47,6 @@ func getPointerAndSize(x interface{}, scratch unsafe.Pointer) (unsafe.Pointer, u
 		return addressablePointerAndSize(newValue)
 
 	case reflect.Ptr:
-
 		for {
 			value = value.Elem()
 			if value.Kind() != reflect.Ptr {
