@@ -15,9 +15,6 @@ import (
 type Platform struct {
 	id clw.PlatformID
 
-	// Devices available on the platform.
-	Devices []*Device
-
 	// The profile name supported by the implementation, either the full profile or
 	// a subset of each OpenCL version (embedded profile).
 	Profile PlatformProfile
@@ -33,6 +30,9 @@ type Platform struct {
 
 	// Extensions supported by all devices associated with the platform.
 	Extensions []string
+
+	// Devices available on the platform.
+	Devices []*Device
 }
 
 type PlatformProfile int

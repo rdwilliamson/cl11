@@ -55,7 +55,7 @@ type Device struct {
 	VendorID                 int
 	PreferredVectorWidths    VectorWidths
 	NativeVectorWidths       VectorWidths
-	Extensions               string
+	Extensions               []string
 	Name                     string
 	Profile                  string
 	Vendor                   string
@@ -303,7 +303,7 @@ func (d *Device) getAllInfo() (err error) {
 	d.NativeVectorWidths.Double = d.getUint(clw.DeviceNativeVectorWidthDouble)
 	// d.NativeVectorWidths.Half = d.getUint(clw.DeviceNativeVectorWidthHalf)
 
-	d.Extensions = d.getString(clw.DeviceExtensions)
+	d.Extensions = strings.Split(d.getString(clw.DeviceExtensions), " ")
 	d.Name = d.getString(clw.DeviceName)
 	d.Profile = d.getString(clw.DeviceProfile)
 	d.Vendor = d.getString(clw.DeviceVendor)
