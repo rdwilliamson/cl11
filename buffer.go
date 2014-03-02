@@ -25,17 +25,17 @@ type MemoryFlags int
 
 // Bitfield.
 const (
-	MemoryReadWrite MemoryFlags = MemoryFlags(clw.MemoryReadWrite)
-	MemoryWriteOnly MemoryFlags = MemoryFlags(clw.MemoryWriteOnly)
-	MemoryReadOnly  MemoryFlags = MemoryFlags(clw.MemoryReadOnly)
+	MemoryReadWrite = MemoryFlags(clw.MemoryReadWrite)
+	MemoryWriteOnly = MemoryFlags(clw.MemoryWriteOnly)
+	MemoryReadOnly  = MemoryFlags(clw.MemoryReadOnly)
 )
 
 type MapFlags int
 
 // Bitfield.
 const (
-	MapRead  MapFlags = MapFlags(clw.MapRead)
-	MapWrite MapFlags = MapFlags(clw.MapWrite)
+	MapRead  = MapFlags(clw.MapRead)
+	MapWrite = MapFlags(clw.MapWrite)
 )
 
 type BlockingCall clw.Bool

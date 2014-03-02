@@ -29,7 +29,7 @@ func main() {
 			cq, err := c.CreateCommandQueue(d, cl.QueueProfilingEnable)
 			check(err)
 
-			size := int(d.MaxMemAllocSize)
+			size := d.MaxMemAllocSize
 
 			host, err := c.CreateHostBuffer(size, 0)
 			check(err)
