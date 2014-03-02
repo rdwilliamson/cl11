@@ -57,64 +57,60 @@ func (k *Kernel) getAllInfo() (err error) {
 		}
 	}()
 
-	k.Arguments = int(k.getUint(clw.KernelNumArgs))
+	k.Arguments = k.getUint(clw.KernelNumArgs)
 	k.argScratch = make([][8]byte, k.Arguments)
 
 	for i := range k.WorkGroupInfo {
 		wgi := &k.WorkGroupInfo[i]
 
-		wgi.WorkGroupSize = int(k.getWorkGroupSize(wgi.Device, clw.KernelWorkGroupSize))
-		wgi.LocalMemSize = int(k.getWorkGroupUlong(wgi.Device, clw.KernelLocalMemSize))
+		wgi.WorkGroupSize = k.getWorkGroupSize(wgi.Device, clw.KernelWorkGroupSize)
+		wgi.LocalMemSize = k.getWorkGroupUlong(wgi.Device, clw.KernelLocalMemSize)
 		wgi.PreferredWorkGroupSizeMultiple =
-			int(k.getWorkGroupSize(wgi.Device, clw.KernelPreferredWorkGroupSizeMultiple))
-		wgi.PrivateMemSize = int(k.getWorkGroupUlong(wgi.Device, clw.KernelPrivateMemSize))
-
-		cwgs := k.getWorkGroupSize3(wgi.Device, clw.KernelCompileWorkGroupSize)
-		wgi.CompileWorkGroupSize[0] = int(cwgs[0])
-		wgi.CompileWorkGroupSize[1] = int(cwgs[1])
-		wgi.CompileWorkGroupSize[2] = int(cwgs[2])
+			k.getWorkGroupSize(wgi.Device, clw.KernelPreferredWorkGroupSizeMultiple)
+		wgi.PrivateMemSize = k.getWorkGroupUlong(wgi.Device, clw.KernelPrivateMemSize)
+		wgi.CompileWorkGroupSize = k.getWorkGroupSize3(wgi.Device, clw.KernelCompileWorkGroupSize)
 	}
 
 	return
 }
 
-func (k *Kernel) getUint(paramName clw.KernelInfo) clw.Uint {
+func (k *Kernel) getUint(paramName clw.KernelInfo) int {
 	var param clw.Uint
 	err := clw.GetKernelInfo(k.id, clw.KernelNumArgs, clw.Size(unsafe.Sizeof(param)), unsafe.Pointer(&param), nil)
 	if err != nil {
 		panic(err)
 	}
-	return param
+	return int(param)
 }
 
-func (k *Kernel) getWorkGroupSize(d *Device, paramName clw.KernelWorkGroupInfo) clw.Size {
+func (k *Kernel) getWorkGroupSize(d *Device, paramName clw.KernelWorkGroupInfo) int {
 	var param clw.Size
 	err := clw.GetKernelWorkGroupInfo(k.id, d.id, paramName, clw.Size(unsafe.Sizeof(param)), unsafe.Pointer(&param),
 		nil)
 	if err != nil {
 		panic(err)
 	}
-	return param
+	return int(param)
 }
 
-func (k *Kernel) getWorkGroupSize3(d *Device, paramName clw.KernelWorkGroupInfo) [3]clw.Size {
+func (k *Kernel) getWorkGroupSize3(d *Device, paramName clw.KernelWorkGroupInfo) [3]int {
 	var param [3]clw.Size
 	err := clw.GetKernelWorkGroupInfo(k.id, d.id, paramName, clw.Size(unsafe.Sizeof(param)), unsafe.Pointer(&param),
 		nil)
 	if err != nil {
 		panic(err)
 	}
-	return param
+	return [3]int{int(param[0]), int(param[1]), int(param[2])}
 }
 
-func (k *Kernel) getWorkGroupUlong(d *Device, paramName clw.KernelWorkGroupInfo) clw.Ulong {
+func (k *Kernel) getWorkGroupUlong(d *Device, paramName clw.KernelWorkGroupInfo) int {
 	var param clw.Ulong
 	err := clw.GetKernelWorkGroupInfo(k.id, d.id, paramName, clw.Size(unsafe.Sizeof(param)), unsafe.Pointer(&param),
 		nil)
 	if err != nil {
 		panic(err)
 	}
-	return param
+	return int(param)
 }
 
 func (k *Kernel) SetArgument(index int, arg interface{}) error {
