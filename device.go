@@ -7,6 +7,7 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
+// Device configuration information and used to create Contexts.
 type Device struct {
 	id                       clw.DeviceID
 	Type                     DeviceType
@@ -60,7 +61,7 @@ type Device struct {
 	LocalMemTypeInfo       LocalMemTypeInfo
 }
 
-type DeviceType uint32
+type DeviceType int
 
 // Bitfield.
 const (
@@ -94,10 +95,10 @@ type VectorWidths struct {
 	Long   int
 	Float  int
 	Double int
-	Half   int
+	// Half   int
 }
 
-type FPConfig uint32
+type FPConfig int
 
 // Bitfield.
 const (
@@ -112,27 +113,27 @@ const (
 func (fpConfig FPConfig) String() string {
 	var configStrings []string
 	if fpConfig&FPDenorm != 0 {
-		configStrings = append(configStrings, "CL_FP_DENORM")
+		configStrings = append(configStrings, "denorms")
 	}
 	if fpConfig&FPFma != 0 {
-		configStrings = append(configStrings, "CL_FP_FMA")
+		configStrings = append(configStrings, "fused multiply-add ")
 	}
 	if fpConfig&FPInfNan != 0 {
-		configStrings = append(configStrings, "CL_FP_INF_NAN")
+		configStrings = append(configStrings, "inf and nan")
 	}
 	if fpConfig&FPRoundToInf != 0 {
-		configStrings = append(configStrings, "CL_FP_ROUND_TO_INF")
+		configStrings = append(configStrings, "round to inf")
 	}
 	if fpConfig&FPRoundToNearest != 0 {
-		configStrings = append(configStrings, "CL_FP_ROUND_TO_NEAREST")
+		configStrings = append(configStrings, "round to nearest")
 	}
 	if fpConfig&FPRoundToZero != 0 {
-		configStrings = append(configStrings, "CL_FP_ROUND_TO_ZERO")
+		configStrings = append(configStrings, "round to zero")
 	}
 	return "(" + strings.Join(configStrings, "|") + ")"
 }
 
-type GlobalMemCacheType uint32
+type GlobalMemCacheType int
 
 const (
 	None           = GlobalMemCacheType(clw.None)
@@ -152,7 +153,7 @@ func (gmct GlobalMemCacheType) String() string {
 	panic("unknown global mem cache type")
 }
 
-type LocalMemTypeInfo uint32
+type LocalMemTypeInfo int
 
 const (
 	Global = LocalMemTypeInfo(clw.Global)
@@ -169,7 +170,7 @@ func (lmti LocalMemTypeInfo) String() string {
 	panic("unknown local mem type")
 }
 
-type ExecCapabilities uint32
+type ExecCapabilities int
 
 // Bitfield.
 const (
@@ -254,14 +255,14 @@ func (d *Device) getAllInfo() (err error) {
 	d.PreferredVectorWidths.Long = d.getUint(clw.DevicePreferredVectorWidthLong)
 	d.PreferredVectorWidths.Float = d.getUint(clw.DevicePreferredVectorWidthFloat)
 	d.PreferredVectorWidths.Double = d.getUint(clw.DevicePreferredVectorWidthDouble)
-	d.PreferredVectorWidths.Half = d.getUint(clw.DevicePreferredVectorWidthHalf)
+	// d.PreferredVectorWidths.Half = d.getUint(clw.DevicePreferredVectorWidthHalf)
 	d.NativeVectorWidths.Char = d.getUint(clw.DeviceNativeVectorWidthChar)
 	d.NativeVectorWidths.Short = d.getUint(clw.DeviceNativeVectorWidthShort)
 	d.NativeVectorWidths.Int = d.getUint(clw.DeviceNativeVectorWidthInt)
 	d.NativeVectorWidths.Long = d.getUint(clw.DeviceNativeVectorWidthLong)
 	d.NativeVectorWidths.Float = d.getUint(clw.DeviceNativeVectorWidthFloat)
 	d.NativeVectorWidths.Double = d.getUint(clw.DeviceNativeVectorWidthDouble)
-	d.NativeVectorWidths.Half = d.getUint(clw.DeviceNativeVectorWidthHalf)
+	// d.NativeVectorWidths.Half = d.getUint(clw.DeviceNativeVectorWidthHalf)
 
 	d.Extensions = d.getString(clw.DeviceExtensions)
 	d.Name = d.getString(clw.DeviceName)

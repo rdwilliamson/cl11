@@ -10,6 +10,8 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
+// Platforms implement specific features and allow applications to query
+// devices.
 type Platform struct {
 	id         clw.PlatformID
 	Devices    []*Device
@@ -33,7 +35,7 @@ type PlatformVersion struct {
 	Info  string
 }
 
-// Get all the platforms on the system.
+// Obtain the list of platforms available.
 func GetPlatforms() ([]*Platform, error) {
 
 	var numPlatforms clw.Uint
