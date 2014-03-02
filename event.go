@@ -240,3 +240,31 @@ func WaitForEvents(events ...*Event) error {
 	}
 	return clw.WaitForEvents(waitList)
 }
+
+// Increments the event reference count.
+//
+// The OpenCL commands that return an event perform an implicit retain.
+func (e *Event) Retain() error {
+	return clw.RetainEvent(e.id)
+}
+
+// Decrements the event reference count.
+//
+// Decrements the event reference count. The event object is deleted once the
+// reference count becomes zero, the specific command identified by this event
+// has completed (or terminated) and there are no commands in the command-queues
+// of a context that require a wait for this event to complete.
+func (e *Event) Release() error {
+	return clw.ReleaseEvent(e.id)
+}
+
+// The event reference count.
+//
+// The reference count returned should be considered immediately stale. It is
+// unsuitable for general use in applications. This feature is provided for
+// identifying memory leaks.
+func (e *Event) ReferenceCount() (int, error) {
+	var param clw.Uint
+	err := clw.GetEventInfo(e.id, clw.EventReferenceCount, clw.Size(unsafe.Sizeof(param)), unsafe.Pointer(&param), nil)
+	return int(param), err
+}
