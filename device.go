@@ -108,6 +108,7 @@ const (
 	FPRoundToInf     = FPConfig(clw.FPRoundToInf)
 	FPRoundToNearest = FPConfig(clw.FPRoundToNearest)
 	FPRoundToZero    = FPConfig(clw.FPRoundToZero)
+	FPSoftFloat      = FPConfig(clw.FPSoftFloat)
 )
 
 func (fpConfig FPConfig) String() string {
@@ -129,6 +130,9 @@ func (fpConfig FPConfig) String() string {
 	}
 	if fpConfig&FPRoundToZero != 0 {
 		configStrings = append(configStrings, "round to zero")
+	}
+	if fpConfig&FPSoftFloat != 0 {
+		configStrings = append(configStrings, "soft float")
 	}
 	return "(" + strings.Join(configStrings, "|") + ")"
 }
