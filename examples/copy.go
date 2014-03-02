@@ -17,9 +17,9 @@ func check(err error) {
 }
 
 var kernel = `
-__kernel void copy(__global float* in, __global float* out, int size)
+__kernel void copy(__global float* in, __global float* out, long size)
 {
-	for (int id = get_global_id(0); id < size; id += get_global_size(0)) {
+	for (long id = get_global_id(0); id < size; id += get_global_size(0)) {
 		out[id] = in[id];
 	}
 }
