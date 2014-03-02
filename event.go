@@ -103,21 +103,6 @@ func (ces CommandExecutionStatus) String() string {
 	return ""
 }
 
-// Creates a user event object.
-//
-// User events allow applications to enqueue commands that wait on a user event
-// to finish before the command is executed by the device. The execution status
-// of the user event object created is set to Submitted.
-func (c *Context) CreateUserEvent() (*Event, error) {
-
-	event, err := clw.CreateUserEvent(c.id)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Event{id: event, Context: c, CommandType: CommandUser}, nil
-}
-
 // Return the execution status of the command identified by event.
 //
 // Statuses are: Queued (command has been enqueued in the command-queue),
@@ -239,6 +224,40 @@ func WaitForEvents(events ...*Event) error {
 		waitList[i] = events[i].id
 	}
 	return clw.WaitForEvents(waitList)
+}
+
+// Creates a user event object.
+//
+// User events allow applications to enqueue commands that wait on a user event
+// to finish before the command is executed by the device. The execution status
+// of the user event object created is set to Submitted.
+//
+// Enqueued commands that specify user events must ensure that the status of the
+// user events be set before any OpenCL APIs that release OpenCL objects except
+// for event objects are called.
+func (c *Context) CreateUserEvent() (*Event, error) {
+
+	event, err := clw.CreateUserEvent(c.id)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Event{id: event, Context: c, CommandType: CommandUser}, nil
+}
+
+// Sets the execution status of a user event object to Complete.
+func (e *Event) SetComplete() error {
+	return clw.SetUserEventStatus(e.id, clw.Int(clw.Complete))
+}
+
+// Sets the execution status of a user event object to an error state. All
+// enqueued commands that wait on this user event will be terminated. Err must
+// be negative.
+func (e *Event) SetError(err int) error {
+	if err >= 0 {
+		return wrapError(fmt.Errorf("can not set event error code to a non-negative value"))
+	}
+	return clw.SetUserEventStatus(e.id, clw.Int(err))
 }
 
 // Increments the event reference count.
