@@ -15,8 +15,8 @@ import (
 type Platform struct {
 	id clw.PlatformID
 
-	// The profile name supported by the implementation, either the full profile or
-	// a subset of each OpenCL version (embedded profile).
+	// The profile name supported by the implementation, either the full profile
+	// or a subset of each OpenCL version (embedded profile).
 	Profile PlatformProfile
 
 	// A Platform's version.
@@ -164,6 +164,7 @@ func (pv PlatformVersion) String() string {
 	return fmt.Sprint(pv.Major, ".", pv.Minor)
 }
 
+// Checks if the platform supports the extension.
 func (p *Platform) HasExtension(extension string) bool {
 	for i := range p.Extensions {
 		if p.Extensions[i] == extension {

@@ -15,9 +15,15 @@ import (
 // API calls that enqueue commands to a command-queue create a new event object
 // that is returned in the event argument.
 type Event struct {
-	id           clw.Event
-	Context      *Context
-	CommandType  CommandType
+	id clw.Event
+
+	// The context the event was created on.
+	Context *Context
+
+	// The command type the event represents.
+	CommandType CommandType
+
+	// The command queue the event was created on.
 	CommandQueue *CommandQueue
 
 	Queued int64 // Profiling information.
@@ -269,10 +275,10 @@ func (e *Event) Retain() error {
 
 // Decrements the event reference count.
 //
-// Decrements the event reference count. The event object is deleted once the
-// reference count becomes zero, the specific command identified by this event
-// has completed (or terminated) and there are no commands in the command-queues
-// of a context that require a wait for this event to complete.
+// The event object is deleted once the reference count becomes zero, the
+// specific command identified by this event has completed (or terminated) and
+// there are no commands in the command-queues of a context that require a wait
+// for this event to complete.
 func (e *Event) Release() error {
 	return clw.ReleaseEvent(e.id)
 }
