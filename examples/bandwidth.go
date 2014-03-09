@@ -19,11 +19,9 @@ func main() {
 	platforms, err := cl.GetPlatforms()
 	check(err)
 	for _, p := range platforms {
-		devices, err := p.GetDevices()
-		check(err)
-		for _, d := range devices {
+		for _, d := range p.Devices {
 
-			c, err := cl.CreateContext([]*cl.Device{d}, cl.ContextProperties{}, nil)
+			c, err := cl.CreateContext([]*cl.Device{d}, nil, nil, nil)
 			check(err)
 
 			cq, err := c.CreateCommandQueue(d, cl.QueueProfilingEnable)
@@ -47,8 +45,8 @@ func main() {
 				duration := time.Duration(e.End - e.Start)
 				transferSpeed := transfered / duration.Seconds() / 1024
 
-				callbackChan <- fmt.Sprintf("Callback: %s: %.2f MiB in %v (%.2f GiB/s)", name, transfered, duration,
-					transferSpeed)
+				callbackChan <- fmt.Sprintf("Callback with Event Profiling: %s: %.2f MiB in %v (%.2f GiB/s)", name,
+					transfered, duration, transferSpeed)
 			}
 			recieveFunc := func() {
 				fmt.Println(<-callbackChan)
@@ -69,7 +67,7 @@ func main() {
 			transfered := float64(size) / 1024 / 1024
 			transferSpeed := transfered / duration.Seconds() / 1024
 
-			fmt.Printf("Go: %s: %.2f MiB in %v (%.2f GiB/s)\n", d.Name, transfered, duration, transferSpeed)
+			fmt.Printf("Go Timer: %s: %.2f MiB in %v (%.2f GiB/s)\n", d.Name, transfered, duration, transferSpeed)
 
 			check(host.Release())
 			check(device.Release())

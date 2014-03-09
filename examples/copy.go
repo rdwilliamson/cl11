@@ -30,11 +30,9 @@ func main() {
 	platforms, err := cl.GetPlatforms()
 	check(err)
 	for _, p := range platforms {
-		devices, err := p.GetDevices()
-		check(err)
-		for _, d := range devices {
+		for _, d := range p.Devices {
 
-			c, err := cl.CreateContext([]*cl.Device{d}, cl.ContextProperties{}, nil)
+			c, err := cl.CreateContext([]*cl.Device{d}, nil, nil, nil)
 			check(err)
 
 			progam, err := c.CreateProgramWithSource([]byte(kernel))
@@ -86,7 +84,8 @@ func main() {
 			check(event.Wait())
 
 			if equal {
-				fmt.Println(d.Name, time.Duration(kernelEvent.End-kernelEvent.Start), snippets.PrintBytes(int64(size*4)))
+				fmt.Println(d.Name, "copied", snippets.PrintBytes(int64(size*4)), "in",
+					time.Duration(kernelEvent.End-kernelEvent.Start))
 			} else {
 				fmt.Println(d.Name, "values do not match")
 			}
