@@ -173,3 +173,9 @@ func (p *Platform) HasExtension(extension string) bool {
 	}
 	return false
 }
+
+// Returns the platform as a ContextProperties suitable for adding to a property
+// list during context creation.
+func (p *Platform) ToContextProperty() ContextProperties {
+	return *(*ContextProperties)(unsafe.Pointer(&p.id))
+}
