@@ -17,10 +17,10 @@ type Platform struct {
 
 	// The profile name supported by the implementation, either the full profile
 	// or a subset of each OpenCL version (embedded profile).
-	Profile PlatformProfile
+	Profile Profile
 
 	// A Platform's version.
-	Version PlatformVersion
+	Version Version
 
 	// Platform's name.
 	Name string
@@ -35,14 +35,14 @@ type Platform struct {
 	Devices []*Device
 }
 
-type PlatformProfile int
+type Profile int
 
 const (
-	FullProfile     PlatformProfile = iota
-	EmbeddedProfile PlatformProfile = iota
+	FullProfile     Profile = iota
+	EmbeddedProfile Profile = iota
 )
 
-type PlatformVersion struct {
+type Version struct {
 	Major int
 	Minor int
 	Info  string
@@ -90,8 +90,8 @@ func (p *Platform) getAllInfo() (err error) {
 		}
 	}()
 
-	p.getProfile()
-	p.getVersion()
+	p.Profile = toProfile(p.getString(clw.PlatformProfile))
+	p.Version = toVersion(p.getString(clw.PlatformVersion))
 	p.Name = p.getString(clw.PlatformName)
 	p.Vendor = p.getString(clw.PlatformVendor)
 	p.Extensions = strings.Split(p.getString(clw.PlatformExtensions), " ")
@@ -117,19 +117,19 @@ func (p *Platform) getString(paramName clw.PlatformInfo) string {
 	return strings.TrimSpace(string(buffer[:len(buffer)-1]))
 }
 
-func (p *Platform) getProfile() {
-	profile := p.getString(clw.PlatformProfile)
+func toProfile(profile string) Profile {
+
 	switch profile {
 	case "FULL_PROFILE":
-		p.Profile = FullProfile
+		return FullProfile
 	case "EMBEDDED_PROFILE":
-		p.Profile = EmbeddedProfile
-	default:
-		panic(errors.New("unknown platform profile"))
+		return EmbeddedProfile
 	}
+
+	panic(errors.New("unknown profile"))
 }
 
-func (pp PlatformProfile) String() string {
+func (pp Profile) String() string {
 	switch pp {
 	case FullProfile:
 		return "full profile"
@@ -139,25 +139,27 @@ func (pp PlatformProfile) String() string {
 	panic("unreachable")
 }
 
-func (p *Platform) getVersion() {
+func toVersion(version string) Version {
 
-	version := p.getString(clw.PlatformVersion)
-	n, err := fmt.Sscanf(version, "OpenCL %d.%d %s", &p.Version.Major, &p.Version.Minor, &p.Version.Info)
+	var result Version
+	n, err := fmt.Sscanf(version, "OpenCL %d.%d %s", &result.Major, &result.Minor, &result.Info)
 
 	// May encounter EOF and only scan 2 items if there is no "info".
 	if err == io.EOF && n == 2 {
-		return
+		return result
 	}
 
 	if err != nil {
 		panic(err)
 	}
 	if n != 3 {
-		panic(errors.New("could not parse OpenCL platform version"))
+		panic(errors.New("could not parse version"))
 	}
+
+	return result
 }
 
-func (pv PlatformVersion) String() string {
+func (pv Version) String() string {
 	if pv.Info != "" {
 		return fmt.Sprint(pv.Major, ".", pv.Minor, " ", pv.Info)
 	}

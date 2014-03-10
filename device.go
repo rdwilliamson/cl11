@@ -42,40 +42,135 @@ type Device struct {
 	// supported values are 32 or 64 bits.
 	AddressBits int
 
-	GlobalMemCachelineSize   int
-	MaxClockFrequency        int
-	MaxComputeUnits          int
-	MaxConstantArgs          int
-	MaxReadImageArgs         int
-	MaxSamplers              int
-	MaxWorkItemDimensions    int
-	MaxWriteImageArgs        int
-	MemBaseAddrAlign         int
-	MinDataTypeAlignSize     int
-	VendorID                 int
-	PreferredVectorWidths    VectorWidths
-	NativeVectorWidths       VectorWidths
-	Extensions               []string
-	Name                     string
-	Profile                  string
-	Vendor                   string
-	Version                  string
-	OpenclCVersion           string
-	DriverVersion            string
-	GlobalMemCacheSize       int64
-	GlobalMemSize            int64
-	LocalMemSize             int64
-	MaxConstantBufferSize    int64
-	MaxMemAllocSize          int64
-	Image2dMaxHeight         int
-	Image2dMaxWidth          int
-	Image3dMaxDepth          int
-	Image3dMaxHeight         int
-	Image3dMaxWidth          int
-	MaxParameterSize         int
-	MaxWorkGroupSize         int
+	// Size of global memory cache line in bytes.
+	GlobalMemCachelineSize int
+
+	// Maximum configured clock frequency of the device in MHz.
+	MaxClockFrequency int
+
+	// The number of parallel compute cores on the OpenCL device. The minimum
+	// value is 1.
+	MaxComputeUnits int
+
+	// Max number of arguments declared with the __constant qualifier in a
+	// kernel. The minimum value is 8.
+	MaxConstantArgs int
+
+	// Max number of simultaneous image objects that can be read by a kernel.
+	// The minimum value is 128 if ImageSupport is true.
+	MaxReadImageArgs int
+
+	// Maximum number of samplers that can be used in a kernel. The minimum
+	// value is 16 if ImageSupport is true.
+	MaxSamplers int
+
+	// Maximum dimensions that specify the global and local work-item IDs used
+	// by the data parallel execution model. (Refer to EnqueueNDRangeKernel).
+	// The minimum value is 3.
+	MaxWorkItemDimensions int
+
+	// Max number of simultaneous image objects that can be written to by a
+	// kernel. The minimum value is 8 if ImageSupport is true.
+	MaxWriteImageArgs int
+
+	// Describes the alignment in bits of the base address of any allocated
+	// memory object.
+	MemBaseAddrAlign int
+
+	// The smallest alignment in bytes which can be used for any data type.
+	MinDataTypeAlignSize int
+
+	// Preferred native vector width size for built-in scalar types that can be
+	// put into vectors. The vector width is defined as the number of scalar
+	// elements that can be stored in the vector.
+	PreferredVectorWidths VectorWidths
+
+	// Returns the native ISA vector width. The vector width is defined as the
+	// number of scalar elements that can be stored in the vector.
+	NativeVectorWidths VectorWidths
+
+	Extensions []string
+
+	// Device name string.
+	Name string
+
+	// Either FulleProfile, if the device supports the OpenCL specification
+	// (functionality defined as part of the core specification and does not
+	// require any extensions to be supported). Or EmbedddedProfile, if the
+	// device supports the OpenCL embedded profile.
+	Profile Profile
+
+	// Vendor name string.
+	Vendor string
+
+	// A unique device vendor identifier. An example of a unique device
+	// identifier could be the PCIe ID.
+	VendorID int
+
+	// The OpenCL version supported by the device.
+	Version Version
+
+	// The highest OpenCL C version supported by the compiler for this device.
+	OpenCLCVersion Version
+
+	// OpenCL software driver version.
+	DriverVersion Version
+
+	// Size of global memory cache in bytes.
+	GlobalMemCacheSize int64
+
+	// Size of global device memory in bytes.
+	GlobalMemSize int64
+
+	// Size of local memory arena in bytes. The minimum value is 32 KB.
+	LocalMemSize int64
+
+	// Max size in bytes of a constant buffer allocation. The minimum value is
+	// 64 KB.
+	MaxConstantBufferSize int64
+
+	// Max size of memory object allocation in bytes. The minimum value is
+	// max(1/4th of GlobalMemSize, 128*1024*1024).
+	MaxMemAllocSize int64
+
+	// Max height of 2D image in pixels. The minimum value is 8192 if
+	// ImageSupport is true.
+	Image2DMaxHeight int
+
+	// Max width of 2D image in pixels. The minimum value is 8192 if
+	// ImageSupport is true.
+	Image2DMaxWidth int
+
+	// Max depth of 3D image in pixels. The minimum value is 2048 if
+	// ImageSupport is true.
+	Image3DMaxDepth int
+
+	// Max height of 3D image in pixels. The minimum value is 2048 if
+	// ImageSupport is true.
+	Image3DMaxHeight int
+
+	// Max width of 3D image in pixels. The minimum value is 2048 if
+	// ImageSupport is true.
+	Image3DMaxWidth int
+
+	// Max size in bytes of the arguments that can be passed to a kernel. The
+	// minimum value is 1024. For this minimum value, only a maximum of 128
+	// arguments can be passed to a kernel.
+	MaxParameterSize int
+
+	// Maximum number of work-items in a work-group executing a kernel using the
+	// data parallel execution model. (Refer to EnqueueNDRangeKernel). The
+	// minimum value is 1.
+	MaxWorkGroupSize int
+
+	// Describes the resolution of device timer. This is measured in nanoseconds.
 	ProfilingTimerResolution int
-	MaxWorkItemSizes         []int
+
+	// Maximum number of work-items that can be specified in each dimension of
+	// the work-group to EnqueueNDRangeKernel. Returns n entries, where n is the
+	// value returned by the query for MaxWorkItemDimensions. The minimum value
+	// is (1, 1, 1).
+	MaxWorkItemSizes []int
 
 	// Describes single precision floating-point capability of the device. The
 	// mandated minimum capability is round to nearest and infinity and NaN
@@ -90,10 +185,27 @@ type Device struct {
 
 	// HalfFpConfig   FPConfig
 
-	ExecCapabilities       ExecCapabilities
+	// Describes the execution capabilities of the device. This is a bit-field
+	// that describes one or more of the following values: ExecKernel - The
+	// OpenCL device can execute OpenCL kernels. ExecNativeKernel - The OpenCL
+	// device can execute native kernels. The mandated minimum capability is
+	// ExecKernel.
+	ExecCapabilities ExecCapabilities
+
+	// Describes the command-queue properties supported by the device. This is a
+	// bit-field that describes one or more of the following values:
+	// QueueOutOfOrderExecution. QueueProfilingEnable. These
+	// properties are described in the table for CreateCommandQueue. The
+	// mandated minimum capability is QueueProfilingEnable.
 	CommandQueueProperties CommandQueueProperties
-	GlobalMemCacheType     GlobalMemCacheType
-	LocalMemTypeInfo       LocalMemTypeInfo
+
+	// Type of global memory cache supported. Valid values are: None,
+	// ReadOnlyCache, and ReadWriteCache.
+	GlobalMemCacheType GlobalMemCacheType
+
+	// Type of local memory supported. This can be set to Local implying
+	// dedicated local memory storage such as SRAM, or Global.
+	LocalMemTypeInfo LocalMemTypeInfo
 }
 
 type DeviceType int
@@ -305,11 +417,13 @@ func (d *Device) getAllInfo() (err error) {
 
 	d.Extensions = strings.Split(d.getString(clw.DeviceExtensions), " ")
 	d.Name = d.getString(clw.DeviceName)
-	d.Profile = d.getString(clw.DeviceProfile)
 	d.Vendor = d.getString(clw.DeviceVendor)
-	d.Version = d.getString(clw.DeviceVersion)
-	d.OpenclCVersion = d.getString(clw.DeviceOpenclCVersion)
-	d.DriverVersion = d.getString(clw.DriverVersion)
+
+	d.Profile = toProfile(d.getString(clw.DeviceProfile))
+
+	d.Version = toVersion(d.getString(clw.DeviceVersion))
+	d.OpenCLCVersion = toVersion(d.getString(clw.DeviceOpenclCVersion))
+	d.DriverVersion = toVersion(d.getString(clw.DriverVersion))
 
 	d.GlobalMemCacheSize = d.getUlong(clw.DeviceGlobalMemCacheSize)
 	d.GlobalMemSize = d.getUlong(clw.DeviceGlobalMemSize)
@@ -317,11 +431,11 @@ func (d *Device) getAllInfo() (err error) {
 	d.MaxConstantBufferSize = d.getUlong(clw.DeviceMaxConstantBufferSize)
 	d.MaxMemAllocSize = d.getUlong(clw.DeviceMaxMemAllocSize)
 
-	d.Image2dMaxHeight = d.getSize(clw.DeviceImage2dMaxHeight)
-	d.Image2dMaxWidth = d.getSize(clw.DeviceImage2dMaxWidth)
-	d.Image3dMaxDepth = d.getSize(clw.DeviceImage3dMaxDepth)
-	d.Image3dMaxHeight = d.getSize(clw.DeviceImage3dMaxHeight)
-	d.Image3dMaxWidth = d.getSize(clw.DeviceImage3dMaxWidth)
+	d.Image2DMaxHeight = d.getSize(clw.DeviceImage2dMaxHeight)
+	d.Image2DMaxWidth = d.getSize(clw.DeviceImage2dMaxWidth)
+	d.Image3DMaxDepth = d.getSize(clw.DeviceImage3dMaxDepth)
+	d.Image3DMaxHeight = d.getSize(clw.DeviceImage3dMaxHeight)
+	d.Image3DMaxWidth = d.getSize(clw.DeviceImage3dMaxWidth)
 	d.MaxParameterSize = d.getSize(clw.DeviceMaxParameterSize)
 	d.MaxWorkGroupSize = d.getSize(clw.DeviceMaxWorkGroupSize)
 	d.ProfilingTimerResolution = d.getSize(clw.DeviceProfilingTimerResolution)
