@@ -232,7 +232,7 @@ func (dt DeviceType) String() string {
 	case DeviceTypeAll:
 		return "all"
 	}
-	panic("unknown device type")
+	return ""
 }
 
 type VectorWidths struct {
@@ -301,7 +301,7 @@ func (gmct GlobalMemCacheType) String() string {
 	case ReadWriteCache:
 		return "read and write"
 	}
-	panic("unknown global mem cache type")
+	return ""
 }
 
 type LocalMemTypeInfo int
@@ -318,7 +318,7 @@ func (lmti LocalMemTypeInfo) String() string {
 	case Local:
 		return "local"
 	}
-	panic("unknown local mem type")
+	return ""
 }
 
 type ExecCapabilities int
