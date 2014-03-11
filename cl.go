@@ -2,15 +2,80 @@
 package cl11
 
 import (
+	"errors"
+	"fmt"
 	"reflect"
+	"strings"
 	"unsafe"
 )
+
+type Profile int
+
+func toProfile(profile string) Profile {
+
+	switch profile {
+	case "FULL_PROFILE":
+		return FullProfile
+	case "EMBEDDED_PROFILE":
+		return EmbeddedProfile
+	}
+
+	panic(errors.New("unknown profile"))
+}
+
+func (pp Profile) String() string {
+	switch pp {
+	case zeroProfile:
+		return ""
+	case FullProfile:
+		return "full profile"
+	case EmbeddedProfile:
+		return "embedded profile"
+	}
+	panic("unreachable")
+}
+
+type Version struct {
+	Major int
+	Minor int
+	Info  string
+}
+
+func toVersion(version string) Version {
+
+	var result Version
+	var err error
+
+	if strings.HasPrefix(version, "OpenCL C") {
+		_, err = fmt.Sscanf(version, "OpenCL C %d.%d", &result.Major, &result.Minor)
+		result.Info = strings.TrimSpace(version[len(fmt.Sprintf("OpenCL C %d.%d", result.Major, result.Minor)):])
+
+	} else if strings.HasPrefix(version, "OpenCL") {
+		_, err = fmt.Sscanf(version, "OpenCL %d.%d", &result.Major, &result.Minor)
+		result.Info = strings.TrimSpace(version[len(fmt.Sprintf("OpenCL %d.%d", result.Major, result.Minor)):])
+
+	} else {
+		_, err = fmt.Sscanf(version, "%d.%d", &result.Major, &result.Minor)
+	}
+
+	if err != nil {
+		panic(err)
+	}
+
+	return result
+}
+
+func (v Version) String() string {
+	if v.Info != "" {
+		return fmt.Sprintf("%d.%d %s", v.Major, v.Minor, v.Info)
+	}
+	return fmt.Sprintf("%d.%d", v.Major, v.Minor)
+}
 
 const (
 	scratchSize = 8
 )
 
-// TODO move?
 var (
 	int32Type   = reflect.TypeOf(int32(0))
 	int32Size   = int32Type.Size()
