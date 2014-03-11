@@ -17,7 +17,7 @@ type CommandQueue struct {
 	eventsScratch []clw.Event
 }
 
-type CommandQueueProperties uint8
+type CommandQueueProperties int
 
 // Bitfield.
 const (
@@ -52,6 +52,14 @@ func (cq *CommandQueue) Flush() error {
 
 func (cq *CommandQueue) Finish() error {
 	return clw.Finish(cq.id)
+}
+
+func (cq *CommandQueue) Retain() error {
+	return clw.RetainCommandQueue(cq.id)
+}
+
+func (cq *CommandQueue) Release() error {
+	return clw.ReleaseCommandQueue(cq.id)
 }
 
 func (cq *CommandQueue) toEvents(in []*Event) []clw.Event {
