@@ -37,6 +37,7 @@ type Platform struct {
 type Profile int
 
 const (
+	zeroProfile     Profile = iota
 	FullProfile     Profile = iota
 	EmbeddedProfile Profile = iota
 )
@@ -124,6 +125,8 @@ func toProfile(profile string) Profile {
 
 func (pp Profile) String() string {
 	switch pp {
+	case zeroProfile:
+		return ""
 	case FullProfile:
 		return "full profile"
 	case EmbeddedProfile:
