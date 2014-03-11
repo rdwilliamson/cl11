@@ -422,8 +422,9 @@ func (d *Device) getAllInfo() (err error) {
 	d.Profile = toProfile(d.getString(clw.DeviceProfile))
 
 	d.Version = toVersion(d.getString(clw.DeviceVersion))
-	d.OpenCLCVersion = toVersion(d.getString(clw.DeviceOpenclCVersion))
 	d.DriverVersion = toVersion(d.getString(clw.DriverVersion))
+
+	d.OpenCLCVersion = toVersion(d.getString(clw.DeviceOpenclCVersion))
 
 	d.GlobalMemCacheSize = d.getUlong(clw.DeviceGlobalMemCacheSize)
 	d.GlobalMemSize = d.getUlong(clw.DeviceGlobalMemSize)

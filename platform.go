@@ -3,7 +3,6 @@ package cl11
 import (
 	"errors"
 	"fmt"
-	"io"
 	"strings"
 	"unsafe"
 
@@ -41,12 +40,6 @@ const (
 	FullProfile     Profile = iota
 	EmbeddedProfile Profile = iota
 )
-
-type Version struct {
-	Major int
-	Minor int
-	Info  string
-}
 
 // Obtain the list of platforms available.
 func GetPlatforms() ([]*Platform, error) {
@@ -139,31 +132,41 @@ func (pp Profile) String() string {
 	panic("unreachable")
 }
 
+type Version struct {
+	Major int
+	Minor int
+	Info  string
+}
+
 func toVersion(version string) Version {
 
 	var result Version
-	n, err := fmt.Sscanf(version, "OpenCL %d.%d %s", &result.Major, &result.Minor, &result.Info)
+	var err error
 
-	// May encounter EOF and only scan 2 items if there is no "info".
-	if err == io.EOF && n == 2 {
-		return result
+	if strings.HasPrefix(version, "OpenCL C") {
+		_, err = fmt.Sscanf(version, "OpenCL C %d.%d", &result.Major, &result.Minor)
+		result.Info = strings.TrimSpace(version[len(fmt.Sprintf("OpenCL C %d.%d", result.Major, result.Minor)):])
+
+	} else if strings.HasPrefix(version, "OpenCL") {
+		_, err = fmt.Sscanf(version, "OpenCL %d.%d", &result.Major, &result.Minor)
+		result.Info = strings.TrimSpace(version[len(fmt.Sprintf("OpenCL %d.%d", result.Major, result.Minor)):])
+
+	} else {
+		_, err = fmt.Sscanf(version, "%d.%d", &result.Major, &result.Minor)
 	}
 
 	if err != nil {
 		panic(err)
 	}
-	if n != 3 {
-		panic(errors.New("could not parse version"))
-	}
 
 	return result
 }
 
-func (pv Version) String() string {
-	if pv.Info != "" {
-		return fmt.Sprint(pv.Major, ".", pv.Minor, " ", pv.Info)
+func (v Version) String() string {
+	if v.Info != "" {
+		return fmt.Sprintf("%d.%d %s", v.Major, v.Minor, v.Info)
 	}
-	return fmt.Sprint(pv.Major, ".", pv.Minor)
+	return fmt.Sprintf("%d.%d", v.Major, v.Minor)
 }
 
 // Checks if the platform supports the extension.
