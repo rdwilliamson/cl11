@@ -416,6 +416,15 @@ func (d *Device) getAllInfo() (err error) {
 	// d.NativeVectorWidths.Half = d.getUint(clw.DeviceNativeVectorWidthHalf)
 
 	d.Extensions = strings.Split(d.getString(clw.DeviceExtensions), " ")
+
+	// Clear empty extensions.
+	for i := 0; i < len(d.Extensions); i++ {
+		if d.Extensions[i] == "" {
+			d.Extensions[i] = d.Extensions[len(d.Extensions)-1]
+			d.Extensions = d.Extensions[:len(d.Extensions)-1]
+		}
+	}
+
 	d.Name = d.getString(clw.DeviceName)
 	d.Vendor = d.getString(clw.DeviceVendor)
 
