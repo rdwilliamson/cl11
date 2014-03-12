@@ -95,8 +95,7 @@ func toByteSlice(p unsafe.Pointer, size uintptr) []byte {
 	return *(*[]byte)(unsafe.Pointer(&header))
 }
 
-// Scratch must be (at least) 8 bytes of scratch space.
-func ToBytes(x interface{}, scratch unsafe.Pointer) []byte {
+func toBytes(x interface{}, scratch unsafe.Pointer) []byte {
 	pointer, size := getPointerAndSize(x, scratch)
 	return toByteSlice(pointer, size)
 }
