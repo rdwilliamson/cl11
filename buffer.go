@@ -9,11 +9,13 @@ import (
 )
 
 type Buffer struct {
-	id      clw.Memory
+	id      clw.Mem
 	Context *Context
 	Size    int64
-	Flags   MemoryFlags
-	Host    interface{} // The host backed memory for the buffer.
+	Flags   MemFlags
+
+	// The host backed memory for the buffer, if applicable.
+	Host interface{}
 }
 
 type MappedBuffer struct {
@@ -22,13 +24,13 @@ type MappedBuffer struct {
 	buffer  *Buffer
 }
 
-type MemoryFlags int
+type MemFlags int
 
 // Bitfield.
 const (
-	MemoryReadWrite = MemoryFlags(clw.MemoryReadWrite)
-	MemoryWriteOnly = MemoryFlags(clw.MemoryWriteOnly)
-	MemoryReadOnly  = MemoryFlags(clw.MemoryReadOnly)
+	MemReadWrite = MemFlags(clw.MemReadWrite)
+	MemWriteOnly = MemFlags(clw.MemWriteOnly)
+	MemReadOnly  = MemFlags(clw.MemReadOnly)
 )
 
 type MapFlags int
@@ -46,9 +48,9 @@ const (
 	NonBlocking = BlockingCall(clw.False)
 )
 
-func (c *Context) CreateDeviceBuffer(size int64, mf MemoryFlags) (*Buffer, error) {
+func (c *Context) CreateDeviceBuffer(size int64, mf MemFlags) (*Buffer, error) {
 
-	memory, err := clw.CreateBuffer(c.id, clw.MemoryFlags(mf), clw.Size(size), nil)
+	memory, err := clw.CreateBuffer(c.id, clw.MemFlags(mf), clw.Size(size), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -56,9 +58,9 @@ func (c *Context) CreateDeviceBuffer(size int64, mf MemoryFlags) (*Buffer, error
 	return &Buffer{id: memory, Context: c, Size: size, Flags: mf}, nil
 }
 
-func (c *Context) CreateDeviceBufferInitializedBy(mf MemoryFlags, value interface{}) (*Buffer, error) {
+func (c *Context) CreateDeviceBufferInitializedBy(mf MemFlags, value interface{}) (*Buffer, error) {
 
-	flags := clw.MemoryFlags(mf) | clw.MemoryCopyHostPointer
+	flags := clw.MemFlags(mf) | clw.MemCopyHostPointer
 
 	var scratch [scratchSize]byte
 	pointer, size := getPointerAndSize(value, unsafe.Pointer(&scratch[0]))
@@ -71,9 +73,9 @@ func (c *Context) CreateDeviceBufferInitializedBy(mf MemoryFlags, value interfac
 	return &Buffer{id: memory, Context: c, Size: int64(size), Flags: mf}, nil
 }
 
-func (c *Context) CreateDeviceBufferFromHostMemory(mf MemoryFlags, host interface{}) (*Buffer, error) {
+func (c *Context) CreateDeviceBufferFromHostMem(mf MemFlags, host interface{}) (*Buffer, error) {
 
-	flags := clw.MemoryFlags(mf) | clw.MemoryUseHostPointer
+	flags := clw.MemFlags(mf) | clw.MemUseHostPointer
 
 	value := reflect.ValueOf(host)
 	if kind := value.Kind(); kind != reflect.Ptr && kind != reflect.Slice {
@@ -96,9 +98,9 @@ func (c *Context) CreateDeviceBufferFromHostMemory(mf MemoryFlags, host interfac
 	return &Buffer{id: memory, Context: c, Size: int64(size), Host: host, Flags: mf}, nil
 }
 
-func (c *Context) CreateHostBuffer(size int64, mf MemoryFlags) (*Buffer, error) {
+func (c *Context) CreateHostBuffer(size int64, mf MemFlags) (*Buffer, error) {
 
-	flags := clw.MemoryFlags(mf) | clw.MemoryAllocHostPointer
+	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer
 
 	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(size), nil)
 	if err != nil {
@@ -108,9 +110,9 @@ func (c *Context) CreateHostBuffer(size int64, mf MemoryFlags) (*Buffer, error) 
 	return &Buffer{id: memory, Context: c, Size: size, Flags: mf}, nil
 }
 
-func (c *Context) CreateHostBufferInitializedBy(mf MemoryFlags, value interface{}) (*Buffer, error) {
+func (c *Context) CreateHostBufferInitializedBy(mf MemFlags, value interface{}) (*Buffer, error) {
 
-	flags := clw.MemoryFlags(mf) | clw.MemoryAllocHostPointer | clw.MemoryCopyHostPointer
+	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer | clw.MemCopyHostPointer
 
 	var scratch [scratchSize]byte
 	pointer, size := getPointerAndSize(value, unsafe.Pointer(&scratch[0]))
