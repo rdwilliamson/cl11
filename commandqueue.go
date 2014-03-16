@@ -62,6 +62,25 @@ func (cq *CommandQueue) Release() error {
 	return clw.ReleaseCommandQueue(cq.id)
 }
 
+func (cq *CommandQueue) EnqueueMarker(e *Event) error {
+
+	if e != nil {
+		e.Context = cq.Context
+		e.CommandType = CommandMarker
+		e.CommandQueue = cq
+	}
+
+	return clw.EnqueueMarker(cq.id, &e.id)
+}
+
+func (cq *CommandQueue) EnqueueWaitForEvents(waitList []*Event) error {
+	return clw.EnqueueWaitForEvents(cq.id, cq.toEvents(waitList))
+}
+
+func (cq *CommandQueue) EnqueueBarrier() error {
+	return clw.EnqueueBarrier(cq.id)
+}
+
 func (cq *CommandQueue) toEvents(in []*Event) []clw.Event {
 
 	if in == nil {
