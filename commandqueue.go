@@ -6,11 +6,24 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
-// Not thread safe.
+// The OpenCL functions that are submitted to a command-queue are enqueued in
+// the order the calls are made but can be configured to execute in-order or
+// out-of-order. In addition, a wait for events or a barrier command can be
+// enqueued to the command-queue. The wait for events command ensures that
+// previously enqueued commands identified by the list of events to wait for
+// have finished before the next batch of commands is executed. The barrier
+// command ensures that all previously enqueued commands in a command-queue have
+// finished execution before the next batch of commands is executed.
 type CommandQueue struct {
-	id         clw.CommandQueue
-	Context    *Context
-	Device     *Device
+	id clw.CommandQueue
+
+	// The context the command queue was created on.
+	Context *Context
+
+	// The device the command queue was created for.
+	Device *Device
+
+	// Bit-field list of properties for the command queue.
 	Properties CommandQueueProperties
 
 	// Scratch space to avoid allocating memory when converting a wait list.
