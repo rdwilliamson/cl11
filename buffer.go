@@ -8,14 +8,52 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
+// A buffer object stores a one-dimensional collection of elements. Elements of
+// a buffer object can be a scalar data type (such as an int, float), vector
+// data type, or a user-defined structure.
 type Buffer struct {
-	id      clw.Mem
+	id clw.Mem
+
+	// The context the buffer was created on.
 	Context *Context
-	Size    int64
-	Flags   MemFlags
+
+	// The size of the buffer in bytes.
+	Size int64
+
+	// Usage information for the buffer from the device's point of view.
+	Flags MemFlags
 
 	// The host backed memory for the buffer, if applicable.
 	Host interface{}
+
+	// The parent buffer, if applicable.
+	Buffer *Buffer
+
+	// The offset in bytes within the parent buffer.
+	Origin int64
+}
+
+// A source and destination rectangular region.
+type Rect struct {
+
+	// The source offset. For a 2D rectangle SrcOrigin[2] should be 0. The
+	// offset in bytes is SrcOrigin[2] * SrcSlicePitch + SrcOrigin[1] *
+	// SrcRowPitch + SrcOrigin[0].
+	SrcOrigin     [3]int64
+	SrcRowPitch   int64
+	SrcSlicePitch int64
+
+	// The destination offset. For a 2D rectangle DstOrigin[2] should be 0. The
+	// offset in bytes is DstOrigin[2] * DstSlicePitch + DstOrigin[1] *
+	// DstRowPitch + DstOrigin[0].
+	DstOrigin     [3]int64
+	DstRowPitch   int64
+	DstSlicePitch int64
+
+	// The (width, height, depth) in bytes of the 2D or 3D rectangle being
+	// copied. For a 2D rectangle the depth value given by Region[2] should be
+	// 1.
+	Region [3]int64
 }
 
 type MappedBuffer struct {
@@ -123,6 +161,22 @@ func (c *Context) CreateHostBufferInitializedBy(mf MemFlags, value interface{}) 
 	}
 
 	return &Buffer{id: memory, Context: c, Size: int64(size), Flags: mf}, nil
+}
+
+func (b *Buffer) CreateSubBuffer(mf MemFlags, origin, size int64) (*Buffer, error) {
+
+	region := clw.BufferRegion{clw.Size(origin), clw.Size(size)}
+
+	memory, err := clw.CreateSubBuffer(b.id, clw.MemFlags(mf), region)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Buffer{id: memory, Context: b.Context, Size: size, Flags: mf, Buffer: b, Origin: origin}, nil
+}
+
+func (b *Buffer) Retain() error {
+	return clw.RetainMemObject(b.id)
 }
 
 func (b *Buffer) Release() error {
