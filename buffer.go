@@ -245,6 +245,38 @@ func (cq *CommandQueue) UnmapBuffer(mb *MappedBuffer, waitList []*Event, e *Even
 	return clw.EnqueueUnmapMemObject(cq.id, mb.buffer.id, mb.pointer, cq.toEvents(waitList), event)
 }
 
+func (cq *CommandQueue) ReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst interface{}, waitList []*Event,
+	e *Event) error {
+
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandReadBuffer
+		e.CommandQueue = cq
+	}
+
+	pointer, size, err := tryPointerAndSize(dst)
+	if err != nil {
+		return wrapError(err)
+	}
+
+	return clw.EnqueueReadBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer,
+		cq.toEvents(waitList), event)
+}
+
+func (cq *CommandQueue) WriteBuffer() {
+
+}
+
+func (cq *CommandQueue) ReadBufferRect() {
+
+}
+
+func (cq *CommandQueue) WriteBufferRect() {
+
+}
+
 func (r *Rect) srcOrigin() [3]clw.Size {
 	return [3]clw.Size{clw.Size(r.SrcOrigin[0]), clw.Size(r.SrcOrigin[1]), clw.Size(r.SrcOrigin[2])}
 }

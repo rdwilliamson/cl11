@@ -100,6 +100,36 @@ func toBytes(x interface{}, scratch unsafe.Pointer) []byte {
 	return toByteSlice(pointer, size)
 }
 
+var errNotAddressable = errors.New("value not addressable")
+
+// TODO reduce duplicate code with getPointerAndSize
+func tryPointerAndSize(x interface{}) (pointer unsafe.Pointer, size uintptr, err error) {
+
+	value := reflect.ValueOf(x)
+	switch value.Kind() {
+
+	case reflect.Ptr:
+		for {
+			value = value.Elem()
+			if value.Kind() != reflect.Ptr {
+				break
+			}
+		}
+		pointer, size = addressablePointerAndSize(value)
+		return
+
+	case reflect.Slice:
+		pointer, size = addressablePointerAndSize(value)
+		return
+
+	default:
+		err = errNotAddressable
+		return
+	}
+
+	panic("unreachable")
+}
+
 func getPointerAndSize(x interface{}, scratch unsafe.Pointer) (unsafe.Pointer, uintptr) {
 
 	value := reflect.ValueOf(x)
