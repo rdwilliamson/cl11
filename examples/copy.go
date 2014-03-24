@@ -50,9 +50,9 @@ func main() {
 			}
 			values := utils.RandomFloat32(int(size))
 
-			inData, err := c.CreateDeviceBufferInitializedBy(cl.MemoryReadOnly, values)
+			inData, err := c.CreateDeviceBufferInitializedBy(cl.MemReadOnly, values)
 			check(err)
-			outData, err := c.CreateDeviceBuffer(size*4, cl.MemoryWriteOnly)
+			outData, err := c.CreateDeviceBuffer(size*4, cl.MemWriteOnly)
 			check(err)
 
 			err = kernel.SetArguments(inData, outData, size)
