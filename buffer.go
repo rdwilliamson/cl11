@@ -56,6 +56,37 @@ type Rect struct {
 	Region [3]int64
 }
 
+type rect struct {
+	srcOrigin     [3]clw.Size
+	srcRowPitch   clw.Size
+	srcSlicePitch clw.Size
+
+	dstOrigin     [3]clw.Size
+	dstRowPitch   clw.Size
+	dstSlicePitch clw.Size
+
+	region [3]clw.Size
+}
+
+func (out *rect) setFrom(in *Rect) {
+
+	out.srcOrigin[0] = clw.Size(in.SrcOrigin[0])
+	out.srcOrigin[1] = clw.Size(in.SrcOrigin[1])
+	out.srcOrigin[2] = clw.Size(in.SrcOrigin[2])
+	out.srcRowPitch = clw.Size(in.SrcRowPitch)
+	out.srcSlicePitch = clw.Size(in.SrcSlicePitch)
+
+	out.dstOrigin[0] = clw.Size(in.DstOrigin[0])
+	out.dstOrigin[1] = clw.Size(in.DstOrigin[1])
+	out.dstOrigin[2] = clw.Size(in.DstOrigin[2])
+	out.dstRowPitch = clw.Size(in.DstRowPitch)
+	out.dstSlicePitch = clw.Size(in.DstSlicePitch)
+
+	out.region[0] = clw.Size(in.Region[0])
+	out.region[1] = clw.Size(in.Region[1])
+	out.region[2] = clw.Size(in.Region[2])
+}
+
 type MappedBuffer struct {
 	pointer unsafe.Pointer
 	size    int64
@@ -196,6 +227,23 @@ func (cq *CommandQueue) CopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size 
 
 	return clw.EnqueueCopyBuffer(cq.id, src.id, dst.id, clw.Size(srcOffset), clw.Size(dstOffset), clw.Size(size),
 		cq.toEvents(waitList), event)
+}
+
+func (cq *CommandQueue) CopyBufferRect(src, dst *Buffer, r *Rect, waitList []*Event, e *Event) error {
+
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandCopyBuffer
+		e.CommandQueue = cq
+	}
+
+	var rect rect
+	rect.setFrom(r)
+
+	return clw.EnqueueCopyBufferRect(cq.id, src.id, dst.id, rect.srcOrigin, rect.dstOrigin, rect.region,
+		rect.srcRowPitch, rect.srcSlicePitch, rect.dstRowPitch, rect.dstSlicePitch, cq.toEvents(waitList), event)
 }
 
 func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, offset, size int64, waitList []*Event,
