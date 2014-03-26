@@ -36,7 +36,12 @@ func main() {
 			check(err)
 
 			callbackChan := make(chan interface{})
-			sendFunc := func(e *cl.Event, userData interface{}) {
+			sendFunc := func(e *cl.Event, err error, userData interface{}) {
+
+				if err != nil {
+					callbackChan <- fmt.Sprintf("Error: %s", err.Error())
+					return
+				}
 
 				check(e.GetProfilingInfo())
 

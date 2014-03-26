@@ -32,9 +32,11 @@ type Event struct {
 	End    int64 // Profiling information.
 }
 
-type EventCallback func(e *Event, userData interface{})
+// Differs from clw.EventCallbackFunc because the command execution status is
+// either Complete (success) or an error.
+type EventCallback func(e *Event, err error, userData interface{})
 
-var noOpEventCallback = func(e *Event, userData interface{}) {}
+var noOpEventCallback EventCallback = func(e *Event, err error, userData interface{}) {}
 
 type CommandType int
 
@@ -190,7 +192,8 @@ func (e *Event) GetProfilingInfo() error {
 // Registers a user callback function for a specific command execution status.
 //
 // The registered callback function will be called when the execution status of
-// command associated with event changes to Complete.
+// command associated with event changes to Complete or is abnormally terminated
+// due to an error.
 //
 // Each call to SetCallback registers the specified user callback
 // function on a callback stack associated with event. The order in which the
@@ -205,7 +208,11 @@ func (e *Event) SetCallback(callback EventCallback, userData interface{}) error 
 
 	return clw.SetEventCallback(e.id, clw.Complete,
 		func(event clw.Event, ces clw.CommandExecutionStatus, _userData interface{}) {
-			callback(e, _userData)
+			var err error
+			if ces < 0 {
+				err = clw.CodeToError(clw.Int(ces))
+			}
+			callback(e, err, _userData)
 		},
 		userData)
 }
