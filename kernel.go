@@ -144,9 +144,9 @@ func (k *Kernel) SetArgument(index int, arg interface{}) error {
 
 			localCopy := reflect.NewAt(int32Type, pointer).Elem()
 			if value.Bool() {
-				localCopy.SetInt(1)
+				localCopy.SetInt(int64(clw.True))
 			} else {
-				localCopy.SetInt(0)
+				localCopy.SetInt(int64(clw.False))
 			}
 
 			size = int32Size
