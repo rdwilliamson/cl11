@@ -32,6 +32,10 @@ type Event struct {
 	End    int64 // Profiling information.
 }
 
+type EventCallback func(e *Event, userData interface{})
+
+var noOpEventCallback = func(e *Event, userData interface{}) {}
+
 type CommandType int
 
 const (
@@ -197,7 +201,7 @@ func (e *Event) GetProfilingInfo() error {
 // must return promptly. The behavior of calling expensive system routines,
 // OpenCL API calls to create contexts or command-queues, or blocking OpenCL
 // operations, in a callback is undefined.
-func (e *Event) SetCallback(callback func(e *Event, userData interface{}), userData interface{}) error {
+func (e *Event) SetCallback(callback EventCallback, userData interface{}) error {
 
 	return clw.SetEventCallback(e.id, clw.Complete,
 		func(event clw.Event, ces clw.CommandExecutionStatus, _userData interface{}) {
