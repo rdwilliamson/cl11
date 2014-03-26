@@ -102,7 +102,6 @@ func toBytes(x interface{}, scratch unsafe.Pointer) []byte {
 
 var errNotAddressable = errors.New("value not addressable")
 
-// TODO reduce duplicate code with getPointerAndSize
 func tryPointerAndSize(x interface{}) (pointer unsafe.Pointer, size uintptr, err error) {
 
 	value := reflect.ValueOf(x)
@@ -111,6 +110,7 @@ func tryPointerAndSize(x interface{}) (pointer unsafe.Pointer, size uintptr, err
 	case reflect.Ptr:
 		for {
 			value = value.Elem()
+
 			if value.Kind() != reflect.Ptr {
 				break
 			}
@@ -136,6 +136,7 @@ func getPointerAndSize(x interface{}, scratch unsafe.Pointer) (unsafe.Pointer, u
 	switch value.Kind() {
 
 	case reflect.Int, reflect.Int32:
+
 		newValue := reflect.NewAt(int32Type, scratch).Elem()
 		newValue.SetInt(value.Int())
 		return addressablePointerAndSize(newValue)
@@ -143,7 +144,15 @@ func getPointerAndSize(x interface{}, scratch unsafe.Pointer) (unsafe.Pointer, u
 	case reflect.Ptr:
 		for {
 			value = value.Elem()
-			if value.Kind() != reflect.Ptr {
+
+			if kind := value.Kind(); kind == reflect.Int {
+
+				newValue := reflect.NewAt(int32Type, scratch).Elem()
+				newValue.SetInt(value.Int())
+				value = newValue
+				break
+
+			} else if kind != reflect.Ptr {
 				break
 			}
 		}
@@ -159,9 +168,6 @@ func getPointerAndSize(x interface{}, scratch unsafe.Pointer) (unsafe.Pointer, u
 func addressablePointerAndSize(v reflect.Value) (unsafe.Pointer, uintptr) {
 
 	switch v.Kind() {
-
-	case reflect.Int:
-		return unsafe.Pointer(v.UnsafeAddr()), int32Size
 
 	case reflect.Int32:
 		return unsafe.Pointer(v.UnsafeAddr()), v.Type().Size()
