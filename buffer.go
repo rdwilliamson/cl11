@@ -285,8 +285,8 @@ func (cq *CommandQueue) ReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst
 // It is the user's responsibility to ensure the source is valid at the time the
 // write is actually performed. If the source is addressable a reference will be
 // held to prevent it being garbage collected (but not overwritten), if it isn't
-// addressable a copy will be created that is elegiable for garbage collection
-// once the write has completed (via an event callback).
+// addressable a copy will be created that will be elegiable for garbage
+// collection once the write has completed (via an event callback).
 func (cq *CommandQueue) WriteBuffer(b *Buffer, bc BlockingCall, offset int64, src interface{}, waitList []*Event,
 	e *Event) error {
 
@@ -334,28 +334,78 @@ func (cq *CommandQueue) WriteBuffer(b *Buffer, bc BlockingCall, offset int64, sr
 	return nil
 }
 
-func (cq *CommandQueue) ReadBufferRect() {
+func (cq *CommandQueue) ReadBufferRect(b *Buffer, bc BlockingCall, r *Rect, dst interface{}, waitList []*Event,
+	e *Event) error {
 
-	// var event *clw.Event
-	// if e != nil {
-	// 	event = &e.id
-	// 	e.Context = cq.Context
-	// 	e.CommandType = CommandReadBuffer
-	// 	e.CommandQueue = cq
-	// }
+	if e == nil && bc == NonBlocking {
+		e = &Event{}
+	}
 
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandReadBuffer
+		e.CommandQueue = cq
+	}
+
+	pointer, _, err := tryPointerAndSize(dst)
+	if err != nil {
+		return wrapError(err)
+	}
+
+	err = clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), r.dstOrigin(), r.srcOrigin(), r.region(),
+		r.dstRowPitch(), r.dstSlicePitch(), r.srcRowPitch(), r.dstRowPitch(), pointer, cq.toEvents(waitList), event)
+	if err != nil {
+		return err
+	}
+
+	if bc == NonBlocking {
+		err = e.SetCallback(noOpEventCallback, dst)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (cq *CommandQueue) WriteBufferRect() {
+func (cq *CommandQueue) WriteBufferRect(b *Buffer, bc BlockingCall, r *Rect, src interface{}, waitList []*Event,
+	e *Event) error {
 
-	// var event *clw.Event
-	// if e != nil {
-	// 	event = &e.id
-	// 	e.Context = cq.Context
-	// 	e.CommandType = CommandWriteBuffer
-	// 	e.CommandQueue = cq
-	// }
+	if e == nil && bc == NonBlocking {
+		e = &Event{}
+	}
 
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandWriteBuffer
+		e.CommandQueue = cq
+	}
+
+	pointer, _, err := tryPointerAndSize(src)
+	if err != nil {
+		var scratch [scratchSize]byte
+		pointer, _ = getPointerAndSize(src, unsafe.Pointer(&scratch[0]))
+		src = &scratch
+	}
+
+	err = clw.EnqueueWriteBufferRect(cq.id, b.id, clw.Bool(bc), r.dstOrigin(), r.srcOrigin(), r.region(),
+		r.dstRowPitch(), r.dstSlicePitch(), r.srcRowPitch(), r.srcSlicePitch(), pointer, cq.toEvents(waitList), event)
+	if err != nil {
+		return err
+	}
+
+	if bc == NonBlocking {
+		err = e.SetCallback(noOpEventCallback, src)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (r *Rect) srcOrigin() [3]clw.Size {
