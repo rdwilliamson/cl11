@@ -6,12 +6,19 @@ import (
 
 type Image struct {
 	id clw.Mem
+
+	Format ImageFormat
 }
 
 type (
 	ChannelOrder clw.ChannelOrder
 	ChannelType  clw.ChannelType
 )
+
+type ImageFormat struct {
+	ChannelOrder ChannelOrder
+	ChannelType  ChannelType
+}
 
 const (
 	R         = ChannelOrder(clw.R)
@@ -49,14 +56,14 @@ const (
 
 // Get supported image formats.
 
-func (c *Context) CreateImage2D(flags MemFlags, co ChannelOrder, ct ChannelType, width, height, pitch int,
+func (c *Context) CreateImage2D(flags MemFlags, fmt ImageFormat, width, height, pitch int,
 	src interface{}) (*Image, error) {
 
-	mem, err := clw.CreateImage2D(c.id, clw.MemFlags(flags), clw.ImageFormat{clw.ChannelOrder(co), clw.ChannelType(ct)},
-		clw.Size(width), clw.Size(height), clw.Size(pitch), nil)
+	mem, err := clw.CreateImage2D(c.id, clw.MemFlags(flags), clw.ImageFormat{clw.ChannelOrder(fmt.ChannelOrder),
+		clw.ChannelType(fmt.ChannelType)}, clw.Size(width), clw.Size(height), clw.Size(pitch), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Image{id: mem}, nil
+	return &Image{id: mem, Format: fmt}, nil
 }
