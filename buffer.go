@@ -56,12 +56,6 @@ type Rect struct {
 	Region [3]int64
 }
 
-type MappedBuffer struct {
-	pointer unsafe.Pointer
-	size    int64
-	buffer  *Buffer
-}
-
 type MemFlags int
 
 // Bitfield.
@@ -229,20 +223,7 @@ func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, of
 		return nil, err
 	}
 
-	return &MappedBuffer{pointer, size, b}, nil
-}
-
-func (cq *CommandQueue) UnmapBuffer(mb *MappedBuffer, waitList []*Event, e *Event) error {
-
-	var event *clw.Event
-	if e != nil {
-		event = &e.id
-		e.Context = cq.Context
-		e.CommandType = CommandUnmapMemoryObject
-		e.CommandQueue = cq
-	}
-
-	return clw.EnqueueUnmapMemObject(cq.id, mb.buffer.id, mb.pointer, cq.toEvents(waitList), event)
+	return &MappedBuffer{pointer, size, b.id}, nil
 }
 
 // TODO see write notes on garbage collection.
@@ -434,15 +415,4 @@ func (r *Rect) dstSlicePitch() clw.Size {
 
 func (r *Rect) region() [3]clw.Size {
 	return [3]clw.Size{clw.Size(r.Region[0]), clw.Size(r.Region[1]), clw.Size(r.Region[2])}
-}
-
-func (bm *MappedBuffer) Float32Slice() []float32 {
-
-	var header reflect.SliceHeader
-	header.Data = uintptr(bm.pointer)
-	size := int(bm.size / int64(float32Size))
-	header.Len = size
-	header.Cap = size
-
-	return *(*[]float32)(unsafe.Pointer(&header))
 }
