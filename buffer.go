@@ -36,16 +36,16 @@ type Buffer struct {
 // A source and destination rectangular region.
 type Rect struct {
 
-	// The source offset. For a 2D rectangle SrcOrigin[2] should be 0. The
-	// offset in bytes is SrcOrigin[2] * SrcSlicePitch + SrcOrigin[1] *
+	// The source offset in bytes. For a 2D rectangle SrcOrigin[2] should be 0.
+	// The offset in bytes is SrcOrigin[2] * SrcSlicePitch + SrcOrigin[1] *
 	// SrcRowPitch + SrcOrigin[0].
 	SrcOrigin     [3]int64
 	SrcRowPitch   int64
 	SrcSlicePitch int64
 
-	// The destination offset. For a 2D rectangle DstOrigin[2] should be 0. The
-	// offset in bytes is DstOrigin[2] * DstSlicePitch + DstOrigin[1] *
-	// DstRowPitch + DstOrigin[0].
+	// The destination offset in bytes. For a 2D rectangle DstOrigin[2] should
+	// be 0. The offset in bytes is DstOrigin[2] * DstSlicePitch + DstOrigin[1]
+	// * DstRowPitch + DstOrigin[0].
 	DstOrigin     [3]int64
 	DstRowPitch   int64
 	DstSlicePitch int64
@@ -245,8 +245,13 @@ func (cq *CommandQueue) UnmapBuffer(mb *MappedBuffer, waitList []*Event, e *Even
 	return clw.EnqueueUnmapMemObject(cq.id, mb.buffer.id, mb.pointer, cq.toEvents(waitList), event)
 }
 
+// TODO see write notes on garbage collection.
 func (cq *CommandQueue) ReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst interface{}, waitList []*Event,
 	e *Event) error {
+
+	if e == nil && bc == NonBlocking {
+		e = &Event{}
+	}
 
 	var event *clw.Event
 	if e != nil {
@@ -261,19 +266,95 @@ func (cq *CommandQueue) ReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst
 		return wrapError(err)
 	}
 
-	return clw.EnqueueReadBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer,
+	err = clw.EnqueueReadBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer,
 		cq.toEvents(waitList), event)
+	if err != nil {
+		return err
+	}
+
+	if bc == NonBlocking {
+		err = e.SetCallback(noOpEventCallback, dst)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
-func (cq *CommandQueue) WriteBuffer() {
+// It is the user's responsibility to ensure the source is valid at the time the
+// write is actually performed. If the source is addressable a reference will be
+// held to prevent it being garbage collected (but not overwritten), if it isn't
+// addressable a copy will be created that is elegiable for garbage collection
+// once the write has completed (via an event callback).
+func (cq *CommandQueue) WriteBuffer(b *Buffer, bc BlockingCall, offset int64, src interface{}, waitList []*Event,
+	e *Event) error {
 
+	// Ensure we always have an event if not blocking, need this to set a
+	// callback with the source as user data to prevent garbage collection. This
+	// way the source data is guaranteed to be referenced somewhere and will not
+	// be garbage collected. Once the event has completed the callback is
+	// triggered, doing nothing, but removing the reference to the source data
+	// allowing it to be garbage collected.
+	if e == nil && bc == NonBlocking {
+		e = &Event{}
+	}
+
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandWriteBuffer
+		e.CommandQueue = cq
+	}
+
+	pointer, size, err := tryPointerAndSize(src)
+
+	// The source value is not addressable so create a local copy of it.
+	if err != nil {
+		var scratch [scratchSize]byte
+		pointer, size = getPointerAndSize(src, unsafe.Pointer(&scratch[0]))
+		src = &scratch
+	}
+
+	err = clw.EnqueueWriteBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer,
+		cq.toEvents(waitList), event)
+	if err != nil {
+		return err
+	}
+
+	// Set a no-op callback, just need hold a reference to the source data.
+	if bc == NonBlocking {
+		err = e.SetCallback(noOpEventCallback, src)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (cq *CommandQueue) ReadBufferRect() {
 
+	// var event *clw.Event
+	// if e != nil {
+	// 	event = &e.id
+	// 	e.Context = cq.Context
+	// 	e.CommandType = CommandReadBuffer
+	// 	e.CommandQueue = cq
+	// }
+
 }
 
 func (cq *CommandQueue) WriteBufferRect() {
+
+	// var event *clw.Event
+	// if e != nil {
+	// 	event = &e.id
+	// 	e.Context = cq.Context
+	// 	e.CommandType = CommandWriteBuffer
+	// 	e.CommandQueue = cq
+	// }
 
 }
 
