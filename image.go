@@ -8,17 +8,35 @@ type Image struct {
 	id clw.Mem
 
 	Format ImageFormat
+
+	Width int
+
+	Height int
+
+	Depth int
+
+	RowPitch int
+
+	SlicePitch int
+
+	Flags MemFlags
 }
 
 type (
-	ChannelOrder clw.ChannelOrder
-	ChannelType  clw.ChannelType
+	MemObjectType clw.MemObjectType
+	ChannelOrder  clw.ChannelOrder
+	ChannelType   clw.ChannelType
 )
 
 type ImageFormat struct {
 	ChannelOrder ChannelOrder
 	ChannelType  ChannelType
 }
+
+const (
+	MemObjectImage2D = MemObjectType(clw.MemObjectImage2D)
+	MemObjectImage3D = MemObjectType(clw.MemObjectImage3D)
+)
 
 const (
 	R         = ChannelOrder(clw.R)
@@ -54,7 +72,30 @@ const (
 	Float          = ChannelType(clw.Float)
 )
 
-// Get supported image formats.
+func (c *Context) GetSupportedImageFormats(mf MemFlags, t MemObjectType) ([]ImageFormat, error) {
+
+	var count clw.Uint
+	err := clw.GetSupportedImageFormats(c.id, clw.MemFlags(mf), clw.MemObjectType(t), 0, nil, &count)
+	if err != nil {
+		return nil, err
+	}
+
+	formats := make([]clw.ImageFormat, int(count))
+
+	err = clw.GetSupportedImageFormats(c.id, clw.MemFlags(mf), clw.MemObjectType(t), count, &formats[0], nil)
+	if err != nil {
+		return nil, err
+	}
+
+	results := make([]ImageFormat, int(count))
+
+	for i := range formats {
+		results[i].ChannelOrder = ChannelOrder(formats[i].ChannelOrder())
+		results[i].ChannelType = ChannelType(formats[i].ChannelType())
+	}
+
+	return results, nil
+}
 
 func (c *Context) CreateImage2D(flags MemFlags, fmt ImageFormat, width, height, pitch int,
 	src interface{}) (*Image, error) {
