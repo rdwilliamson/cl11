@@ -59,8 +59,10 @@ const (
 func (c *Context) CreateImage2D(flags MemFlags, fmt ImageFormat, width, height, pitch int,
 	src interface{}) (*Image, error) {
 
-	mem, err := clw.CreateImage2D(c.id, clw.MemFlags(flags), clw.ImageFormat{clw.ChannelOrder(fmt.ChannelOrder),
-		clw.ChannelType(fmt.ChannelType)}, clw.Size(width), clw.Size(height), clw.Size(pitch), nil)
+	fmt2 := clw.CreateImageFormat(clw.ChannelOrder(fmt.ChannelOrder), clw.ChannelType(fmt.ChannelType))
+
+	mem, err := clw.CreateImage2D(c.id, clw.MemFlags(flags), fmt2, clw.Size(width), clw.Size(height), clw.Size(pitch),
+		nil)
 	if err != nil {
 		return nil, err
 	}
