@@ -8,9 +8,9 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
-// A buffer object stores a one-dimensional collection of elements. Elements of
-// a buffer object can be a scalar data type (such as an int, float), vector
-// data type, or a user-defined structure.
+// A buffer object stores a one-dimensional collection of elements (though there
+// are "rectangle" operations). Elements of a buffer object can be a scalar data
+// type (such as an int, float), vector data type, or a user-defined structure.
 type Buffer struct {
 	id clw.Mem
 

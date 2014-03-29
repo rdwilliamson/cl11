@@ -4,24 +4,40 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
+// A 2D or 3D image (Depth and SlicePitch are 0 for 2D images).
 type Image struct {
 	id clw.Mem
 
+	// The context the buffer was created on.
 	Context *Context
 
+	// The image format, the channel order and data type.
 	Format ImageFormat
 
+	// The width in pixels.
 	Width int
 
+	// The height in pixels.
 	Height int
 
+	// The depth in pixels. Zero for a 2D image.
 	Depth int
 
+	// Scan line width in bytes. Only valid if Host is not nil. If Host is not
+	// nil then valid values are 0 for Width * size of element in bytes or
+	// greater than or equal to Width * size of element in bytes.
 	RowPitch int
 
+	// The size in bytes of each 2D image in bytes. Only valid if Host is not
+	// nil; valid values are 0 for RowPitch * Height or greater than or equal to
+	// RowPitch * Height.
 	SlicePitch int
 
+	// Usage information for the buffer from the device's point of view.
 	Flags MemFlags
+
+	// The host backed memory for the buffer, if applicable.
+	Host interface{}
 }
 
 type (
