@@ -7,6 +7,8 @@ import (
 type Image struct {
 	id clw.Mem
 
+	Context *Context
+
 	Format ImageFormat
 
 	Width int
@@ -97,16 +99,16 @@ func (c *Context) GetSupportedImageFormats(mf MemFlags, t MemObjectType) ([]Imag
 	return results, nil
 }
 
-func (c *Context) CreateImage2D(flags MemFlags, fmt ImageFormat, width, height, pitch int,
+func (c *Context) CreateImage2D(mf MemFlags, fmt ImageFormat, width, height, rowPitch int,
 	src interface{}) (*Image, error) {
 
 	fmt2 := clw.CreateImageFormat(clw.ChannelOrder(fmt.ChannelOrder), clw.ChannelType(fmt.ChannelType))
 
-	mem, err := clw.CreateImage2D(c.id, clw.MemFlags(flags), fmt2, clw.Size(width), clw.Size(height), clw.Size(pitch),
+	mem, err := clw.CreateImage2D(c.id, clw.MemFlags(mf), fmt2, clw.Size(width), clw.Size(height), clw.Size(rowPitch),
 		nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Image{id: mem, Format: fmt}, nil
+	return &Image{id: mem, Context: c, Format: fmt, Width: width, Height: height, RowPitch: rowPitch, Flags: mf}, nil
 }
