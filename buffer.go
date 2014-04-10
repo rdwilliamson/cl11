@@ -85,8 +85,7 @@ const (
 
 // Creates a buffer object on the device.
 //
-// Creates an uninitialized buffer of the passed size in bytes and with the
-// passed read and / or write flags.
+// Creates an uninitialized buffer on the device. The size is in bytes.
 func (c *Context) CreateDeviceBuffer(size int64, mf MemFlags) (*Buffer, error) {
 
 	memory, err := clw.CreateBuffer(c.id, clw.MemFlags(mf), clw.Size(size), nil)
@@ -99,8 +98,8 @@ func (c *Context) CreateDeviceBuffer(size int64, mf MemFlags) (*Buffer, error) {
 
 // Create a buffer object on the device.
 //
-// Create a buffer object with the contents of the passed value and with the
-// passed read and / or write flags.
+// Create a buffer object initialized with the passed value. The size of
+// contents are determined by the passed value.
 func (c *Context) CreateDeviceBufferInitializedBy(mf MemFlags, value interface{}) (*Buffer, error) {
 
 	flags := clw.MemFlags(mf) | clw.MemCopyHostPointer
@@ -118,8 +117,8 @@ func (c *Context) CreateDeviceBufferInitializedBy(mf MemFlags, value interface{}
 
 // Create a buffer object for the device backed by host memory.
 //
-// Create a device accessable buffer object on the host with the passed read and
-// / or write memory flags.
+// Create a device accessible buffer object on the host. The host value must be
+// addressable.
 func (c *Context) CreateDeviceBufferFromHostMem(mf MemFlags, host interface{}) (*Buffer, error) {
 
 	flags := clw.MemFlags(mf) | clw.MemUseHostPointer
@@ -147,8 +146,8 @@ func (c *Context) CreateDeviceBufferFromHostMem(mf MemFlags, host interface{}) (
 
 // Creates a buffer object on the host that is device accessible.
 //
-// Creats an uninitialized buffer in pinned memory. This memory is not pageable
-// and allows for DMA copies (which are faster).
+// Creates an uninitialized buffer in pinned memory. The size is in bytes. This
+// memory is not pageable and allows for DMA copies (which are faster).
 func (c *Context) CreateHostBuffer(size int64, mf MemFlags) (*Buffer, error) {
 
 	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer
@@ -163,8 +162,9 @@ func (c *Context) CreateHostBuffer(size int64, mf MemFlags) (*Buffer, error) {
 
 // Creates a buffer object on the host that is device accessible.
 //
-// Creates a buffer object with the contents of the passed value and with the
-// passed read and / or write flags.
+// Creates an initialized buffer in pinned memory. The size and contents are
+// determined by value. This memory is not pageable and allows for DMA copies
+// (which are faster).
 func (c *Context) CreateHostBufferInitializedBy(mf MemFlags, value interface{}) (*Buffer, error) {
 
 	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer | clw.MemCopyHostPointer
@@ -180,9 +180,11 @@ func (c *Context) CreateHostBufferInitializedBy(mf MemFlags, value interface{}) 
 	return &Buffer{id: memory, Context: c, Size: int64(size), Flags: mf}, nil
 }
 
-// Creates a buffer object from an existing object.
+// Creates a buffer object from an existing object with the passed offset and
+// size in bytes.
 //
-// Creates a buffer object with the passed offset and size in bytes.
+// If the size and offset are the same as another sub buffer the implementation
+// may return the same sub buffer and increment the reference count.
 func (b *Buffer) CreateSubBuffer(mf MemFlags, origin, size int64) (*Buffer, error) {
 
 	region := clw.BufferRegion{clw.Size(origin), clw.Size(size)}
@@ -298,18 +300,16 @@ func (cq *CommandQueue) ReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst
 
 // It is the user's responsibility to ensure the source is valid at the time the
 // write is actually performed. If the source is addressable a reference will be
-// held to prevent it being garbage collected (but not overwritten), if it isn't
-// addressable a copy will be created that will be elegiable for garbage
-// collection once the write has completed (via an event callback).
+// held to prevent it being garbage collected, if it isn't a copy will be
+// created.
 func (cq *CommandQueue) WriteBuffer(b *Buffer, bc BlockingCall, offset int64, src interface{}, waitList []*Event,
 	e *Event) error {
 
-	// Ensure we always have an event if not blocking, need this to set a
-	// callback with the source as user data to prevent garbage collection. This
-	// way the source data is guaranteed to be referenced somewhere and will not
-	// be garbage collected. Once the event has completed the callback is
-	// triggered, doing nothing, but removing the reference to the source data
-	// allowing it to be garbage collected.
+	// Ensure we always have an event if not blocking. The event will be used to
+	// register a callback. Thus the source data is guaranteed to be referenced
+	// somewhere, preventing it from being garbage collected. Once the event has
+	// completed and the callback is triggered (doing nothing) the reference to
+	// the source data will be removed allowing it to be garbage collected.
 	if e == nil && bc == NonBlocking {
 		e = &Event{}
 	}
@@ -324,8 +324,8 @@ func (cq *CommandQueue) WriteBuffer(b *Buffer, bc BlockingCall, offset int64, sr
 
 	pointer, size, err := tryPointerAndSize(src)
 
-	// The source value is not addressable so create a local copy of it.
 	if err != nil {
+		// The source value is not addressable so create a local copy of it.
 		var scratch [scratchSize]byte
 		pointer, size = getPointerAndSize(src, unsafe.Pointer(&scratch[0]))
 		src = &scratch
