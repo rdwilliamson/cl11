@@ -83,6 +83,10 @@ const (
 	NonBlocking = BlockingCall(clw.False)
 )
 
+// Creates a buffer object on the device.
+//
+// Creates an uninitialized buffer of the passed size in bytes and with the
+// passed read and / or write flags.
 func (c *Context) CreateDeviceBuffer(size int64, mf MemFlags) (*Buffer, error) {
 
 	memory, err := clw.CreateBuffer(c.id, clw.MemFlags(mf), clw.Size(size), nil)
@@ -93,6 +97,10 @@ func (c *Context) CreateDeviceBuffer(size int64, mf MemFlags) (*Buffer, error) {
 	return &Buffer{id: memory, Context: c, Size: size, Flags: mf}, nil
 }
 
+// Create a buffer object on the device.
+//
+// Create a buffer object with the contents of the passed value and with the
+// passed read and / or write flags.
 func (c *Context) CreateDeviceBufferInitializedBy(mf MemFlags, value interface{}) (*Buffer, error) {
 
 	flags := clw.MemFlags(mf) | clw.MemCopyHostPointer
@@ -108,6 +116,10 @@ func (c *Context) CreateDeviceBufferInitializedBy(mf MemFlags, value interface{}
 	return &Buffer{id: memory, Context: c, Size: int64(size), Flags: mf}, nil
 }
 
+// Create a buffer object for the device backed by host memory.
+//
+// Create a device accessable buffer object on the host with the passed read and
+// / or write memory flags.
 func (c *Context) CreateDeviceBufferFromHostMem(mf MemFlags, host interface{}) (*Buffer, error) {
 
 	flags := clw.MemFlags(mf) | clw.MemUseHostPointer
@@ -133,6 +145,10 @@ func (c *Context) CreateDeviceBufferFromHostMem(mf MemFlags, host interface{}) (
 	return &Buffer{id: memory, Context: c, Size: int64(size), Host: host, Flags: mf}, nil
 }
 
+// Creates a buffer object on the host that is device accessible.
+//
+// Creats an uninitialized buffer in pinned memory. This memory is not pageable
+// and allows for DMA copies (which are faster).
 func (c *Context) CreateHostBuffer(size int64, mf MemFlags) (*Buffer, error) {
 
 	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer
@@ -145,6 +161,10 @@ func (c *Context) CreateHostBuffer(size int64, mf MemFlags) (*Buffer, error) {
 	return &Buffer{id: memory, Context: c, Size: size, Flags: mf}, nil
 }
 
+// Creates a buffer object on the host that is device accessible.
+//
+// Creates a buffer object with the contents of the passed value and with the
+// passed read and / or write flags.
 func (c *Context) CreateHostBufferInitializedBy(mf MemFlags, value interface{}) (*Buffer, error) {
 
 	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer | clw.MemCopyHostPointer
@@ -160,6 +180,9 @@ func (c *Context) CreateHostBufferInitializedBy(mf MemFlags, value interface{}) 
 	return &Buffer{id: memory, Context: c, Size: int64(size), Flags: mf}, nil
 }
 
+// Creates a buffer object from an existing object.
+//
+// Creates a buffer object with the passed offset and size in bytes.
 func (b *Buffer) CreateSubBuffer(mf MemFlags, origin, size int64) (*Buffer, error) {
 
 	region := clw.BufferRegion{clw.Size(origin), clw.Size(size)}
@@ -172,10 +195,17 @@ func (b *Buffer) CreateSubBuffer(mf MemFlags, origin, size int64) (*Buffer, erro
 	return &Buffer{id: memory, Context: b.Context, Size: size, Flags: mf, Buffer: b, Origin: origin}, nil
 }
 
+// Increments the memory object reference count.
+//
+// The OpenCL commands that return a buffer perform an implicit retain.
 func (b *Buffer) Retain() error {
 	return clw.RetainMemObject(b.id)
 }
 
+// Decrements the memory object reference count.
+//
+// After the buffers reference count becomes zero and commands queued for
+// execution that use the buffer have finished the buffer is deleted.
 func (b *Buffer) Release() error {
 	return clw.ReleaseMemObject(b.id)
 }
