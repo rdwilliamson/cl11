@@ -7,7 +7,7 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
-// A mapped buffer or image.
+// A mapped buffer or image. Has convenience functions for common data types.
 type MappedBuffer struct {
 	pointer unsafe.Pointer
 	size    int64
@@ -27,6 +27,7 @@ func (cq *CommandQueue) UnmapBuffer(mb *MappedBuffer, waitList []*Event, e *Even
 	return clw.EnqueueUnmapMemObject(cq.id, mb.memID, mb.pointer, cq.toEvents(waitList), event)
 }
 
+// Returns a slice of float32s backed by the mapped buffer.
 func (bm *MappedBuffer) Float32Slice() []float32 {
 	var header reflect.SliceHeader
 	header.Data = uintptr(bm.pointer)
