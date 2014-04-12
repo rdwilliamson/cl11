@@ -98,7 +98,7 @@ func (c *Context) CreateDeviceBuffer(size int64, mf MemFlags) (*Buffer, error) {
 
 // Create a buffer object on the device.
 //
-// Create a buffer object initialized with the passed value. The size of
+// Create a buffer object initialized with the passed value. The size and
 // contents are determined by the passed value.
 func (c *Context) CreateDeviceBufferInitializedBy(mf MemFlags, value interface{}) (*Buffer, error) {
 
@@ -118,7 +118,8 @@ func (c *Context) CreateDeviceBufferInitializedBy(mf MemFlags, value interface{}
 // Create a buffer object for the device backed by host memory.
 //
 // Create a device accessible buffer object on the host. The host value must be
-// addressable.
+// addressable. The OpenCL implementation is allowed to cache the data on the
+// device.
 func (c *Context) CreateDeviceBufferFromHostMem(mf MemFlags, host interface{}) (*Buffer, error) {
 
 	flags := clw.MemFlags(mf) | clw.MemUseHostPointer
@@ -144,7 +145,7 @@ func (c *Context) CreateDeviceBufferFromHostMem(mf MemFlags, host interface{}) (
 	return &Buffer{id: memory, Context: c, Size: int64(size), Host: host, Flags: mf}, nil
 }
 
-// Creates a buffer object on the host that is device accessible.
+// Creates a buffer object that is host accessible.
 //
 // Creates an uninitialized buffer in pinned memory. The size is in bytes. This
 // memory is not pageable and allows for DMA copies (which are faster).
@@ -160,7 +161,7 @@ func (c *Context) CreateHostBuffer(size int64, mf MemFlags) (*Buffer, error) {
 	return &Buffer{id: memory, Context: c, Size: size, Flags: mf}, nil
 }
 
-// Creates a buffer object on the host that is device accessible.
+// Creates a buffer object that is host accessible.
 //
 // Creates an initialized buffer in pinned memory. The size and contents are
 // determined by value. This memory is not pageable and allows for DMA copies
@@ -212,6 +213,9 @@ func (b *Buffer) Release() error {
 	return clw.ReleaseMemObject(b.id)
 }
 
+// Enqueues a command to copy from one buffer object to another.
+//
+// Source offset, destination offset, and size are in bytes.
 func (cq *CommandQueue) CopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size int64, waitList []*Event,
 	e *Event) error {
 
@@ -227,6 +231,10 @@ func (cq *CommandQueue) CopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size 
 		cq.toEvents(waitList), event)
 }
 
+// Enqueues a command to copy a rectangular region from the buffer object to
+// another buffer object.
+//
+// See Rect definition for how source and destination are defined.
 func (cq *CommandQueue) CopyBufferRect(src, dst *Buffer, r *Rect, waitList []*Event, e *Event) error {
 
 	var event *clw.Event
@@ -241,6 +249,8 @@ func (cq *CommandQueue) CopyBufferRect(src, dst *Buffer, r *Rect, waitList []*Ev
 		r.srcSlicePitch(), r.dstRowPitch(), r.dstSlicePitch(), cq.toEvents(waitList), event)
 }
 
+// Enqueues a command to map a region of the buffer object given by buffer into
+// the host address space.
 func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, offset, size int64, waitList []*Event,
 	e *Event) (*MappedBuffer, error) {
 

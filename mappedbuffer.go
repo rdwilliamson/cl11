@@ -14,6 +14,7 @@ type MappedBuffer struct {
 	memID   clw.Mem
 }
 
+// Enqueues a command to unmap a previously mapped region of a memory object.
 func (cq *CommandQueue) UnmapBuffer(mb *MappedBuffer, waitList []*Event, e *Event) error {
 
 	var event *clw.Event
