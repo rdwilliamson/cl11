@@ -271,13 +271,14 @@ func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, of
 	return &MappedBuffer{pointer, size, b.id}, nil
 }
 
-// TODO see write notes on garbage collection.
+// Enqueue commands to read from a buffer object to host memory.
+//
+// Offset is in bytes. The destination must be addressable. If the buffer object
+// is backed by host memory then all commands that use it and sub buffers must
+// have finished execution and it must not be mapped otherwise the results are
+// undefined.
 func (cq *CommandQueue) ReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst interface{}, waitList []*Event,
 	e *Event) error {
-
-	if e == nil && bc == NonBlocking {
-		e = &Event{}
-	}
 
 	var event *clw.Event
 	if e != nil {
@@ -298,28 +299,26 @@ func (cq *CommandQueue) ReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst
 		return err
 	}
 
-	if bc == NonBlocking {
-		err = e.SetCallback(noOpEventCallback, dst)
-		if err != nil {
-			return err
-		}
-	}
-
 	return nil
 }
 
-// It is the user's responsibility to ensure the source is valid at the time the
-// write is actually performed. If the source is addressable a reference will be
-// held to prevent it being garbage collected, if it isn't a copy will be
-// created.
+// Enqueue commands to write to a buffer object from host memory.
+//
+// Offset is in bytes. If the buffer object is backed by host memory then all
+// commands that use it and sub buffers must have finished execution and it must
+// not be mapped otherwise the results are undefined. If the source is
+// addressable a reference will be held to prevent it being garbage collected,
+// it is the user's responsibility to ensure that the source data is valid at
+// the time the write is actually performed. If the source isn't addressable a
+// copy will be created.
 func (cq *CommandQueue) WriteBuffer(b *Buffer, bc BlockingCall, offset int64, src interface{}, waitList []*Event,
 	e *Event) error {
 
 	// Ensure we always have an event if not blocking. The event will be used to
 	// register a callback. Thus the source data is guaranteed to be referenced
-	// somewhere, preventing it from being garbage collected. Once the event has
-	// completed and the callback is triggered (doing nothing) the reference to
-	// the source data will be removed allowing it to be garbage collected.
+	// somewhere to preventing it from being garbage collected. Once the event
+	// has completed and the callback is triggered (doing nothing) the reference
+	// to the source data will be removed allowing it to be garbage collected.
 	if e == nil && bc == NonBlocking {
 		e = &Event{}
 	}
@@ -358,12 +357,15 @@ func (cq *CommandQueue) WriteBuffer(b *Buffer, bc BlockingCall, offset int64, sr
 	return nil
 }
 
-func (cq *CommandQueue) ReadBufferRect(b *Buffer, bc BlockingCall, r *Rect, dst interface{}, waitList []*Event,
+// Enqueue commands to read from a rectangular region from a buffer object to
+// host memory.
+//
+// See Rect definition for offset is defined. The destination must be
+// addressable. If the buffer object is backed by host memory then all commands
+// that use it and sub buffers must have finished execution and it must not be
+// mapped otherwise the results are undefined.
+func (cq *CommandQueue) ReadBufferRect(b *Buffer, bc BlockingCall, offset *Rect, dst interface{}, waitList []*Event,
 	e *Event) error {
-
-	if e == nil && bc == NonBlocking {
-		e = &Event{}
-	}
 
 	var event *clw.Event
 	if e != nil {
@@ -378,25 +380,34 @@ func (cq *CommandQueue) ReadBufferRect(b *Buffer, bc BlockingCall, r *Rect, dst 
 		return wrapError(err)
 	}
 
-	err = clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), r.dstOrigin(), r.srcOrigin(), r.region(),
-		r.dstRowPitch(), r.dstSlicePitch(), r.srcRowPitch(), r.dstRowPitch(), pointer, cq.toEvents(waitList), event)
+	err = clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), offset.dstOrigin(), offset.srcOrigin(), offset.region(),
+		offset.dstRowPitch(), offset.dstSlicePitch(), offset.srcRowPitch(), offset.dstRowPitch(), pointer,
+		cq.toEvents(waitList), event)
 	if err != nil {
 		return err
-	}
-
-	if bc == NonBlocking {
-		err = e.SetCallback(noOpEventCallback, dst)
-		if err != nil {
-			return err
-		}
 	}
 
 	return nil
 }
 
-func (cq *CommandQueue) WriteBufferRect(b *Buffer, bc BlockingCall, r *Rect, src interface{}, waitList []*Event,
+// Enqueue commands to write a rectangular region to a buffer object from host
+// memory.
+//
+// See Rect definition for offset is defined. If the buffer object is backed by
+// host memory then all commands that use it and sub buffers must have finished
+// execution and it must not be mapped otherwise the results are undefined. If
+// the source is addressable a reference will be held to prevent it being
+// garbage collected, it is the user's responsibility to ensure that the source
+// data is valid at the time the write is actually performed. If the source
+// isn't addressable a copy will be created.
+func (cq *CommandQueue) WriteBufferRect(b *Buffer, bc BlockingCall, offset *Rect, src interface{}, waitList []*Event,
 	e *Event) error {
 
+	// Ensure we always have an event if not blocking. The event will be used to
+	// register a callback. Thus the source data is guaranteed to be referenced
+	// somewhere to preventing it from being garbage collected. Once the event
+	// has completed and the callback is triggered (doing nothing) the reference
+	// to the source data will be removed allowing it to be garbage collected.
 	if e == nil && bc == NonBlocking {
 		e = &Event{}
 	}
@@ -410,18 +421,22 @@ func (cq *CommandQueue) WriteBufferRect(b *Buffer, bc BlockingCall, r *Rect, src
 	}
 
 	pointer, _, err := tryPointerAndSize(src)
+
 	if err != nil {
+		// The source value is not addressable so create a local copy of it.
 		var scratch [scratchSize]byte
 		pointer, _ = getPointerAndSize(src, unsafe.Pointer(&scratch[0]))
 		src = &scratch
 	}
 
-	err = clw.EnqueueWriteBufferRect(cq.id, b.id, clw.Bool(bc), r.dstOrigin(), r.srcOrigin(), r.region(),
-		r.dstRowPitch(), r.dstSlicePitch(), r.srcRowPitch(), r.srcSlicePitch(), pointer, cq.toEvents(waitList), event)
+	err = clw.EnqueueWriteBufferRect(cq.id, b.id, clw.Bool(bc), offset.dstOrigin(), offset.srcOrigin(), offset.region(),
+		offset.dstRowPitch(), offset.dstSlicePitch(), offset.srcRowPitch(), offset.srcSlicePitch(), pointer,
+		cq.toEvents(waitList), event)
 	if err != nil {
 		return err
 	}
 
+	// Set a no-op callback, just need hold a reference to the source data.
 	if bc == NonBlocking {
 		err = e.SetCallback(noOpEventCallback, src)
 		if err != nil {
