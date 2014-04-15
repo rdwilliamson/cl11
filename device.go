@@ -341,36 +341,34 @@ func (ec ExecCapabilities) String() string {
 	return "{" + strings.Join(execStrings, ", ") + "}"
 }
 
-func (p *Platform) getDevices() ([]*Device, error) {
-
-	if p.Devices != nil {
-		return p.Devices, nil
-	}
+func (p *Platform) getDevices() error {
 
 	var numEntries clw.Uint
 	err := clw.GetDeviceIDs(p.id, clw.DeviceTypeAll, 0, nil, &numEntries)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	deviceIDs := make([]clw.DeviceID, numEntries)
 	err = clw.GetDeviceIDs(p.id, clw.DeviceTypeAll, numEntries, &deviceIDs[0], nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	p.Devices = make([]*Device, len(deviceIDs))
 	for i := range p.Devices {
 
-		p.Devices[i] = &Device{id: deviceIDs[i]}
+		device := &Device{id: deviceIDs[i]}
 
-		err = p.Devices[i].getAllInfo()
+		err = device.getAllInfo()
 		if err != nil {
-			return nil, err
+			return err
 		}
+
+		p.Devices[i] = device
 	}
 
-	return p.Devices, nil
+	return nil
 }
 
 func (d *Device) getAllInfo() (err error) {

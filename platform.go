@@ -56,17 +56,19 @@ func GetPlatforms() ([]*Platform, error) {
 	platforms := make([]*Platform, len(platformIDs))
 	for i := range platforms {
 
-		platforms[i] = &Platform{id: platformIDs[i]}
+		platform := &Platform{id: platformIDs[i]}
 
-		err = platforms[i].getAllInfo()
+		err = platform.getAllInfo()
 		if err != nil {
 			return nil, err
 		}
 
-		platforms[i].Devices, err = platforms[i].getDevices()
+		err = platform.getDevices()
 		if err != nil {
 			return nil, err
 		}
+
+		platforms[i] = platform
 	}
 
 	return platforms, nil
