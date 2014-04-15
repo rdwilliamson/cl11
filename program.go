@@ -6,9 +6,14 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
+// A program object created from either source or a binary.
 type Program struct {
-	id      clw.Program
+	id clw.Program
+
+	// The context the program is associated with.
 	Context *Context
+
+	// The devices associated with the program.
 	Devices []*Device
 }
 
@@ -26,6 +31,10 @@ type ProgramBinary struct {
 	Binary []byte
 }
 
+// Create a program object for a context with the specified source.
+//
+// The devices associated with the program are initially all the context
+// devices.
 func (c *Context) CreateProgramWithSource(sources ...[]byte) (*Program, error) {
 
 	program, err := clw.CreateProgramWithSource(c.id, sources)
