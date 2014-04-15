@@ -213,6 +213,23 @@ func (b *Buffer) Release() error {
 	return clw.ReleaseMemObject(b.id)
 }
 
+// Return the buffer's reference count.
+//
+// The reference count returned should be considered immediately stale. It is
+// unsuitable for general use in applications. This feature is provided for
+// identifying memory leaks.
+func (b *Buffer) ReferenceCount() (int, error) {
+
+	var count clw.Uint
+	err := clw.GetMemObjectInfo(b.id, clw.MemReferenceCount, clw.Size(unsafe.Sizeof(count)), unsafe.Pointer(&count),
+		nil)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
+}
+
 // Enqueues a command to copy from one buffer object to another.
 //
 // Source offset, destination offset, and size are in bytes.
