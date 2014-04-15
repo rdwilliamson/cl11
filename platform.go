@@ -38,7 +38,7 @@ const (
 	EmbeddedProfile Profile = iota
 )
 
-// Obtain the list of platforms available.
+// Obtain the list of platforms and their information.
 func GetPlatforms() ([]*Platform, error) {
 
 	var numPlatforms clw.Uint
@@ -115,13 +115,15 @@ func (p *Platform) getString(paramName clw.PlatformInfo) string {
 	return strings.TrimSpace(string(buffer[:len(buffer)-1]))
 }
 
-// Checks if the platform supports the extension.
+// Check if the platform supports the extension.
 func (p *Platform) HasExtension(extension string) bool {
-	for i := range p.Extensions {
-		if p.Extensions[i] == extension {
+
+	for _, v := range p.Extensions {
+		if v == extension {
 			return true
 		}
 	}
+
 	return false
 }
 

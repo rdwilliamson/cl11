@@ -89,6 +89,7 @@ type Device struct {
 	// number of scalar elements that can be stored in the vector.
 	NativeVectorWidths VectorWidths
 
+	// Extensions supported by the device.
 	Extensions []string
 
 	// Device name string.
@@ -608,4 +609,16 @@ func (d *Device) getLocalMemTypeInfo(paramName clw.DeviceInfo) LocalMemTypeInfo 
 		panic(err)
 	}
 	return LocalMemTypeInfo(paramValue)
+}
+
+// Check if the device supports the extension.
+func (d *Device) HasExtension(extension string) bool {
+
+	for _, v := range d.Extensions {
+		if v == extension {
+			return true
+		}
+	}
+
+	return false
 }

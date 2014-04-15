@@ -30,7 +30,7 @@ func (p *Program) Build(d []*Device, options string) error {
 		devices[i] = d[i].id
 	}
 
-	err := clw.BuildProgram(p.id, devices, options, nil)
+	err := clw.BuildProgram(p.id, devices, options, nil, nil)
 
 	if err == nil {
 		p.Devices = d
