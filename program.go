@@ -12,6 +12,20 @@ type Program struct {
 	Devices []*Device
 }
 
+// A program binary for a device.
+type ProgramBinary struct {
+
+	// The program from which the binary was compiled.
+	Program *Program
+
+	// The device for which the binary was compiled.
+	Device *Device
+
+	// The binary. Can be an implementation specific intermediate
+	// representation, device specific bits, or both.
+	Binary []byte
+}
+
 func (c *Context) CreateProgramWithSource(sources ...[]byte) (*Program, error) {
 
 	program, err := clw.CreateProgramWithSource(c.id, sources)
@@ -39,33 +53,26 @@ func (p *Program) Build(d []*Device, options string) error {
 	return err
 }
 
-func (p *Program) GetProgramBinaries() error {
+// Returns the binaries for each device associated with the program.
+//
+// The binaries can be the source of CreateProgramWithBinary or the result of
+// Build from either source or binaries. The returned bits can be an
+// implementation specific intermediate representation, device specific bits, or
+// both.
+func (p *Program) GetProgramBinaries() ([]ProgramBinary, error) {
 
 	devices := make([]clw.DeviceID, len(p.Devices))
 	err := clw.GetProgramInfo(p.id, clw.ProgramDevices, clw.Size(unsafe.Sizeof(devices[0])*uintptr(len(devices))),
 		unsafe.Pointer(&devices[0]), nil)
 	if err != nil {
-		return err
-	}
-
-	// Reorder p.Devices to match the order returned by GetProgramInfo.
-	for i := 0; i < len(devices)-1; i++ {
-		j := 0
-		for ; j < len(p.Devices); j++ {
-			if p.Devices[j].id == devices[i] {
-				break
-			}
-		}
-		if i != j {
-			p.Devices[i], p.Devices[j] = p.Devices[j], p.Devices[i]
-		}
+		return nil, err
 	}
 
 	sizes := make([]clw.Size, len(p.Devices))
 	err = clw.GetProgramInfo(p.id, clw.ProgramBinarySizes, clw.Size(unsafe.Sizeof(sizes[0])*uintptr(len(sizes))),
 		unsafe.Pointer(&sizes[0]), nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	binaries := make([][]byte, len(p.Devices))
@@ -79,10 +86,25 @@ func (p *Program) GetProgramBinaries() error {
 		clw.Size(unsafe.Sizeof(binaryPointers[0])*uintptr(len(binaryPointers))), unsafe.Pointer(&binaryPointers[0]),
 		nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// TODO what to actually do with binaries.
+	programBinaries := make([]ProgramBinary, len(p.Devices))
+	for i := range programBinaries {
+		programBinary := &programBinaries[i]
 
-	return nil
+		programBinary.Program = p
+
+		for j := range p.Devices {
+			device := p.Devices[j]
+
+			if device.id == devices[j] {
+				programBinary.Device = device
+				programBinary.Binary = binaries[j]
+				break
+			}
+		}
+	}
+
+	return programBinaries, nil
 }
