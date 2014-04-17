@@ -45,6 +45,39 @@ func (c *Context) CreateProgramWithSource(sources ...[]byte) (*Program, error) {
 	return &Program{id: program, Context: c}, nil
 }
 
+// Temp, figure out how to populate devices from program.
+func (p *Program) GetDevices() ([]*Device, error) {
+
+	var numDevices clw.Uint
+	err := clw.GetProgramInfo(p.id, clw.ProgramNumDevices, clw.Size(unsafe.Sizeof(numDevices)),
+		unsafe.Pointer(&numDevices), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	deviceIDs := make([]clw.DeviceID, numDevices)
+	err = clw.GetProgramInfo(p.id, clw.ProgramDevices, clw.Size(unsafe.Sizeof(deviceIDs[0])*uintptr(numDevices)),
+		unsafe.Pointer(&deviceIDs[0]), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	devices := make([]*Device, len(deviceIDs))
+	for i := range devices {
+
+		device := &Device{id: deviceIDs[i]}
+
+		err = device.getAllInfo()
+		if err != nil {
+			return nil, err
+		}
+
+		devices[i] = device
+	}
+
+	return devices, nil
+}
+
 func (p *Program) Build(d []*Device, options string) error {
 	// TODO callback
 
