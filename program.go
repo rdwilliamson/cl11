@@ -42,40 +42,27 @@ func (c *Context) CreateProgramWithSource(sources ...[]byte) (*Program, error) {
 		return nil, err
 	}
 
-	return &Program{id: program, Context: c}, nil
+	return &Program{id: program, Context: c, Devices: c.Devices}, nil
 }
 
-// Temp, figure out how to populate devices from program.
-func (p *Program) GetDevices() ([]*Device, error) {
+// Creates a program object for a context for the specified devices with the
+// passed binaries.
+//
+// Length of devices, binaries, and status must match (though status can be
+// nil). The status will contain an error, or not, for each device.
+func (c *Context) CreateProgramWithBinary(d []*Device, binaries [][]byte, status []error) (*Program, error) {
 
-	var numDevices clw.Uint
-	err := clw.GetProgramInfo(p.id, clw.ProgramNumDevices, clw.Size(unsafe.Sizeof(numDevices)),
-		unsafe.Pointer(&numDevices), nil)
+	deviceIDs := make([]clw.DeviceID, len(d))
+	for i := range deviceIDs {
+		deviceIDs[i] = d[i].id
+	}
+
+	program, err := clw.CreateProgramWithBinary(c.id, deviceIDs, binaries, status)
 	if err != nil {
 		return nil, err
 	}
 
-	deviceIDs := make([]clw.DeviceID, numDevices)
-	err = clw.GetProgramInfo(p.id, clw.ProgramDevices, clw.Size(unsafe.Sizeof(deviceIDs[0])*uintptr(numDevices)),
-		unsafe.Pointer(&deviceIDs[0]), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	devices := make([]*Device, len(deviceIDs))
-	for i := range devices {
-
-		device := &Device{id: deviceIDs[i]}
-
-		err = device.getAllInfo()
-		if err != nil {
-			return nil, err
-		}
-
-		devices[i] = device
-	}
-
-	return devices, nil
+	return &Program{id: program, Context: c, Devices: d}, nil
 }
 
 func (p *Program) Build(d []*Device, options string) error {
