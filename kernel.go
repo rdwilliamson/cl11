@@ -8,27 +8,62 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
+// A kernel is a function declared in a program.
 type Kernel struct {
-	id            clw.Kernel
-	Arguments     int
-	FunctionName  string
-	Context       *Context
-	Program       *Program
+	id clw.Kernel
+
+	// The number of arguments to kernel.
+	Arguments int
+
+	// The kernel function name.
+	FunctionName string
+
+	// The context associated with the kernel.
+	Context *Context
+
+	// The program associated with the kernel.
+	Program *Program
+
+	// Information about the kernel object that may be specific to a device.
 	WorkGroupInfo []KernelWorkGroupInfo
-	argScratch    [][scratchSize]byte
+
+	// Scratch space to store arugment.
+	argScratch [][scratchSize]byte
 }
 
+// Information about the kernel object specific to a device.
 type KernelWorkGroupInfo struct {
-	Device                         *Device
-	WorkGroupSize                  int
-	CompileWorkGroupSize           [3]int
-	LocalMemSize                   int
+
+	// The device associated with the kernel.
+	Device *Device
+
+	// The maximum workgroup size that can be used by the kernel to execute on
+	// the device.
+	WorkGroupSize int
+
+	// The work group size specified in the function qualifiers or all zeros.
+	CompileWorkGroupSize [3]int
+
+	// The amount of local memory used by the kernel.
+	LocalMemSize int
+
+	// The preferred multiple of workgroup size for launch. This is a
+	// performance hint.
 	PreferredWorkGroupSizeMultiple int
-	PrivateMemSize                 int
+
+	// The minimum amount of private memory, in bytes, used by each workitem in
+	// the kernel.
+	PrivateMemSize int
 }
 
 type LocalSpaceArg int
 
+// Creates a kernal object.
+//
+// A kernel is a function declared in a program. A kernel is identified by the
+// __kernel qualifier applied to any function in a program. A kernel object
+// encapsulates the specific __kernel function declared in a program and the
+// argument values to be used when executing this __kernel function.
 func (p *Program) CreateKernel(name string) (*Kernel, error) {
 
 	kernel, err := clw.CreateKernel(p.id, name)
