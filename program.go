@@ -31,6 +31,8 @@ type ProgramBinary struct {
 	Binary []byte
 }
 
+type ProgramCallback func(p *Program, userData interface{})
+
 // Create a program object for a context with the specified source.
 //
 // The devices associated with the program are initially all the context
@@ -65,21 +67,33 @@ func (c *Context) CreateProgramWithBinary(d []*Device, binaries [][]byte, status
 	return &Program{id: program, Context: c, Devices: d}, nil
 }
 
-func (p *Program) Build(d []*Device, options string) error {
-	// TODO callback
+// Builds (compiles and links) a program executable from the program source or
+// binary.
+//
+// The build options are categorized as pre-processor options, options for math
+// intrinsics, options that control optimization and miscellaneous options. This
+// specification defines a standard set of options that must be supported by an
+// OpenCL compiler when building program executables online or offline. These
+// may be extended by a set of vendor- or platform-specific options.
+//
+// The callback is optional. If it is supplied Build will return immediately, if
+// it isn't then Build will block until the program has been build (successfully
+// or unsuccessfully).
+func (p *Program) Build(d []*Device, options string, pc ProgramCallback, userData interface{}) error {
 
 	devices := make([]clw.DeviceID, len(d))
 	for i := range d {
 		devices[i] = d[i].id
 	}
 
-	err := clw.BuildProgram(p.id, devices, options, nil, nil)
-
-	if err == nil {
-		p.Devices = d
+	var callback clw.ProgramCallbackFunc
+	if pc != nil {
+		callback = func(programID clw.Program, userData interface{}) {
+			pc(p, userData)
+		}
 	}
 
-	return err
+	return clw.BuildProgram(p.id, devices, options, callback, userData)
 }
 
 // Returns the binaries for each device associated with the program.
