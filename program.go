@@ -15,6 +15,9 @@ type Program struct {
 
 	// The devices associated with the program.
 	Devices []*Device
+
+	// The build options specified during Build.
+	Options string
 }
 
 // A program binary for a device.
@@ -92,6 +95,8 @@ func (p *Program) Build(d []*Device, options string, pc ProgramCallback, userDat
 			pc(p, userData)
 		}
 	}
+
+	p.Options = options
 
 	return clw.BuildProgram(p.id, devices, options, callback, userData)
 }
