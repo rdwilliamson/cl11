@@ -1,6 +1,7 @@
 package cl11
 
 import (
+	"strings"
 	"unsafe"
 
 	clw "github.com/rdwilliamson/clw11"
@@ -34,7 +35,30 @@ type ProgramBinary struct {
 	Binary []byte
 }
 
+type BuildStatus clw.BuildStatus
+
+const (
+	BuildSuccess    = BuildStatus(clw.BuildSuccess)
+	BuildNone       = BuildStatus(clw.BuildNone)
+	BuildError      = BuildStatus(clw.BuildError)
+	BuildInProgress = BuildStatus(clw.BuildInProgress)
+)
+
 type ProgramCallback func(p *Program, userData interface{})
+
+func (bs BuildStatus) String() string {
+	switch bs {
+	case BuildSuccess:
+		return "success"
+	case BuildNone:
+		return "none"
+	case BuildError:
+		return "error"
+	case BuildInProgress:
+		return "in progress"
+	}
+	return ""
+}
 
 // Create a program object for a context with the specified source.
 //
@@ -155,4 +179,70 @@ func (p *Program) GetProgramBinaries() ([]ProgramBinary, error) {
 	}
 
 	return programBinaries, nil
+}
+
+// Returns build status for the device in the program object.
+func (p *Program) BuildStatus(d *Device) (BuildStatus, error) {
+	var buildStatus clw.BuildStatus
+	err := clw.GetProgramBuildInfo(p.id, d.id, clw.ProgramBuildStatusInfo, clw.Size(unsafe.Sizeof(buildStatus)),
+		unsafe.Pointer(&buildStatus), nil)
+	return BuildStatus(buildStatus), err
+}
+
+// Returns build log for the device in the program object.
+func (p *Program) BuildLog(d *Device) (string, error) {
+
+	var paramValueSize clw.Size
+	err := clw.GetProgramBuildInfo(p.id, d.id, clw.ProgramBuildLog, 0, nil, &paramValueSize)
+	if err != nil {
+		return "", err
+	}
+
+	buffer := make([]byte, paramValueSize)
+	err = clw.GetProgramBuildInfo(p.id, d.id, clw.ProgramBuildLog, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
+	if err != nil {
+		return "", err
+	}
+
+	// Trim space and trailing \0.
+	return strings.TrimSpace(string(buffer[:len(buffer)-1])), nil
+}
+
+// Increments the program reference count.
+//
+// The OpenCL commands that return a program perform an implicit retain.
+func (p *Program) Retain() error {
+	return clw.RetainProgram(p.id)
+}
+
+// Decrements the program reference count.
+//
+// The program object is deleted after all kernel objects associated with
+// program have been deleted and the program reference count becomes zero.
+func (p *Program) Release() error {
+	return clw.ReleaseProgram(p.id)
+}
+
+// The program reference count.
+//
+// The reference count returned should be considered immediately stale. It is
+// unsuitable for general use in applications. This feature is provided for
+// identifying memory leaks.
+func (p *Program) ReferenceCount() (int, error) {
+	var param clw.Uint
+	err := clw.GetProgramInfo(p.id, clw.ProgramReferenceCount, clw.Size(unsafe.Sizeof(param)), unsafe.Pointer(&param),
+		nil)
+	return int(param), err
+}
+
+// Allows the implementation to release the resources allocated by the OpenCL
+// compiler.
+//
+// This is a hint from the application and does not guarantee that the compiler
+// will not be used in the future or that the compiler will actually be unloaded
+// by the implementation. Calls to clBuildProgram after clUnloadCompiler will
+// reload the compiler, if necessary, to build the appropriate program
+// executable.
+func UnloadCompiler() error {
+	return clw.UnloadCompiler()
 }
