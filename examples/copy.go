@@ -38,7 +38,7 @@ func main() {
 			progam, err := c.CreateProgramWithSource([]byte(kernel))
 			check(err)
 
-			err = progam.Build([]*cl.Device{d}, "")
+			err = progam.Build([]*cl.Device{d}, "", nil, nil)
 			check(err)
 
 			kernel, err := progam.CreateKernel("copy")
