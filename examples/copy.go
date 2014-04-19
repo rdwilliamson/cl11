@@ -84,8 +84,9 @@ func main() {
 			check(event.Wait())
 
 			if equal {
-				fmt.Println(d.Name, "copied", snippets.PrintBytes(int64(size*4)), "in",
-					time.Duration(kernelEvent.End-kernelEvent.Start))
+				duration := time.Duration(kernelEvent.End - kernelEvent.Start)
+				fmt.Printf("%s copied %s in %v (%.2f GiB/s)\n", d.Name, snippets.PrintBytes(int64(size*4)),
+					duration, float64(size*4)/1024/1024/1024/duration.Seconds())
 			} else {
 				fmt.Println(d.Name, "values do not match")
 			}
