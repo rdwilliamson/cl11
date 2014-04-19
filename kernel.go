@@ -159,6 +159,10 @@ func (k *Kernel) SetArgument(index int, arg interface{}) error {
 		pointer = unsafe.Pointer(&v.id)
 		size = unsafe.Sizeof(v.id)
 
+	case *Image:
+		pointer = unsafe.Pointer(&v.id)
+		size = unsafe.Sizeof(v.id)
+
 	case LocalSpaceArg:
 		pointer = nil
 		size = uintptr(v)
