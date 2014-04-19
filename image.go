@@ -115,16 +115,16 @@ func (c *Context) GetSupportedImageFormats(mf MemFlags, t MemObjectType) ([]Imag
 	return results, nil
 }
 
-func (c *Context) CreateImage2D(mf MemFlags, fmt ImageFormat, width, height, rowPitch int,
+func (c *Context) CreateImage2D(mf MemFlags, format ImageFormat, width, height, rowPitch int,
 	src interface{}) (*Image, error) {
 
-	fmt2 := clw.CreateImageFormat(clw.ChannelOrder(fmt.ChannelOrder), clw.ChannelType(fmt.ChannelType))
+	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
 
-	mem, err := clw.CreateImage2D(c.id, clw.MemFlags(mf), fmt2, clw.Size(width), clw.Size(height), clw.Size(rowPitch),
-		nil)
+	mem, err := clw.CreateImage2D(c.id, clw.MemFlags(mf), cFormat, clw.Size(width), clw.Size(height),
+		clw.Size(rowPitch), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: fmt, Width: width, Height: height, RowPitch: rowPitch, Flags: mf}, nil
+	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, RowPitch: rowPitch, Flags: mf}, nil
 }
