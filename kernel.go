@@ -3,6 +3,7 @@ package cl11
 import (
 	"fmt"
 	"reflect"
+	"strings"
 	"unsafe"
 
 	clw "github.com/rdwilliamson/clw11"
@@ -71,8 +72,12 @@ func (p *Program) CreateKernel(name string) (*Kernel, error) {
 		return nil, err
 	}
 
-	k := &Kernel{id: kernel, FunctionName: name, Context: p.Context, Program: p,
-		WorkGroupInfo: make([]KernelWorkGroupInfo, len(p.Devices))}
+	k := &Kernel{
+		id:            kernel,
+		Context:       p.Context,
+		Program:       p,
+		WorkGroupInfo: make([]KernelWorkGroupInfo, len(p.Devices)),
+	}
 	for i := range p.Devices {
 		k.WorkGroupInfo[i].Device = p.Devices[i]
 	}
@@ -92,6 +97,7 @@ func (k *Kernel) getAllInfo() (err error) {
 		}
 	}()
 
+	k.FunctionName = k.getString(clw.KernelFunctionName)
 	k.Arguments = k.getUint(clw.KernelNumArgs)
 	k.argScratch = make([][8]byte, k.Arguments)
 
@@ -146,6 +152,24 @@ func (k *Kernel) getWorkGroupUlong(d *Device, paramName clw.KernelWorkGroupInfo)
 		panic(err)
 	}
 	return int(param)
+}
+
+func (k *Kernel) getString(paramName clw.KernelInfo) string {
+
+	var paramValueSize clw.Size
+	err := clw.GetKernelInfo(k.id, paramName, 0, nil, &paramValueSize)
+	if err != nil {
+		panic(err)
+	}
+
+	buffer := make([]byte, paramValueSize)
+	err = clw.GetKernelInfo(k.id, paramName, paramValueSize, unsafe.Pointer(&buffer[0]), nil)
+	if err != nil {
+		panic(err)
+	}
+
+	// Trim space and trailing \0.
+	return strings.TrimSpace(string(buffer[:len(buffer)-1]))
 }
 
 func (k *Kernel) SetArgument(index int, arg interface{}) error {
