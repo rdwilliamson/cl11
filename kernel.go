@@ -90,6 +90,48 @@ func (p *Program) CreateKernel(name string) (*Kernel, error) {
 	return k, nil
 }
 
+// Creates kernel objects for all kernel functions in a program object.
+//
+// Creates kernel objects for all kernel functions in program. Kernel objects
+// are not created for any __kernel functions in program that do not have the
+// same function definition across all devices for which a program executable
+// has been successfully built.
+func (p *Program) CreateKernelsInProgram() ([]*Kernel, error) {
+
+	var numKernels clw.Uint
+	err := clw.CreateKernelsInProgram(p.id, nil, &numKernels)
+	if err != nil {
+		return nil, err
+	}
+
+	kernelIDs := make([]clw.Kernel, int(numKernels))
+	err = clw.CreateKernelsInProgram(p.id, kernelIDs, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	kernels := make([]*Kernel, int(numKernels))
+	for i := range kernels {
+
+		kernels[i] = &Kernel{
+			id:            kernelIDs[i],
+			Context:       p.Context,
+			Program:       p,
+			WorkGroupInfo: make([]KernelWorkGroupInfo, len(p.Devices)),
+		}
+		for j := range p.Devices {
+			kernels[i].WorkGroupInfo[j].Device = p.Devices[j]
+		}
+
+		err = kernels[i].getAllInfo()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return kernels, nil
+}
+
 func (k *Kernel) getAllInfo() (err error) {
 	defer func() {
 		if r := recover(); r != nil {
