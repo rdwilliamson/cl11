@@ -57,6 +57,7 @@ type KernelWorkGroupInfo struct {
 	PrivateMemSize int
 }
 
+// Type passed to SetArguments to allocate the set amount of local memory.
 type LocalSpaceArg int
 
 // Creates a kernal object.
