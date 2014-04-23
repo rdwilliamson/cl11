@@ -214,6 +214,34 @@ func (k *Kernel) getString(paramName clw.KernelInfo) string {
 	return strings.TrimSpace(string(buffer[:len(buffer)-1]))
 }
 
+// Increments the kernel object reference count.
+//
+// CreateKernel or CreateKernelsInProgram do an implicit retain.
+func (k *Kernel) Retain() error {
+	return clw.RetainKernel(k.id)
+}
+
+// Decrements the kernel reference count.
+//
+// The kernel object is deleted once the number of instances that are retained
+// to kernel become zero and the kernel object is no longer needed by any
+// enqueued commands that use kernel.
+func (k *Kernel) Release() error {
+	return clw.ReleaseKernel(k.id)
+}
+
+// Return the kernel reference count.
+//
+// The reference count returned should be considered immediately stale. It is
+// unsuitable for general use in applications. This feature is provided for
+// identifying memory leaks.
+func (k *Kernel) ReferenceCount() (int, error) {
+	var param clw.Uint
+	err := clw.GetKernelInfo(k.id, clw.KernelReferenceCount, clw.Size(unsafe.Sizeof(param)), unsafe.Pointer(&param),
+		nil)
+	return int(param), err
+}
+
 func (k *Kernel) SetArgument(index int, arg interface{}) error {
 
 	var size uintptr
