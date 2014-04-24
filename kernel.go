@@ -28,7 +28,7 @@ type Kernel struct {
 	// Information about the kernel object that may be specific to a device.
 	WorkGroupInfo []KernelWorkGroupInfo
 
-	// Scratch space to store arugment.
+	// Scratch space to store arguments.
 	argScratch [][scratchSize]byte
 }
 
@@ -38,7 +38,7 @@ type KernelWorkGroupInfo struct {
 	// The device associated with the kernel.
 	Device *Device
 
-	// The maximum workgroup size that can be used by the kernel to execute on
+	// The maximum work group size that can be used by the kernel to execute on
 	// the device.
 	WorkGroupSize int
 
@@ -48,11 +48,11 @@ type KernelWorkGroupInfo struct {
 	// The amount of local memory used by the kernel.
 	LocalMemSize int
 
-	// The preferred multiple of workgroup size for launch. This is a
+	// The preferred multiple of work group size for launch. This is a
 	// performance hint.
 	PreferredWorkGroupSizeMultiple int
 
-	// The minimum amount of private memory, in bytes, used by each workitem in
+	// The minimum amount of private memory, in bytes, used by each work item in
 	// the kernel.
 	PrivateMemSize int
 }
@@ -60,7 +60,7 @@ type KernelWorkGroupInfo struct {
 // Type passed to SetArguments to allocate the set amount of local memory.
 type LocalSpaceArg int
 
-// Creates a kernal object.
+// Creates a kernel object.
 //
 // A kernel is a function declared in a program. A kernel is identified by the
 // __kernel qualifier applied to any function in a program. A kernel object
@@ -243,7 +243,17 @@ func (k *Kernel) ReferenceCount() (int, error) {
 	return int(param), err
 }
 
-func (k *Kernel) SetArgument(index int, arg interface{}) error {
+// Set the argument value for a specific argument of a kernel.
+//
+// All OpenCL API calls are thread-safe except SetArg (and SetArguments), which
+// is safe to call from any host thread, and is safe to call re-entrantly so
+// long as concurrent calls operate on different cl_kernel objects.
+//
+// A kernel object does not update the reference count for objects such as
+// memory, sampler objects specified as argument values by clSetKernelArg. Users
+// may not rely on a kernel object to retain objects specified as argument
+// values to the kernel.
+func (k *Kernel) SetArg(index int, arg interface{}) error {
 
 	var size uintptr
 	var pointer unsafe.Pointer
@@ -309,13 +319,16 @@ func (k *Kernel) SetArgument(index int, arg interface{}) error {
 			size = localType.Size()
 
 		default:
-			return wrapError(fmt.Errorf("invaild argument kind: %s", kind.String()))
+			return wrapError(fmt.Errorf("invalid argument kind: %s", kind.String()))
 		}
 	}
 
 	return clw.SetKernelArg(k.id, clw.Uint(index), clw.Size(size), pointer)
 }
 
+// Set all argument values of a kernel.
+//
+// This is a convenience wrapper around SetArg, consult it for more info.
 func (k *Kernel) SetArguments(args ...interface{}) error {
 
 	if len(args) != k.Arguments {
@@ -332,6 +345,11 @@ func (k *Kernel) SetArguments(args ...interface{}) error {
 	return nil
 }
 
+// Enqueues a command to execute a kernel on a device.
+//
+// GlobalOffset is optional, if it omitted it is assumed to be all zeros. The
+// dimensions of globalOffset, globalSize, and localSize must match and be less
+// than or equal to the max work item dimensions.
 func (cq *CommandQueue) EnqueueNDRangeKernel(k *Kernel, globalOffset, globalSize, localSize []int,
 	waitList []*Event, e *Event) error {
 
@@ -357,4 +375,20 @@ func (cq *CommandQueue) EnqueueNDRangeKernel(k *Kernel, globalOffset, globalSize
 
 	return clw.EnqueueNDRangeKernel(cq.id, k.id, sizes[:dims], sizes[dims:2*dims], sizes[2*dims:],
 		cq.toEvents(waitList), event)
+}
+
+// Enqueues a command to execute a kernel on a device.
+//
+// The kernel is executed using a single work-item.
+func (cq *CommandQueue) EnqueueTask(k *Kernel, waitList []*Event, e *Event) error {
+
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandTask
+		e.CommandQueue = cq
+	}
+
+	return clw.EnqueueTask(cq.id, k.id, cq.toEvents(waitList), event)
 }
