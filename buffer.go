@@ -198,14 +198,14 @@ func (b *Buffer) CreateSubBuffer(mf MemFlags, origin, size int64) (*Buffer, erro
 	return &Buffer{id: memory, Context: b.Context, Size: size, Flags: mf, Buffer: b, Origin: origin}, nil
 }
 
-// Increments the memory object reference count.
+// Increments the buffer object reference count.
 //
 // The OpenCL commands that return a buffer perform an implicit retain.
 func (b *Buffer) Retain() error {
 	return clw.RetainMemObject(b.id)
 }
 
-// Decrements the memory object reference count.
+// Decrements the buffer object reference count.
 //
 // After the buffers reference count becomes zero and commands queued for
 // execution that use the buffer have finished the buffer is deleted.
