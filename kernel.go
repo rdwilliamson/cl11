@@ -336,7 +336,7 @@ func (k *Kernel) SetArguments(args ...interface{}) error {
 	}
 
 	for i := range args {
-		err := k.SetArgument(i, args[i])
+		err := k.SetArg(i, args[i])
 		if err != nil {
 			return wrapError(fmt.Errorf("setting argument %d: %s", i, err.Error()))
 		}

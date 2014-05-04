@@ -1,6 +1,9 @@
 package cl11
 
 import (
+	"image"
+	"unsafe"
+
 	clw "github.com/rdwilliamson/clw11"
 )
 
@@ -52,11 +55,6 @@ type ImageFormat struct {
 }
 
 const (
-	MemObjectImage2D = MemObjectType(clw.MemObjectImage2D)
-	MemObjectImage3D = MemObjectType(clw.MemObjectImage3D)
-)
-
-const (
 	R         = ChannelOrder(clw.R)
 	A         = ChannelOrder(clw.A)
 	RG        = ChannelOrder(clw.RG)
@@ -90,17 +88,20 @@ const (
 	Float          = ChannelType(clw.Float)
 )
 
-func (c *Context) GetSupportedImageFormats(mf MemFlags, t MemObjectType) ([]ImageFormat, error) {
+// Get the list of image formats supported by an OpenCL implementation.
+//
+//
+func (c *Context) GetSupportedImage2DFormats(mf MemFlags) ([]ImageFormat, error) {
 
 	var count clw.Uint
-	err := clw.GetSupportedImageFormats(c.id, clw.MemFlags(mf), clw.MemObjectType(t), 0, nil, &count)
+	err := clw.GetSupportedImageFormats(c.id, clw.MemFlags(mf), clw.MemObjectImage2D, 0, nil, &count)
 	if err != nil {
 		return nil, err
 	}
 
 	formats := make([]clw.ImageFormat, int(count))
 
-	err = clw.GetSupportedImageFormats(c.id, clw.MemFlags(mf), clw.MemObjectType(t), count, &formats[0], nil)
+	err = clw.GetSupportedImageFormats(c.id, clw.MemFlags(mf), clw.MemObjectImage2D, count, &formats[0], nil)
 	if err != nil {
 		return nil, err
 	}
@@ -115,16 +116,73 @@ func (c *Context) GetSupportedImageFormats(mf MemFlags, t MemObjectType) ([]Imag
 	return results, nil
 }
 
-func (c *Context) CreateImage2D(mf MemFlags, format ImageFormat, width, height, rowPitch int,
-	src interface{}) (*Image, error) {
+// Creates a 2D image object.
+//
+// Creates an uninitialized buffer on the device.
+func (c *Context) CreateDeviceImage2D(mf MemFlags, format ImageFormat, width, height int) (*Image, error) {
 
 	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
 
-	mem, err := clw.CreateImage2D(c.id, clw.MemFlags(mf), cFormat, clw.Size(width), clw.Size(height),
-		clw.Size(rowPitch), nil)
+	mem, err := clw.CreateImage2D(c.id, clw.MemFlags(mf), cFormat, clw.Size(width), clw.Size(height), 0, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, RowPitch: rowPitch, Flags: mf}, nil
+	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, Flags: mf}, nil
+}
+
+func CreateDeviceImage2DInitializedBy(mf MemFlags) {
+
+}
+
+func CreateDeviceImage2DInitializedByImage(mf MemFlags, i image.Image) {
+
+}
+
+func CreateDeviceImage2DFromHostMem(mf MemFlags) {
+
+}
+
+func CreateDeviceImage2DFromHostImage(mf MemFlags, i image.Image) {
+
+}
+
+func CreateHostImage2D(mf MemFlags) {
+
+}
+
+func CreateHostImage2DInitializedBy(mf MemFlags) {
+
+}
+
+// Increments the image object reference count.
+//
+// The OpenCL commands that return a buffer perform an implicit retain.
+func (b *Image) Retain() error {
+	return clw.RetainMemObject(b.id)
+}
+
+// Decrements the image object reference count.
+//
+// After the buffers reference count becomes zero and commands queued for
+// execution that use the buffer have finished the buffer is deleted.
+func (b *Image) Release() error {
+	return clw.ReleaseMemObject(b.id)
+}
+
+// Return the image's reference count.
+//
+// The reference count returned should be considered immediately stale. It is
+// unsuitable for general use in applications. This feature is provided for
+// identifying memory leaks.
+func (b *Image) ReferenceCount() (int, error) {
+
+	var count clw.Uint
+	err := clw.GetMemObjectInfo(b.id, clw.MemReferenceCount, clw.Size(unsafe.Sizeof(count)), unsafe.Pointer(&count),
+		nil)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
 }
