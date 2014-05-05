@@ -85,12 +85,10 @@ const (
 	UnsignedInt16  = ChannelType(clw.UnsignedInt16)
 	UnsignedInt32  = ChannelType(clw.UnsignedInt32)
 	HalfFloat      = ChannelType(clw.HalfFloat)
-	Float          = ChannelType(clw.Float)
+	Float32        = ChannelType(clw.Float32)
 )
 
 // Get the list of image formats supported by an OpenCL implementation.
-//
-//
 func (c *Context) GetSupportedImage2DFormats(mf MemFlags) ([]ImageFormat, error) {
 
 	var count clw.Uint
