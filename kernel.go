@@ -245,6 +245,9 @@ func (k *Kernel) ReferenceCount() (int, error) {
 
 // Set the argument value for a specific argument of a kernel.
 //
+// TODO currently only native go types, Buffers, Images, and LocalSpaceArgs are
+// supported (no cl.Int, cl.Int8, etc. yet).
+//
 // All OpenCL API calls are thread-safe except SetArg (and SetArguments), which
 // is safe to call from any host thread, and is safe to call re-entrantly so
 // long as concurrent calls operate on different cl_kernel objects.
