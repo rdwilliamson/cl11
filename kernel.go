@@ -142,7 +142,7 @@ func (k *Kernel) getAllInfo() (err error) {
 
 	k.FunctionName = k.getString(clw.KernelFunctionName)
 	k.Arguments = k.getUint(clw.KernelNumArgs)
-	k.argScratch = make([][8]byte, k.Arguments)
+	k.argScratch = make([][scratchSize]byte, k.Arguments)
 
 	for i := range k.WorkGroupInfo {
 		wgi := &k.WorkGroupInfo[i]
