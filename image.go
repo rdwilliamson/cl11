@@ -2,6 +2,7 @@ package cl11
 
 import (
 	"errors"
+	"image"
 	"unsafe"
 
 	clw "github.com/rdwilliamson/clw11"
@@ -133,10 +134,39 @@ func (c *Context) CreateDeviceImage2D(mf MemFlags, format ImageFormat, width, he
 	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, Flags: mf}, nil
 }
 
-// func (c *Context) CreateDeviceImage2DInitializedBy(mf MemFlags, i image.Image) (*Image, error) {
-// 	flags := clw.MemFlags(mf) | clw.MemCopyHostPointer
-// 	return nil, nil
-// }
+// Creates a 2D image object.
+//
+// Creates an initialized buffer on the host. Currently only *image.NRGBA formats are supported.
+func (c *Context) CreateDeviceImage2DInitializedBy(mf MemFlags, i image.Image) (*Image, error) {
+
+	var pointer unsafe.Pointer
+	var width, height, imageRowPitch clw.Size
+	var format ImageFormat
+
+	switch v := i.(type) {
+
+	case *image.NRGBA:
+		pointer = unsafe.Pointer(&v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4])
+		width = clw.Size(v.Rect.Dx())
+		height = clw.Size(v.Rect.Dy())
+		imageRowPitch = clw.Size(v.Stride)
+		format.ChannelOrder = RGBA
+		format.ChannelType = UnormInt8
+
+	default:
+		return nil, UnsupportedImageFormatErr
+	}
+
+	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
+	flags := clw.MemFlags(mf) | clw.MemCopyHostPointer
+
+	mem, err := clw.CreateImage2D(c.id, flags, cFormat, width, height, imageRowPitch, pointer)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Image{id: mem, Context: c, Format: format, Width: int(width), Height: int(height), Flags: mf}, nil
+}
 
 // func (c *Context) CreateDeviceImage2DFromHostMem(mf MemFlags, i image.Image) (*Image, error) {
 // 	flags := clw.MemFlags(mf) | clw.MemUseHostPointer
