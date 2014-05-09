@@ -260,13 +260,8 @@ func (cq *CommandQueue) ReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst
 		return wrapError(err)
 	}
 
-	err = clw.EnqueueReadBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer,
+	return clw.EnqueueReadBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer,
 		cq.toEvents(waitList), event)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // Enqueue commands to write to a buffer object from host memory.
@@ -347,14 +342,9 @@ func (cq *CommandQueue) ReadBufferRect(b *Buffer, bc BlockingCall, offset *Rect,
 		return wrapError(err)
 	}
 
-	err = clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), offset.dstOrigin(), offset.srcOrigin(), offset.region(),
+	return clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), offset.dstOrigin(), offset.srcOrigin(), offset.region(),
 		offset.dstRowPitch(), offset.dstSlicePitch(), offset.srcRowPitch(), offset.dstRowPitch(), pointer,
 		cq.toEvents(waitList), event)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
 
 // Enqueue commands to write a rectangular region to a buffer object from host
