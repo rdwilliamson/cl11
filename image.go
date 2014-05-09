@@ -1,7 +1,7 @@
 package cl11
 
 import (
-	"image"
+	"errors"
 	"unsafe"
 
 	clw "github.com/rdwilliamson/clw11"
@@ -88,6 +88,10 @@ const (
 	Float32        = ChannelType(clw.Float32)
 )
 
+var (
+	UnsupportedImageFormatErr = errors.New("unsupported image format")
+)
+
 // Get the list of image formats supported by an OpenCL implementation.
 func (c *Context) GetSupportedImage2DFormats(mf MemFlags) ([]ImageFormat, error) {
 
@@ -129,29 +133,37 @@ func (c *Context) CreateDeviceImage2D(mf MemFlags, format ImageFormat, width, he
 	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, Flags: mf}, nil
 }
 
-func CreateDeviceImage2DInitializedBy(mf MemFlags) {
+// func (c *Context) CreateDeviceImage2DInitializedBy(mf MemFlags, i image.Image) (*Image, error) {
+// 	flags := clw.MemFlags(mf) | clw.MemCopyHostPointer
+// 	return nil, nil
+// }
 
+// func (c *Context) CreateDeviceImage2DFromHostMem(mf MemFlags, i image.Image) (*Image, error) {
+// 	flags := clw.MemFlags(mf) | clw.MemUseHostPointer
+// 	return nil, nil
+// }
+
+// Creates a 2D image object.
+//
+// Creates an uninitialized buffer on the host.
+func (c *Context) CreateHostImage2D(mf MemFlags, format ImageFormat, width, height int) (*Image, error) {
+
+	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer
+
+	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
+
+	mem, err := clw.CreateImage2D(c.id, flags, cFormat, clw.Size(width), clw.Size(height), 0, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, Flags: mf}, nil
 }
 
-func CreateDeviceImage2DInitializedByImage(mf MemFlags, i image.Image) {
-
-}
-
-func CreateDeviceImage2DFromHostMem(mf MemFlags) {
-
-}
-
-func CreateDeviceImage2DFromHostImage(mf MemFlags, i image.Image) {
-
-}
-
-func CreateHostImage2D(mf MemFlags) {
-
-}
-
-func CreateHostImage2DInitializedBy(mf MemFlags) {
-
-}
+// func (c *Context) CreateHostImage2DInitializedBy(mf MemFlags, i image.Image) (*Image, error) {
+// 	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer | clw.MemCopyHostPointer
+// 	return nil, nil
+// }
 
 // Increments the image object reference count.
 //
