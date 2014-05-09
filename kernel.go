@@ -142,6 +142,8 @@ func (k *Kernel) getAllInfo() (err error) {
 
 	k.FunctionName = k.getString(clw.KernelFunctionName)
 	k.Arguments = k.getUint(clw.KernelNumArgs)
+	// TODO since there is the potential to store 128 bytes per argument
+	// (Double8) convert to a slice of byte slices.
 	k.argScratch = make([][scratchSize]byte, k.Arguments)
 
 	for i := range k.WorkGroupInfo {
@@ -283,6 +285,9 @@ func (k *Kernel) SetArg(index int, arg interface{}) error {
 			kind = value.Kind()
 		}
 
+		// TODO since there is the potential to store 128 bytes per argument
+		// (Double8) the scratch space will need to be allocated/resized as
+		// needed.
 		pointer = unsafe.Pointer(&k.argScratch[index][0])
 
 		switch kind {

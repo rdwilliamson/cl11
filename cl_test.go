@@ -1,6 +1,7 @@
 package cl11
 
 import (
+	"bytes"
 	"testing"
 	"unsafe"
 )
@@ -90,3 +91,46 @@ func TestInt32PointerAndSize(t *testing.T) {
 // Slice
 // String
 // Struct
+
+func TestChar2(t *testing.T) {
+
+	got := NewChar2(Char(1), Char(2))
+
+	for i := 0; i < 2; i++ {
+		gotValue := got.Get(i)
+		wantValue := Char(i + 1)
+		if gotValue != wantValue {
+			t.Fatalf("get/new failure: index %d, want %d, got %d", i, gotValue, wantValue)
+		}
+	}
+
+	var want []int8
+	for i := 0; i < 2; i++ {
+		v := int8(i) + 3
+		got.Set(i, Char(v))
+		want = append(want, v)
+	}
+
+	gotBytes := toByteSlice(unsafe.Pointer(&got), unsafe.Sizeof(got))
+	wantBytes := toByteSlice(unsafe.Pointer(&want[0]), uintptr(len(want))*unsafe.Sizeof(want[0]))
+	if !bytes.Equal(gotBytes, wantBytes) {
+		t.Fatalf("set failure:\nwant [% x]\ngot  [% x]", wantBytes, gotBytes)
+	}
+}
+
+func TestDouble16(t *testing.T) {
+	var got Double16
+	var want []float64
+	for i := 0; i < 16; i++ {
+		v := float64(i) + 1
+		got.Set(i, Double(v))
+		want = append(want, v)
+	}
+	for i := 0; i < len(want); i++ {
+		gotBytes := toByteSlice(unsafe.Pointer(&got), unsafe.Sizeof(got))
+		wantBytes := toByteSlice(unsafe.Pointer(&want[0]), uintptr(len(want))*unsafe.Sizeof(want[0]))
+		if !bytes.Equal(gotBytes, wantBytes) {
+			t.Fatalf("set failure:\nwant [% x]\ngot  [% x]", wantBytes, gotBytes)
+		}
+	}
+}
