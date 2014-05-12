@@ -134,10 +134,16 @@ func (c *Context) CreateDeviceImage2D(mf MemFlags, format ImageFormat, width, he
 	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, Flags: mf}, nil
 }
 
+func (c *Context) CreateDeviceImage2DInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
+	value interface{}) (*Image, error) {
+
+	return nil, nil
+}
+
 // Creates a 2D image object.
 //
 // Creates an initialized buffer on the host. Currently only *image.NRGBA formats are supported.
-func (c *Context) CreateDeviceImage2DInitializedBy(mf MemFlags, i image.Image) (*Image, error) {
+func (c *Context) CreateDeviceImage2DInitializedByImage(mf MemFlags, i image.Image) (*Image, error) {
 
 	var pointer unsafe.Pointer
 	var width, height, imageRowPitch clw.Size
@@ -225,4 +231,64 @@ func (b *Image) ReferenceCount() (int, error) {
 	}
 
 	return int(count), nil
+}
+
+func (cq *CommandQueue) EnqueueReadImage(dst *Image, bc BlockingCall, r *Rect, src interface{}, waitList []*Event,
+	e *Event) error {
+
+	return nil
+}
+
+func (cq *CommandQueue) EnqueueReadImageFromImage(dst *Image, bc BlockingCall, src image.Image, waitList []*Event,
+	e *Event) error {
+
+	return nil
+}
+
+// rect only uses the dst and region, src is ignored
+func (cq *CommandQueue) EnqueueWriteImage(src *Image, bc BlockingCall, r *Rect, dst interface{}, waitList []*Event,
+	e *Event) error {
+
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandReadImage
+		e.CommandQueue = cq
+	}
+
+	pointer, _, err := tryPointerAndSize(dst)
+	if err != nil {
+		return wrapError(err)
+	}
+
+	return clw.EnqueueReadImage(cq.id, src.id, clw.Bool(bc), r.dstOrigin(), r.region(), r.dstRowPitch(),
+		r.dstSlicePitch(), pointer, cq.toEvents(waitList), event)
+}
+
+func (cq *CommandQueue) EnqueueWriteImageToImage(src *Image, bc BlockingCall, dst image.Image, waitList []*Event,
+	e *Event) error {
+
+	var rect Rect
+	var actualDst interface{}
+
+	switch v := dst.(type) {
+
+	case *image.NRGBA:
+		rect.Region[0] = int64(v.Rect.Dx())
+		rect.Region[1] = int64(v.Rect.Dy())
+		rect.Region[2] = 1
+		rect.Src.RowPitch = int64(v.Stride)
+		actualDst = &v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4]
+
+	default:
+		return UnsupportedImageFormatErr
+	}
+
+	return cq.EnqueueReadImage(src, bc, &rect, actualDst, waitList, e)
+}
+
+func (cq *CommandQueue) EnqueueCopyImage(src, dst *Image, r *Rect, waitList []*Event, e *Event) error {
+
+	return nil
 }

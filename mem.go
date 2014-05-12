@@ -5,6 +5,8 @@ import (
 )
 
 // Rectangle layout in bytes. For a 2D image SlicePitch and Origin[2] are zero.
+// The offset of pixel X,Y,Z in bytes is (Z-Origin[2])*SlicePitch +
+// (Y-Origin[1])*RowPitch + (X-Origin[3]).
 type RectLayout struct {
 	Origin     [3]int64
 	RowPitch   int64
@@ -80,4 +82,14 @@ func (r *Rect) dstSlicePitch() clw.Size {
 
 func (r *Rect) region() [3]clw.Size {
 	return [3]clw.Size{clw.Size(r.Region[0]), clw.Size(r.Region[1]), clw.Size(r.Region[2])}
+}
+
+func (cq *CommandQueue) EnqueueCopyImageToBuffer(src *Image, dst *Buffer, r *Rect, waitList []*Event, e *Event) error {
+
+	return nil
+}
+
+func (cq *CommandQueue) EnqueueCopyBufferToImage(src *Buffer, dst *Image, r *Rect, waitList []*Event, e *Event) error {
+
+	return nil
 }
