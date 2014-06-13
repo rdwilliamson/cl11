@@ -90,8 +90,41 @@ const (
 )
 
 var (
-	UnsupportedImageFormatErr = errors.New("unsupported image format")
+	UnsupportedImageFormatErr        = errors.New("cl: unsupported image format")
+	ImageRectToBufferSizeMismatchErr = errors.New("cl: image rectangle to buffer size mismatch")
+	InvalidImageFormat               = errors.New("cl: invalid image format")
 )
+
+// Invalid image formats will return 0.
+func (i *ImageFormat) pixelBytes() int64 {
+
+	var channels int64
+	switch i.ChannelOrder {
+	case R, A, Intensity, Luminance:
+		channels = 1
+	case RG, RA:
+		channels = 2
+	case RGB:
+		channels = 3
+	case RGBA, BGRA, ARGB:
+		channels = 4
+	case Rx, RGx, RGBx:
+		// TODO how many channels do each of these have?
+		panic("unknown number of channels in format")
+	}
+
+	var channelBytes int64
+	switch i.ChannelType {
+	case SnormInt8, UnsignedInt8, UnormInt8, UnormInt16, SignedInt8:
+		channelBytes = 1
+	case SnormInt16, UnormShort565, UnormShort555, SignedInt16, UnsignedInt16, HalfFloat:
+		channelBytes = 2
+	case UnormInt101010, SignedInt32, UnsignedInt32, Float32:
+		channelBytes = 4
+	}
+
+	return channels * channelBytes
+}
 
 // Get the list of image formats supported by an OpenCL implementation.
 func (c *Context) GetSupportedImage2DFormats(mf MemFlags) ([]ImageFormat, error) {
@@ -134,10 +167,37 @@ func (c *Context) CreateDeviceImage2D(mf MemFlags, format ImageFormat, width, he
 	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, Flags: mf}, nil
 }
 
+// Only source and region are used from the rectangle.
 func (c *Context) CreateDeviceImage2DInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
 
-	return nil, nil
+	var scratch [scratchSize]byte
+	pointer, size := getPointerAndSize(value, unsafe.Pointer(&scratch[0]))
+	if uintptr(r.srcBytes()) > size {
+		return nil, ImageRectToBufferSizeMismatchErr
+	}
+
+	// Determine the width and height from the region size in byte and the image
+	// format.
+	pixelBytes := format.pixelBytes()
+	if pixelBytes == 0 {
+		return nil, InvalidImageFormat
+	}
+	if r.Region[0]%pixelBytes > 0 || r.Region[1]%pixelBytes > 0 {
+		return nil, ImageRectToBufferSizeMismatchErr
+	}
+	width := r.Region[0] / pixelBytes
+	height := r.Region[1] / pixelBytes
+
+	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
+
+	mem, err := clw.CreateImage2D(c.id, clw.MemFlags(mf), cFormat, clw.Size(width), clw.Size(height),
+		r.dstRowPitch(), pointer)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Image{id: mem, Context: c, Format: format, Width: int(width), Height: int(height), Flags: mf}, nil
 }
 
 // Creates a 2D image object.
