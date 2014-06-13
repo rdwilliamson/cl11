@@ -84,12 +84,34 @@ func (r *Rect) region() [3]clw.Size {
 	return [3]clw.Size{clw.Size(r.Region[0]), clw.Size(r.Region[1]), clw.Size(r.Region[2])}
 }
 
-func (cq *CommandQueue) EnqueueCopyImageToBuffer(src *Image, dst *Buffer, r *Rect, waitList []*Event, e *Event) error {
+// Only the source and region are used from the rectangle.
+func (cq *CommandQueue) EnqueueCopyImageToBuffer(src *Image, dst *Buffer, r *Rect, offset int, waitList []*Event,
+	e *Event) error {
 
-	return nil
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandCopyImageToBuffer
+		e.CommandQueue = cq
+	}
+
+	return clw.EnqueueCopyImageToBuffer(cq.id, src.id, dst.id, r.srcOrigin(), r.region(), clw.Size(offset),
+		cq.toEvents(waitList), event)
 }
 
-func (cq *CommandQueue) EnqueueCopyBufferToImage(src *Buffer, dst *Image, r *Rect, waitList []*Event, e *Event) error {
+// Only the destination and region are used from the rectangle.
+func (cq *CommandQueue) EnqueueCopyBufferToImage(src *Buffer, dst *Image, offset int, r *Rect, waitList []*Event,
+	e *Event) error {
 
-	return nil
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandCopyBufferToImage
+		e.CommandQueue = cq
+	}
+
+	return clw.EnqueueCopyBufferToImage(cq.id, src.id, dst.id, clw.Size(offset), r.dstOrigin(), r.region(),
+		cq.toEvents(waitList), event)
 }

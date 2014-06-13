@@ -290,5 +290,14 @@ func (cq *CommandQueue) EnqueueWriteImageToImage(src *Image, bc BlockingCall, ds
 
 func (cq *CommandQueue) EnqueueCopyImage(src, dst *Image, r *Rect, waitList []*Event, e *Event) error {
 
-	return nil
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandCopyImage
+		e.CommandQueue = cq
+	}
+
+	return clw.EnqueueCopyImage(cq.id, src.id, dst.id, r.srcOrigin(), r.dstOrigin(), r.region(), cq.toEvents(waitList),
+		event)
 }
