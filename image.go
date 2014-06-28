@@ -90,9 +90,9 @@ const (
 )
 
 var (
-	UnsupportedImageFormatErr        = errors.New("cl: unsupported image format")
-	ImageRectToBufferSizeMismatchErr = errors.New("cl: image rectangle to buffer size mismatch")
-	InvalidImageFormat               = errors.New("cl: invalid image format")
+	ErrUnsupportedImageFormat        = errors.New("cl: unsupported image format")
+	ErrImageRectToBufferSizeMismatch = errors.New("cl: image rectangle to buffer size mismatch")
+	ErrInvalidImageFormat            = errors.New("cl: invalid image format")
 )
 
 // Invalid image formats will return 0.
@@ -174,17 +174,17 @@ func (c *Context) CreateDeviceImage2DInitializedBy(mf MemFlags, format ImageForm
 	var scratch [scratchSize]byte
 	pointer, size := getPointerAndSize(value, unsafe.Pointer(&scratch[0]))
 	if uintptr(r.srcBytes()) > size {
-		return nil, ImageRectToBufferSizeMismatchErr
+		return nil, ErrImageRectToBufferSizeMismatch
 	}
 
 	// Determine the width and height from the region size in byte and the image
 	// format.
 	pixelBytes := format.pixelBytes()
 	if pixelBytes == 0 {
-		return nil, InvalidImageFormat
+		return nil, ErrInvalidImageFormat
 	}
 	if r.Region[0]%pixelBytes > 0 || r.Region[1]%pixelBytes > 0 {
-		return nil, ImageRectToBufferSizeMismatchErr
+		return nil, ErrImageRectToBufferSizeMismatch
 	}
 	width := r.Region[0] / pixelBytes
 	height := r.Region[1] / pixelBytes
@@ -220,7 +220,7 @@ func (c *Context) CreateDeviceImage2DInitializedByImage(mf MemFlags, i image.Ima
 		format.ChannelType = UnormInt8
 
 	default:
-		return nil, UnsupportedImageFormatErr
+		return nil, ErrUnsupportedImageFormat
 	}
 
 	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
@@ -342,7 +342,7 @@ func (cq *CommandQueue) EnqueueWriteImageToImage(src *Image, bc BlockingCall, ds
 		actualDst = &v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4]
 
 	default:
-		return UnsupportedImageFormatErr
+		return ErrUnsupportedImageFormat
 	}
 
 	return cq.EnqueueReadImage(src, bc, &rect, actualDst, waitList, e)
