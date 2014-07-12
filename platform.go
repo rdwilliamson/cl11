@@ -86,15 +86,7 @@ func (p *Platform) getAllInfo() (err error) {
 	p.Version = toVersion(p.getString(clw.PlatformVersion))
 	p.Name = p.getString(clw.PlatformName)
 	p.Vendor = p.getString(clw.PlatformVendor)
-	p.Extensions = strings.Split(p.getString(clw.PlatformExtensions), " ")
-
-	// Clear empty extensions.
-	for i := 0; i < len(p.Extensions); i++ {
-		if p.Extensions[i] == "" {
-			p.Extensions[i] = p.Extensions[len(p.Extensions)-1]
-			p.Extensions = p.Extensions[:len(p.Extensions)-1]
-		}
-	}
+	p.Extensions = strings.Fields(p.getString(clw.PlatformExtensions))
 
 	return
 }
