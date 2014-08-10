@@ -219,6 +219,14 @@ func (c *Context) CreateDeviceImage2DInitializedByImage(mf MemFlags, i image.Ima
 		format.ChannelOrder = RGBA
 		format.ChannelType = UnormInt8
 
+	case *image.RGBA:
+		pointer = unsafe.Pointer(&v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4])
+		width = clw.Size(v.Rect.Dx())
+		height = clw.Size(v.Rect.Dy())
+		imageRowPitch = clw.Size(v.Stride)
+		format.ChannelOrder = RGBA
+		format.ChannelType = UnormInt8
+
 	default:
 		return nil, ErrUnsupportedImageFormat
 	}
