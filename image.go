@@ -217,7 +217,7 @@ func (c *Context) CreateDeviceImage2DInitializedByImage(mf MemFlags, i image.Ima
 		height = clw.Size(v.Rect.Dy())
 		imageRowPitch = clw.Size(v.Stride)
 		format.ChannelOrder = RGBA
-		format.ChannelType = UnormInt8
+		format.ChannelType = UnsignedInt8
 
 	case *image.RGBA:
 		pointer = unsafe.Pointer(&v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4])
@@ -225,7 +225,7 @@ func (c *Context) CreateDeviceImage2DInitializedByImage(mf MemFlags, i image.Ima
 		height = clw.Size(v.Rect.Dy())
 		imageRowPitch = clw.Size(v.Stride)
 		format.ChannelOrder = RGBA
-		format.ChannelType = UnormInt8
+		format.ChannelType = UnsignedInt8
 
 	default:
 		return nil, ErrUnsupportedImageFormat
@@ -343,6 +343,20 @@ func (cq *CommandQueue) EnqueueWriteImageToImage(src *Image, bc BlockingCall, ds
 	switch v := dst.(type) {
 
 	case *image.NRGBA:
+		rect.Region[0] = int64(v.Rect.Dx())
+		rect.Region[1] = int64(v.Rect.Dy())
+		rect.Region[2] = 1
+		rect.Src.RowPitch = int64(v.Stride)
+		actualDst = &v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4]
+
+	case *image.Gray:
+		rect.Region[0] = int64(v.Rect.Dx())
+		rect.Region[1] = int64(v.Rect.Dy())
+		rect.Region[2] = 1
+		rect.Src.RowPitch = int64(v.Stride)
+		actualDst = &v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4]
+
+	case *image.RGBA:
 		rect.Region[0] = int64(v.Rect.Dx())
 		rect.Region[1] = int64(v.Rect.Dy())
 		rect.Region[2] = 1
