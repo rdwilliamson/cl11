@@ -4,7 +4,6 @@ package main
 import (
 	"fmt"
 	"image"
-	"image/color"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -20,23 +19,19 @@ func check(err error) {
 }
 
 var kernel = `
-#define int32_t int
+__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_FILTER_NEAREST;
 
-const sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_FILTER_NEAREST;
-
-// __kernel void to_gray(__read_only image2d_t input, __write_only image2d_t output)
-__kernel void to_gray(__read_only image2d_t input, __global float* output)
+__kernel void toGray(__read_only image2d_t input, __write_only image2d_t output)
 {
-	int width = get_image_width(input);
+	int width  = get_image_width(input);
 	int height = get_image_height(input);
 
-	for (int32_t y = get_global_id(1); y < height; y += get_global_size(1)) {
-		for (int32_t x = get_global_id(0); x < width; x += get_global_size(0)) {
+	for (int y = get_global_id(1); y < height; y += get_global_size(1)) {
+		for (int x = get_global_id(0); x < width; x += get_global_size(0)) {
 
 			uint4 pixel = read_imageui(input, sampler, (int2)(x, y));
-			// write_imageui(output, (int2)(x, y), 0.298912*pixel.x + 0.586611*pixel.y + 0.114478*pixel.z);
-			// write_imageui(output, (int2)(x, y), (uint4)(pixel.x, pixel.y, pixel.z, 255));
-			output[y*width+x] = 0.298912*pixel.x + 0.586611*pixel.y + 0.114478*pixel.z;
+			int v = 0.298912*pixel.x + 0.586611*pixel.y + 0.114478*pixel.z;
+			write_imageui(output, (int2)(x, y), (uint4)(v, v, v, 255));
 		}
 	}
 }
@@ -100,16 +95,13 @@ func main() {
 			check(err)
 
 			// TODO modify kernel to copy from image to image
-			kernel, err := progam.CreateKernel("to_gray")
+			kernel, err := progam.CreateKernel("toGray")
 			check(err)
 
 			inData, err := c.CreateDeviceImage2DInitializedByImage(cl.MemReadOnly, input)
 			check(err)
 
-			// outData, err := c.CreateDeviceImage2D(cl.MemWriteOnly, cl.ImageFormat{cl.RGBA, cl.UnormInt8}, width, height)
-			// check(err)
-
-			outData, err := c.CreateDeviceBuffer(int64(width*height*4), cl.MemWriteOnly)
+			outData, err := c.CreateDeviceImage2D(cl.MemWriteOnly, cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}, width, height)
 			check(err)
 
 			err = kernel.SetArguments(inData, outData)
@@ -136,27 +128,14 @@ func main() {
 				nil, &kernelEvent)
 			check(err)
 
-			// err = cq.EnqueueWriteImageToImage(outData, cl.Blocking, output, []*cl.Event{&kernelEvent}, nil)
-			// check(err)
-
-			mb, err := cq.MapBuffer(outData, cl.Blocking, cl.MapRead, 0, int64(width*height*4), nil, nil)
+			err = cq.EnqueueWriteImageToImage(outData, cl.Blocking, output, []*cl.Event{&kernelEvent}, nil)
 			check(err)
 
-			values := mb.Float32Slice()
-			for y := 0; y < height; y++ {
-				for x := 0; x < width; x++ {
-					v := uint8(values[y*width+x])
-					output.Set(x, y, color.RGBA{R: v, G: v, B: v, A: 255})
-				}
-			}
+			err = cq.Finish()
+			check(err)
 
-			var event cl.Event
-			check(cq.UnmapBuffer(mb, nil, &event))
-			check(event.Wait())
-
-			check(cq.Finish())
-
-			check(kernelEvent.GetProfilingInfo())
+			err = kernelEvent.GetProfilingInfo()
+			check(err)
 			fmt.Println(d.Name, time.Duration(kernelEvent.End-kernelEvent.Start))
 
 			outFile, err := os.Create(fmt.Sprintf("%s%d%s", base, count, ext))
