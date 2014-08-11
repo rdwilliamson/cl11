@@ -101,7 +101,8 @@ func main() {
 			inData, err := c.CreateDeviceImage2DInitializedByImage(cl.MemReadOnly, input)
 			check(err)
 
-			outData, err := c.CreateDeviceImage2D(cl.MemWriteOnly, cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}, width, height)
+			outData, err := c.CreateDeviceImage(cl.MemWriteOnly, cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}, width,
+				height, 0)
 			check(err)
 
 			err = kernel.SetArguments(inData, outData)
