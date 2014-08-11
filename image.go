@@ -211,14 +211,6 @@ func (c *Context) CreateDeviceImage2DInitializedByImage(mf MemFlags, i image.Ima
 
 	switch v := i.(type) {
 
-	case *image.NRGBA:
-		pointer = unsafe.Pointer(&v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4])
-		width = clw.Size(v.Rect.Dx())
-		height = clw.Size(v.Rect.Dy())
-		imageRowPitch = clw.Size(v.Stride)
-		format.ChannelOrder = RGBA
-		format.ChannelType = UnsignedInt8
-
 	case *image.RGBA:
 		pointer = unsafe.Pointer(&v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4])
 		width = clw.Size(v.Rect.Dx())
@@ -342,32 +334,18 @@ func (cq *CommandQueue) EnqueueWriteImageToImage(src *Image, bc BlockingCall, ds
 
 	switch v := dst.(type) {
 
-	case *image.NRGBA:
-		rect.Region[0] = int64(v.Rect.Dx())
-		rect.Region[1] = int64(v.Rect.Dy())
-		rect.Region[2] = 1
-		rect.Src.RowPitch = int64(v.Stride)
-		actualDst = &v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4]
-
-	case *image.Gray:
-		rect.Region[0] = int64(v.Rect.Dx())
-		rect.Region[1] = int64(v.Rect.Dy())
-		rect.Region[2] = 1
-		rect.Src.RowPitch = int64(v.Stride)
-		actualDst = &v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4]
-
 	case *image.RGBA:
 		rect.Region[0] = int64(v.Rect.Dx())
 		rect.Region[1] = int64(v.Rect.Dy())
 		rect.Region[2] = 1
 		rect.Src.RowPitch = int64(v.Stride)
-		actualDst = &v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4]
+		actualDst = v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4 : (v.Rect.Max.Y-1)*v.Stride+v.Rect.Max.X-1]
 
 	default:
 		return ErrUnsupportedImageFormat
 	}
 
-	return cq.EnqueueReadImage(src, bc, &rect, actualDst, waitList, e)
+	return cq.EnqueueWriteImage(src, bc, &rect, actualDst, waitList, e)
 }
 
 func (cq *CommandQueue) EnqueueCopyImage(src, dst *Image, r *Rect, waitList []*Event, e *Event) error {
