@@ -6,10 +6,10 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
-// ErrInvalidRect is returned when a rectangle has a negative value or isn't
-// completely set to 2D or 3D. Such as a layout having only one of Origin[2] or
+// ErrInvalidRect is returned when a rectangle has a value less than 1, isn't
+// completely set to 2D or 3D (a layout having only one of Origin[2] or
 // SlicePitch non-zero; or the rectangle layout is 2D and a Rect.Region[2] isn't
-// 1.
+// 1). Or really any bad size, origin, etc.
 var ErrInvalidRect = errors.New("cl: invalid rectangle")
 
 // RectLayout defines a rectangle layout in bytes. For a 2D image SlicePitch and

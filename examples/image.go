@@ -100,18 +100,23 @@ func main() {
 
 			var inData *cl.Image
 			if false {
-				var format cl.ImageFormat
-				format.ChannelOrder = RGBA
-				format.ChannelType = UnsignedInt8
-				inData, err = c.CreateDeviceImage2DInitializedBy(cl.MemReadOnly, format, input.Bounds().Dx(), input.Bounds().Dy(),
-					1)
+
+			} else if true {
+				rgba := input.(*image.RGBA)
+				format := cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}
+				var rect cl.Rect
+				rect.Src.RowPitch = int64(rgba.Stride)
+				rect.Region[0] = int64(rgba.Rect.Dx())
+				rect.Region[1] = int64(rgba.Rect.Dy())
+				rect.Region[2] = 1
+				inData, err = c.CreateDeviceImageInitializedBy(cl.MemReadOnly, format, &rect, rgba.Pix)
 			} else {
-				inData, err = c.CreateDeviceImage2DInitializedByImage(cl.MemReadOnly, input)
+				inData, err = c.CreateDeviceImageInitializedByImage(cl.MemReadOnly, input)
 			}
 			check(err)
 
 			outData, err := c.CreateDeviceImage(cl.MemWriteOnly, cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}, width,
-				height, 0)
+				height, 1)
 			check(err)
 
 			err = kernel.SetArguments(inData, outData)

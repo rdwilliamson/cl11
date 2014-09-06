@@ -222,13 +222,14 @@ func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat
 
 	// Create the image.
 	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
+	flags := clw.MemFlags(mf) | clw.MemCopyHostPointer
 
 	var mem clw.Mem
 	var err error
 	if dim == 2 {
-		mem, err = clw.CreateImage2D(c.id, clw.MemFlags(mf), cFormat, r.width(), r.height(), r.Src.rowPitch(), pointer)
+		mem, err = clw.CreateImage2D(c.id, flags, cFormat, r.width(), r.height(), r.Src.rowPitch(), pointer)
 	} else {
-		mem, err = clw.CreateImage3D(c.id, clw.MemFlags(mf), cFormat, r.width(), r.height(), r.depth(),
+		mem, err = clw.CreateImage3D(c.id, flags, cFormat, r.width(), r.height(), r.depth(),
 			r.Src.rowPitch(), r.Src.slicePitch(), pointer)
 	}
 	if err != nil {
