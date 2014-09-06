@@ -98,7 +98,16 @@ func main() {
 			kernel, err := progam.CreateKernel("toGray")
 			check(err)
 
-			inData, err := c.CreateDeviceImage2DInitializedByImage(cl.MemReadOnly, input)
+			var inData *cl.Image
+			if false {
+				var format cl.ImageFormat
+				format.ChannelOrder = RGBA
+				format.ChannelType = UnsignedInt8
+				inData, err = c.CreateDeviceImage2DInitializedBy(cl.MemReadOnly, format, input.Bounds().Dx(), input.Bounds().Dy(),
+					1)
+			} else {
+				inData, err = c.CreateDeviceImage2DInitializedByImage(cl.MemReadOnly, input)
+			}
 			check(err)
 
 			outData, err := c.CreateDeviceImage(cl.MemWriteOnly, cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}, width,

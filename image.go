@@ -8,7 +8,7 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
-// A 2D or 3D image (Depth and SlicePitch are 0 for 2D images).
+// A 2D or 3D image (Depth is 1 and SlicePitch is 0 for 2D images).
 type Image struct {
 	id clw.Mem
 
@@ -24,17 +24,18 @@ type Image struct {
 	// The height in pixels.
 	Height int
 
-	// The depth in pixels. Zero for a 2D image.
+	// The depth in pixels. One for a 2D image.
 	Depth int
 
 	// Scan line width in bytes. Only valid if Host is not nil. If Host is not
-	// nil then valid values are 0 for Width * size of element in bytes or
-	// greater than or equal to Width * size of element in bytes.
+	// nil then valid values are 0 (which is the same as Width * size of element
+	// in bytes) or a value greater than or equal to Width * size of element in
+	// bytes.
 	RowPitch int
 
 	// The size in bytes of each 2D image in bytes. Only valid if Host is not
-	// nil; valid values are 0 for RowPitch * Height or greater than or equal to
-	// RowPitch * Height.
+	// nil; valid values are 0 (which is the same as RowPitch * Height) or a
+	// value greater than or equal to RowPitch * Height.
 	SlicePitch int
 
 	// Usage information for the buffer from the device's point of view.
@@ -180,9 +181,19 @@ func (c *Context) CreateDeviceImage(mf MemFlags, format ImageFormat, width, heig
 	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, Depth: depth, Flags: mf}, nil
 }
 
-// Only source and region are used from the rectangle.
-func (c *Context) CreateDeviceImage2DInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
+// Only source and region are used from the rectangle (though the destination is
+// still validated).
+func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
+
+	// Validate input.
+	if !r.valid() {
+		return nil, ErrInvalidRect
+	}
+	dim := r.Src.dimensions()
+	if dim == 2 && r.Region[2] != 1 {
+		return nil, ErrInvalidRect
+	}
 
 	var scratch [scratchSize]byte
 	pointer, size := getPointerAndSize(value, unsafe.Pointer(&scratch[0]))
@@ -190,27 +201,39 @@ func (c *Context) CreateDeviceImage2DInitializedBy(mf MemFlags, format ImageForm
 		return nil, ErrImageRectToBufferSizeMismatch
 	}
 
-	// Determine the width and height from the region size in byte and the image
-	// format.
-	pixelBytes := format.pixelBytes()
-	if pixelBytes == 0 {
+	if format.pixelBytes() == 0 {
 		return nil, ErrInvalidImageFormat
 	}
-	if r.Region[0]%pixelBytes > 0 || r.Region[1]%pixelBytes > 0 {
+	if r.srcBytes() > int64(size) {
 		return nil, ErrImageRectToBufferSizeMismatch
 	}
-	width := r.Region[0] / pixelBytes
-	height := r.Region[1] / pixelBytes
 
+	// Create the image.
 	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
 
-	mem, err := clw.CreateImage2D(c.id, clw.MemFlags(mf), cFormat, clw.Size(width), clw.Size(height),
-		r.dstRowPitch(), pointer)
+	var mem clw.Mem
+	var err error
+	if dim == 2 {
+		mem, err = clw.CreateImage2D(c.id, clw.MemFlags(mf), cFormat, r.width(), r.height(), r.srcRowPitch(), pointer)
+	} else {
+		mem, err = clw.CreateImage3D(c.id, clw.MemFlags(mf), cFormat, r.width(), r.height(), r.depth(), r.srcRowPitch(),
+			r.srcSlicePitch(), pointer)
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, Width: int(width), Height: int(height), Flags: mf}, nil
+	return &Image{
+			id:         mem,
+			Context:    c,
+			Format:     format,
+			Width:      int(r.width()),
+			Height:     int(r.height()),
+			Depth:      int(r.depth()),
+			RowPitch:   int(r.srcRowPitch()),
+			SlicePitch: int(r.srcSlicePitch()),
+			Flags:      mf},
+		nil
 }
 
 // Creates a 2D image object.
