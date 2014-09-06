@@ -94,13 +94,20 @@ func main() {
 			}
 			check(err)
 
-			// TODO modify kernel to copy from image to image
 			kernel, err := progam.CreateKernel("toGray")
+			check(err)
+
+			cq, err := c.CreateCommandQueue(d, cl.QueueProfilingEnable)
 			check(err)
 
 			var inData *cl.Image
 			if false {
-
+				rgba := input.(*image.RGBA)
+				format := cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}
+				inData, err = c.CreateDeviceImage(cl.MemReadOnly, format, rgba.Rect.Dx(), rgba.Rect.Dy(), 1)
+				check(err)
+				err = cq.EnqueueReadImageFromImage(inData, cl.Blocking, input, nil, nil)
+				check(err)
 			} else if true {
 				rgba := input.(*image.RGBA)
 				format := cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}
@@ -110,19 +117,17 @@ func main() {
 				rect.Region[1] = int64(rgba.Rect.Dy())
 				rect.Region[2] = 1
 				inData, err = c.CreateDeviceImageInitializedBy(cl.MemReadOnly, format, &rect, rgba.Pix)
+				check(err)
 			} else {
 				inData, err = c.CreateDeviceImageInitializedByImage(cl.MemReadOnly, input)
+				check(err)
 			}
-			check(err)
 
 			outData, err := c.CreateDeviceImage(cl.MemWriteOnly, cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}, width,
 				height, 1)
 			check(err)
 
 			err = kernel.SetArguments(inData, outData)
-			check(err)
-
-			cq, err := c.CreateCommandQueue(d, cl.QueueProfilingEnable)
 			check(err)
 
 			localWidth := kernel.WorkGroupInfo[0].PreferredWorkGroupSizeMultiple

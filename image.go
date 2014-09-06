@@ -310,9 +310,8 @@ func (c *Context) CreateDeviceImageFromHostImage(mf MemFlags, i image.Image) (*I
 // Creates an uninitialized buffer on the host.
 func (c *Context) CreateHostImage(mf MemFlags, format ImageFormat, width, height, depth int) (*Image, error) {
 
-	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer
-
 	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
+	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer
 
 	var mem clw.Mem
 	var err error
@@ -384,13 +383,43 @@ func (b *Image) ReferenceCount() (int, error) {
 func (cq *CommandQueue) EnqueueReadImage(dst *Image, bc BlockingCall, r *Rect, src interface{}, waitList []*Event,
 	e *Event) error {
 
-	return nil
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandReadImage
+		e.CommandQueue = cq
+	}
+
+	pointer, _, err := tryPointerAndSize(src)
+	if err != nil {
+		return wrapError(err)
+	}
+
+	return clw.EnqueueWriteImage(cq.id, dst.id, clw.Bool(bc), r.Src.origin(), r.region(), r.Src.rowPitch(),
+		r.Src.slicePitch(), pointer, cq.toEvents(waitList), event)
 }
 
 func (cq *CommandQueue) EnqueueReadImageFromImage(dst *Image, bc BlockingCall, src image.Image, waitList []*Event,
 	e *Event) error {
 
-	return nil
+	var rect Rect
+	var actualSrc interface{}
+
+	switch v := src.(type) {
+
+	case *image.RGBA:
+		rect.Region[0] = int64(v.Rect.Dx())
+		rect.Region[1] = int64(v.Rect.Dy())
+		rect.Region[2] = 1
+		rect.Src.RowPitch = int64(v.Stride)
+		actualSrc = v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4 : (v.Rect.Max.Y-1)*v.Stride+v.Rect.Max.X-1]
+
+	default:
+		return ErrUnsupportedImageFormat
+	}
+
+	return cq.EnqueueReadImage(dst, bc, &rect, actualSrc, waitList, e)
 }
 
 // rect only uses the dst and region, src is ignored
@@ -401,7 +430,7 @@ func (cq *CommandQueue) EnqueueWriteImage(src *Image, bc BlockingCall, r *Rect, 
 	if e != nil {
 		event = &e.id
 		e.Context = cq.Context
-		e.CommandType = CommandReadImage
+		e.CommandType = CommandWriteImage
 		e.CommandQueue = cq
 	}
 
