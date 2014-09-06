@@ -9,6 +9,9 @@ import (
 )
 
 // A 2D or 3D image (Depth is 1 and SlicePitch is 0 for 2D images).
+//
+// TODO If Depth is 1 and SlicePitch is 0 it is ambiguous whether it is a 2D or
+// 3D image.
 type Image struct {
 	id clw.Mem
 
@@ -168,7 +171,7 @@ func (c *Context) CreateDeviceImage(mf MemFlags, format ImageFormat, width, heig
 
 	var mem clw.Mem
 	var err error
-	if depth == 0 {
+	if depth == 1 {
 		mem, err = clw.CreateImage2D(c.id, clw.MemFlags(mf), cFormat, clw.Size(width), clw.Size(height), 0, nil)
 	} else {
 		mem, err = clw.CreateImage3D(c.id, clw.MemFlags(mf), cFormat, clw.Size(width), clw.Size(height),
@@ -220,23 +223,15 @@ func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat
 		return nil, err
 	}
 
-	return &Image{
-			id:         mem,
-			Context:    c,
-			Format:     format,
-			Width:      int(r.width()),
-			Height:     int(r.height()),
-			Depth:      int(r.depth()),
-			RowPitch:   int(r.Src.rowPitch()),
-			SlicePitch: int(r.Src.slicePitch()),
-			Flags:      mf},
-		nil
+	return &Image{id: mem, Context: c, Format: format, Width: int(r.width()), Height: int(r.height()),
+		Depth: int(r.depth()), RowPitch: int(r.Src.rowPitch()), SlicePitch: int(r.Src.slicePitch()), Flags: mf}, nil
 }
 
 // Creates a 2D image object.
 //
-// Creates an initialized buffer on the host. Currently only *image.NRGBA formats are supported.
-func (c *Context) CreateDeviceImage2DInitializedByImage(mf MemFlags, i image.Image) (*Image, error) {
+// Creates an initialized buffer on the host. Currently only *image.RGBA format
+// is supported.
+func (c *Context) CreateDeviceImageInitializedByImage(mf MemFlags, i image.Image) (*Image, error) {
 
 	var pointer unsafe.Pointer
 	var width, height, imageRowPitch clw.Size
@@ -264,44 +259,51 @@ func (c *Context) CreateDeviceImage2DInitializedByImage(mf MemFlags, i image.Ima
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, Width: int(width), Height: int(height), Flags: mf}, nil
+	return &Image{id: mem, Context: c, Format: format, Width: int(width), Height: int(height), Depth: 1, Flags: mf}, nil
 }
 
-func (c *Context) CreateDeviceImage2DFromHostMem(mf MemFlags, format ImageFormat, r *Rect,
+func (c *Context) CreateDeviceImageFromHostMem(mf MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
 	// flags := clw.MemFlags(mf) | clw.MemUseHostPointer
 	return nil, nil
 }
 
-func (c *Context) CreateDeviceImage2DFromHostImage(mf MemFlags, i image.Image) (*Image, error) {
+func (c *Context) CreateDeviceImageFromHostImage(mf MemFlags, i image.Image) (*Image, error) {
 	// flags := clw.MemFlags(mf) | clw.MemUseHostPointer
 	return nil, nil
 }
 
-// Creates a 2D image object.
+// Creates a image object.
 //
 // Creates an uninitialized buffer on the host.
-func (c *Context) CreateHostImage2D(mf MemFlags, format ImageFormat, width, height int) (*Image, error) {
+func (c *Context) CreateHostImage(mf MemFlags, format ImageFormat, width, height, depth int) (*Image, error) {
 
 	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer
 
 	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
 
-	mem, err := clw.CreateImage2D(c.id, flags, cFormat, clw.Size(width), clw.Size(height), 0, nil)
+	var mem clw.Mem
+	var err error
+	if depth == 1 {
+		mem, err = clw.CreateImage2D(c.id, flags, cFormat, clw.Size(width), clw.Size(height), 0, nil)
+	} else {
+		mem, err = clw.CreateImage3D(c.id, flags, cFormat, clw.Size(width), clw.Size(height), clw.Size(depth), 0, 0,
+			nil)
+	}
 	if err != nil {
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, Flags: mf}, nil
+	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, Depth: depth, Flags: mf}, nil
 }
 
-func (c *Context) CreateHostImage2DInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
+func (c *Context) CreateHostImageInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
 	// flags := clw.MemFlags(mf) | clw.MemAllocHostPointer | clw.MemCopyHostPointer
 	return nil, nil
 }
 
-func (c *Context) CreateHostImage2DInitializedByImage(mf MemFlags, i image.Image) (*Image, error) {
+func (c *Context) CreateHostImageInitializedByImage(mf MemFlags, i image.Image) (*Image, error) {
 	// flags := clw.MemFlags(mf) | clw.MemAllocHostPointer | clw.MemCopyHostPointer
 	return nil, nil
 }
