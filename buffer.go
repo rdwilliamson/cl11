@@ -212,8 +212,8 @@ func (cq *CommandQueue) CopyBufferRect(src, dst *Buffer, r *Rect, waitList []*Ev
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueCopyBufferRect(cq.id, src.id, dst.id, r.srcOrigin(), r.dstOrigin(), r.region(), r.srcRowPitch(),
-		r.srcSlicePitch(), r.dstRowPitch(), r.dstSlicePitch(), cq.toEvents(waitList), event)
+	return clw.EnqueueCopyBufferRect(cq.id, src.id, dst.id, r.Src.origin(), r.Dst.origin(), r.region(),
+		r.Src.rowPitch(), r.Src.slicePitch(), r.Dst.rowPitch(), r.Dst.slicePitch(), cq.toEvents(waitList), event)
 }
 
 // Enqueues a command to map a region of the buffer object given by buffer into
@@ -342,9 +342,9 @@ func (cq *CommandQueue) ReadBufferRect(b *Buffer, bc BlockingCall, offset *Rect,
 		return wrapError(err)
 	}
 
-	return clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), offset.dstOrigin(), offset.srcOrigin(), offset.region(),
-		offset.dstRowPitch(), offset.dstSlicePitch(), offset.srcRowPitch(), offset.dstRowPitch(), pointer,
-		cq.toEvents(waitList), event)
+	return clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), offset.Dst.origin(), offset.Src.origin(),
+		offset.region(), offset.Dst.rowPitch(), offset.Dst.slicePitch(), offset.Src.rowPitch(), offset.Dst.rowPitch(),
+		pointer, cq.toEvents(waitList), event)
 }
 
 // Enqueue commands to write a rectangular region to a buffer object from host
@@ -386,9 +386,9 @@ func (cq *CommandQueue) WriteBufferRect(b *Buffer, bc BlockingCall, offset *Rect
 		src = &scratch
 	}
 
-	err = clw.EnqueueWriteBufferRect(cq.id, b.id, clw.Bool(bc), offset.dstOrigin(), offset.srcOrigin(), offset.region(),
-		offset.dstRowPitch(), offset.dstSlicePitch(), offset.srcRowPitch(), offset.srcSlicePitch(), pointer,
-		cq.toEvents(waitList), event)
+	err = clw.EnqueueWriteBufferRect(cq.id, b.id, clw.Bool(bc), offset.Dst.origin(), offset.Src.origin(),
+		offset.region(), offset.Dst.rowPitch(), offset.Dst.slicePitch(), offset.Src.rowPitch(), offset.Src.slicePitch(),
+		pointer, cq.toEvents(waitList), event)
 	if err != nil {
 		return err
 	}

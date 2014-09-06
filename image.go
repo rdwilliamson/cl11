@@ -204,9 +204,6 @@ func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat
 	if format.pixelBytes() == 0 {
 		return nil, ErrInvalidImageFormat
 	}
-	if r.srcBytes() > int64(size) {
-		return nil, ErrImageRectToBufferSizeMismatch
-	}
 
 	// Create the image.
 	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
@@ -214,10 +211,10 @@ func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat
 	var mem clw.Mem
 	var err error
 	if dim == 2 {
-		mem, err = clw.CreateImage2D(c.id, clw.MemFlags(mf), cFormat, r.width(), r.height(), r.srcRowPitch(), pointer)
+		mem, err = clw.CreateImage2D(c.id, clw.MemFlags(mf), cFormat, r.width(), r.height(), r.Src.rowPitch(), pointer)
 	} else {
-		mem, err = clw.CreateImage3D(c.id, clw.MemFlags(mf), cFormat, r.width(), r.height(), r.depth(), r.srcRowPitch(),
-			r.srcSlicePitch(), pointer)
+		mem, err = clw.CreateImage3D(c.id, clw.MemFlags(mf), cFormat, r.width(), r.height(), r.depth(), r.Src.rowPitch(),
+			r.Src.slicePitch(), pointer)
 	}
 	if err != nil {
 		return nil, err
@@ -230,8 +227,8 @@ func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat
 			Width:      int(r.width()),
 			Height:     int(r.height()),
 			Depth:      int(r.depth()),
-			RowPitch:   int(r.srcRowPitch()),
-			SlicePitch: int(r.srcSlicePitch()),
+			RowPitch:   int(r.Src.rowPitch()),
+			SlicePitch: int(r.Src.slicePitch()),
 			Flags:      mf},
 		nil
 }
@@ -370,8 +367,8 @@ func (cq *CommandQueue) EnqueueWriteImage(src *Image, bc BlockingCall, r *Rect, 
 		return wrapError(err)
 	}
 
-	return clw.EnqueueReadImage(cq.id, src.id, clw.Bool(bc), r.dstOrigin(), r.region(), r.dstRowPitch(),
-		r.dstSlicePitch(), pointer, cq.toEvents(waitList), event)
+	return clw.EnqueueReadImage(cq.id, src.id, clw.Bool(bc), r.Dst.origin(), r.region(), r.Dst.rowPitch(),
+		r.Dst.slicePitch(), pointer, cq.toEvents(waitList), event)
 }
 
 func (cq *CommandQueue) EnqueueWriteImageToImage(src *Image, bc BlockingCall, dst image.Image, waitList []*Event,
@@ -406,6 +403,6 @@ func (cq *CommandQueue) EnqueueCopyImage(src, dst *Image, r *Rect, waitList []*E
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueCopyImage(cq.id, src.id, dst.id, r.srcOrigin(), r.dstOrigin(), r.region(), cq.toEvents(waitList),
-		event)
+	return clw.EnqueueCopyImage(cq.id, src.id, dst.id, r.Src.origin(), r.Dst.origin(), r.region(),
+		cq.toEvents(waitList), event)
 }

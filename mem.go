@@ -36,6 +36,18 @@ func (rl *RectLayout) valid() bool {
 	return true
 }
 
+func (rl *RectLayout) origin() [3]clw.Size {
+	return [3]clw.Size{clw.Size(rl.Origin[0]), clw.Size(rl.Origin[1]), clw.Size(rl.Origin[2])}
+}
+
+func (rl *RectLayout) rowPitch() clw.Size {
+	return clw.Size(rl.RowPitch)
+}
+
+func (rl *RectLayout) slicePitch() clw.Size {
+	return clw.Size(rl.SlicePitch)
+}
+
 // dimensions returns 2 for a 2D image and 3 otherwise. It assumes the
 // RectLayout is valid.
 func (rl *RectLayout) dimensions() int {
@@ -66,54 +78,6 @@ func (r *Rect) valid() bool {
 	return r.Src.valid() && r.Dst.valid() && r.Region[0] >= 0 && r.Region[1] >= 0 && r.Region[2] >= 1
 }
 
-type MemFlags int
-
-// Bitfield.
-const (
-	MemReadWrite = MemFlags(clw.MemReadWrite)
-	MemWriteOnly = MemFlags(clw.MemWriteOnly)
-	MemReadOnly  = MemFlags(clw.MemReadOnly)
-)
-
-type MapFlags int
-
-// Bitfield.
-const (
-	MapRead  = MapFlags(clw.MapRead)
-	MapWrite = MapFlags(clw.MapWrite)
-)
-
-type BlockingCall clw.Bool
-
-const (
-	Blocking    = BlockingCall(clw.True)
-	NonBlocking = BlockingCall(clw.False)
-)
-
-func (r *Rect) srcOrigin() [3]clw.Size {
-	return [3]clw.Size{clw.Size(r.Src.Origin[0]), clw.Size(r.Src.Origin[1]), clw.Size(r.Src.Origin[2])}
-}
-
-func (r *Rect) srcRowPitch() clw.Size {
-	return clw.Size(r.Src.RowPitch)
-}
-
-func (r *Rect) srcSlicePitch() clw.Size {
-	return clw.Size(r.Src.SlicePitch)
-}
-
-func (r *Rect) dstOrigin() [3]clw.Size {
-	return [3]clw.Size{clw.Size(r.Dst.Origin[0]), clw.Size(r.Dst.Origin[1]), clw.Size(r.Dst.Origin[2])}
-}
-
-func (r *Rect) dstRowPitch() clw.Size {
-	return clw.Size(r.Dst.RowPitch)
-}
-
-func (r *Rect) dstSlicePitch() clw.Size {
-	return clw.Size(r.Dst.SlicePitch)
-}
-
 func (r *Rect) region() [3]clw.Size {
 	return [3]clw.Size{clw.Size(r.Region[0]), clw.Size(r.Region[1]), clw.Size(r.Region[2])}
 }
@@ -138,6 +102,38 @@ func (r *Rect) srcBytes() int64 {
 	return result
 }
 
+func (r *Rect) dstBytes() int64 {
+	result := r.Dst.RowPitch * r.Region[0]
+	if r.Dst.SlicePitch > 0 {
+		result *= r.Dst.SlicePitch
+	}
+	return result
+}
+
+type MemFlags int
+
+// Bitfield.
+const (
+	MemReadWrite = MemFlags(clw.MemReadWrite)
+	MemWriteOnly = MemFlags(clw.MemWriteOnly)
+	MemReadOnly  = MemFlags(clw.MemReadOnly)
+)
+
+type MapFlags int
+
+// Bitfield.
+const (
+	MapRead  = MapFlags(clw.MapRead)
+	MapWrite = MapFlags(clw.MapWrite)
+)
+
+type BlockingCall clw.Bool
+
+const (
+	Blocking    = BlockingCall(clw.True)
+	NonBlocking = BlockingCall(clw.False)
+)
+
 // Only the source and region are used from the rectangle.
 func (cq *CommandQueue) EnqueueCopyImageToBuffer(src *Image, dst *Buffer, r *Rect, offset int, waitList []*Event,
 	e *Event) error {
@@ -150,7 +146,7 @@ func (cq *CommandQueue) EnqueueCopyImageToBuffer(src *Image, dst *Buffer, r *Rec
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueCopyImageToBuffer(cq.id, src.id, dst.id, r.srcOrigin(), r.region(), clw.Size(offset),
+	return clw.EnqueueCopyImageToBuffer(cq.id, src.id, dst.id, r.Src.origin(), r.region(), clw.Size(offset),
 		cq.toEvents(waitList), event)
 }
 
@@ -166,6 +162,6 @@ func (cq *CommandQueue) EnqueueCopyBufferToImage(src *Buffer, dst *Image, offset
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueCopyBufferToImage(cq.id, src.id, dst.id, clw.Size(offset), r.dstOrigin(), r.region(),
+	return clw.EnqueueCopyBufferToImage(cq.id, src.id, dst.id, clw.Size(offset), r.Dst.origin(), r.region(),
 		cq.toEvents(waitList), event)
 }
