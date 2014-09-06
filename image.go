@@ -21,6 +21,9 @@ type Image struct {
 	// The image format, the channel order and data type.
 	Format ImageFormat
 
+	// Size of each element of the image memory object
+	ElementSize int
+
 	// The width in pixels.
 	Width int
 
@@ -106,9 +109,9 @@ var (
 )
 
 // Invalid image formats will return 0.
-func (i *ImageFormat) pixelBytes() int64 {
+func (i *ImageFormat) elementSize() int {
 
-	var channels int64
+	var channels int
 	switch i.ChannelOrder {
 	case R, A, Intensity, Luminance:
 		channels = 1
@@ -123,7 +126,7 @@ func (i *ImageFormat) pixelBytes() int64 {
 		panic("unknown number of channels in format")
 	}
 
-	var channelBytes int64
+	var channelBytes int
 	switch i.ChannelType {
 	case SnormInt8, UnsignedInt8, UnormInt8, UnormInt16, SignedInt8:
 		channelBytes = 1
@@ -181,7 +184,8 @@ func (c *Context) CreateDeviceImage(mf MemFlags, format ImageFormat, width, heig
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, Depth: depth, Flags: mf}, nil
+	return &Image{id: mem, Context: c, Format: format, ElementSize: format.elementSize(), Width: width, Height: height,
+		Depth: depth, Flags: mf}, nil
 }
 
 // Only source and region are used from the rectangle (though the destination is
@@ -204,7 +208,7 @@ func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat
 		return nil, ErrImageRectToBufferSizeMismatch
 	}
 
-	if format.pixelBytes() == 0 {
+	if format.elementSize() == 0 {
 		return nil, ErrInvalidImageFormat
 	}
 
@@ -223,8 +227,9 @@ func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, Width: int(r.width()), Height: int(r.height()),
-		Depth: int(r.depth()), RowPitch: int(r.Src.rowPitch()), SlicePitch: int(r.Src.slicePitch()), Flags: mf}, nil
+	return &Image{id: mem, Context: c, Format: format, ElementSize: format.elementSize(), Width: int(r.width()),
+		Height: int(r.height()), Depth: int(r.depth()), RowPitch: int(r.Src.rowPitch()),
+		SlicePitch: int(r.Src.slicePitch()), Flags: mf}, nil
 }
 
 // Creates a 2D image object.
@@ -259,7 +264,8 @@ func (c *Context) CreateDeviceImageInitializedByImage(mf MemFlags, i image.Image
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, Width: int(width), Height: int(height), Depth: 1, Flags: mf}, nil
+	return &Image{id: mem, Context: c, Format: format, ElementSize: format.elementSize(), Width: int(width),
+		Height: int(height), Depth: 1, Flags: mf}, nil
 }
 
 func (c *Context) CreateDeviceImageFromHostMem(mf MemFlags, format ImageFormat, r *Rect,
@@ -294,7 +300,8 @@ func (c *Context) CreateHostImage(mf MemFlags, format ImageFormat, width, height
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, Width: width, Height: height, Depth: depth, Flags: mf}, nil
+	return &Image{id: mem, Context: c, Format: format, ElementSize: format.elementSize(), Width: width, Height: height,
+		Depth: depth, Flags: mf}, nil
 }
 
 func (c *Context) CreateHostImageInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
