@@ -34,9 +34,8 @@ type Image struct {
 	Depth int
 
 	// Scan line width in bytes. Only valid if Host is not nil. If Host is not
-	// nil then valid values are 0 (which is the same as Width * size of element
-	// in bytes) or a value greater than or equal to Width * size of element in
-	// bytes.
+	// nil then valid values are 0 (which is the same as Width * ElementSize) or
+	// a value greater than or equal to Width * ElementSize.
 	RowPitch int
 
 	// The size in bytes of each 2D image in bytes. Only valid if Host is not
@@ -184,8 +183,17 @@ func (c *Context) CreateDeviceImage(mf MemFlags, format ImageFormat, width, heig
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, ElementSize: format.elementSize(), Width: width, Height: height,
-		Depth: depth, Flags: mf}, nil
+	return &Image{
+			id:          mem,
+			Context:     c,
+			Format:      format,
+			ElementSize: format.elementSize(),
+			Width:       width,
+			Height:      height,
+			Depth:       depth,
+			Flags:       mf,
+		},
+		nil
 }
 
 // Only source and region are used from the rectangle (though the destination is
@@ -220,16 +228,25 @@ func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat
 	if dim == 2 {
 		mem, err = clw.CreateImage2D(c.id, clw.MemFlags(mf), cFormat, r.width(), r.height(), r.Src.rowPitch(), pointer)
 	} else {
-		mem, err = clw.CreateImage3D(c.id, clw.MemFlags(mf), cFormat, r.width(), r.height(), r.depth(), r.Src.rowPitch(),
-			r.Src.slicePitch(), pointer)
+		mem, err = clw.CreateImage3D(c.id, clw.MemFlags(mf), cFormat, r.width(), r.height(), r.depth(),
+			r.Src.rowPitch(), r.Src.slicePitch(), pointer)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, ElementSize: format.elementSize(), Width: int(r.width()),
-		Height: int(r.height()), Depth: int(r.depth()), RowPitch: int(r.Src.rowPitch()),
-		SlicePitch: int(r.Src.slicePitch()), Flags: mf}, nil
+	return &Image{id: mem,
+			Context:     c,
+			Format:      format,
+			ElementSize: format.elementSize(),
+			Width:       int(r.width()),
+			Height:      int(r.height()),
+			Depth:       int(r.depth()),
+			RowPitch:    int(r.Src.rowPitch()),
+			SlicePitch:  int(r.Src.slicePitch()),
+			Flags:       mf,
+		},
+		nil
 }
 
 // Creates a 2D image object.
@@ -264,8 +281,16 @@ func (c *Context) CreateDeviceImageInitializedByImage(mf MemFlags, i image.Image
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, ElementSize: format.elementSize(), Width: int(width),
-		Height: int(height), Depth: 1, Flags: mf}, nil
+	return &Image{id: mem,
+			Context:     c,
+			Format:      format,
+			ElementSize: format.elementSize(),
+			Width:       int(width),
+			Height:      int(height),
+			Depth:       1,
+			Flags:       mf,
+		},
+		nil
 }
 
 func (c *Context) CreateDeviceImageFromHostMem(mf MemFlags, format ImageFormat, r *Rect,
@@ -300,8 +325,16 @@ func (c *Context) CreateHostImage(mf MemFlags, format ImageFormat, width, height
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, ElementSize: format.elementSize(), Width: width, Height: height,
-		Depth: depth, Flags: mf}, nil
+	return &Image{id: mem,
+			Context:     c,
+			Format:      format,
+			ElementSize: format.elementSize(),
+			Width:       width,
+			Height:      height,
+			Depth:       depth,
+			Flags:       mf,
+		},
+		nil
 }
 
 func (c *Context) CreateHostImageInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
