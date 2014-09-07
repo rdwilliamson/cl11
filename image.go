@@ -276,35 +276,29 @@ func (c *Context) createImageInitializedByImage(mf MemFlags, hiddenFlags clw.Mem
 //
 // Creates an uninitialized buffer on the device.
 func (c *Context) CreateDeviceImage(mf MemFlags, format ImageFormat, width, height, depth int) (*Image, error) {
-
 	return c.createImage(mf, 0, format, width, height, depth)
 }
 
-// Only source and region are used from the rectangle (though the destination is
-// still validated).
+// TODO document which parts of the rectangle are used.
 func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
-
 	return c.createImageInitializedBy(mf, clw.MemCopyHostPointer, format, r, value)
 }
 
 // Creates a 2D image object.
 //
-// Creates an initialized buffer on the host. Currently only *image.RGBA format
-// is supported.
+// Creates an initialized buffer on the device.
 func (c *Context) CreateDeviceImageInitializedByImage(mf MemFlags, i image.Image) (*Image, error) {
-
 	return c.createImageInitializedByImage(mf, clw.MemCopyHostPointer, i)
 }
 
+// TODO document which parts of the rectangle are used.
 func (c *Context) CreateDeviceImageFromHostMem(mf MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
-
 	return c.createImageInitializedBy(mf, clw.MemUseHostPointer, format, r, value)
 }
 
 func (c *Context) CreateDeviceImageFromHostImage(mf MemFlags, i image.Image) (*Image, error) {
-
 	return c.createImageInitializedByImage(mf, clw.MemUseHostPointer, i)
 }
 
@@ -312,18 +306,16 @@ func (c *Context) CreateDeviceImageFromHostImage(mf MemFlags, i image.Image) (*I
 //
 // Creates an uninitialized buffer on the host.
 func (c *Context) CreateHostImage(mf MemFlags, format ImageFormat, width, height, depth int) (*Image, error) {
-
 	return c.createImage(mf, clw.MemAllocHostPointer, format, width, height, depth)
 }
 
+// TODO document which parts of the rectangle are used.
 func (c *Context) CreateHostImageInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
-
 	return c.createImageInitializedBy(mf, clw.MemAllocHostPointer|clw.MemCopyHostPointer, format, r, value)
 }
 
 func (c *Context) CreateHostImageInitializedByImage(mf MemFlags, i image.Image) (*Image, error) {
-
 	return c.createImageInitializedByImage(mf, clw.MemAllocHostPointer|clw.MemCopyHostPointer, i)
 }
 
@@ -359,6 +351,7 @@ func (b *Image) ReferenceCount() (int, error) {
 	return int(count), nil
 }
 
+// TODO document which parts of the rectangle are used.
 func (cq *CommandQueue) EnqueueReadImage(dst *Image, bc BlockingCall, r *Rect, src interface{}, waitList []*Event,
 	e *Event) error {
 
@@ -401,7 +394,7 @@ func (cq *CommandQueue) EnqueueReadImageFromImage(dst *Image, bc BlockingCall, s
 	return cq.EnqueueReadImage(dst, bc, &rect, actualSrc, waitList, e)
 }
 
-// rect only uses the dst and region, src is ignored
+// TODO document which parts of the rectangle are used.
 func (cq *CommandQueue) EnqueueWriteImage(src *Image, bc BlockingCall, r *Rect, dst interface{}, waitList []*Event,
 	e *Event) error {
 
@@ -444,6 +437,7 @@ func (cq *CommandQueue) EnqueueWriteImageToImage(src *Image, bc BlockingCall, ds
 	return cq.EnqueueWriteImage(src, bc, &rect, actualDst, waitList, e)
 }
 
+// TODO document which parts of the rectangle are used.
 func (cq *CommandQueue) EnqueueCopyImage(src, dst *Image, r *Rect, waitList []*Event, e *Event) error {
 
 	var event *clw.Event
