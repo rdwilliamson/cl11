@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"text/tabwriter"
 	"time"
 
 	cl "github.com/rdwilliamson/cl11"
@@ -71,6 +72,8 @@ func main() {
 	ext := filepath.Ext(os.Args[1])
 	base = base[:len(base)-len(ext)]
 
+	outText := tabwriter.NewWriter(os.Stdout, 0, 1, 1, ' ', 0)
+
 	platforms, err := cl.GetPlatforms()
 	check(err)
 	for _, p := range platforms {
@@ -97,11 +100,13 @@ func main() {
 			kernel, err := progam.CreateKernel("toGray")
 			check(err)
 
+			start := time.Now()
+
 			cq, err := c.CreateCommandQueue(d, cl.QueueProfilingEnable)
 			check(err)
 
 			var inData *cl.Image
-			if false {
+			if true {
 				rgba := input.(*image.RGBA)
 				format := cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}
 				inData, err = c.CreateDeviceImage(cl.MemReadOnly, format, rgba.Rect.Dx(), rgba.Rect.Dy(), 1)
@@ -156,7 +161,8 @@ func main() {
 
 			err = kernelEvent.GetProfilingInfo()
 			check(err)
-			fmt.Println(d.Name, time.Duration(kernelEvent.End-kernelEvent.Start))
+			fmt.Fprintf(outText, "%s\tvia\t%s\tKernel\t%v\tWall\t%v\n", d.Name, p.Name,
+				time.Duration(kernelEvent.End-kernelEvent.Start), time.Since(start))
 
 			outFile, err := os.Create(fmt.Sprintf("%s%d%s", base, count, ext))
 			check(err)
@@ -166,4 +172,7 @@ func main() {
 			check(err)
 		}
 	}
+
+	err = outText.Flush()
+	check(err)
 }

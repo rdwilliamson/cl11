@@ -101,11 +101,10 @@ const (
 	MemObjectImage3D = MemObjectType(clw.MemObjectImage3D)
 )
 
-var (
-	ErrUnsupportedImageFormat        = errors.New("cl: unsupported image format")
-	ErrImageRectToBufferSizeMismatch = errors.New("cl: image rectangle to buffer size mismatch")
-	ErrInvalidImageFormat            = errors.New("cl: invalid image format")
-)
+// ErrUnsupportedImageFormat is returned when trying to use an unsupported Go
+// image format in one of the convenience image methods (ends something along the
+// lines on By/From Image).
+var ErrUnsupportedImageFormat = errors.New("cl: unsupported image format")
 
 // Invalid image formats will return 0.
 func (i *ImageFormat) elementSize() int {
@@ -164,19 +163,18 @@ func (c *Context) GetSupportedImageFormats(mf MemFlags, mot MemObjectType) ([]Im
 	return results, nil
 }
 
-// Creates an image object.
-//
-// Creates an uninitialized buffer on the device.
-func (c *Context) CreateDeviceImage(mf MemFlags, format ImageFormat, width, height, depth int) (*Image, error) {
+func (c *Context) createImage(mf MemFlags, hiddenFlags clw.MemFlags, format ImageFormat, width, height,
+	depth int) (*Image, error) {
 
 	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
+	flags := clw.MemFlags(mf) | hiddenFlags
 
 	var mem clw.Mem
 	var err error
 	if depth == 1 {
-		mem, err = clw.CreateImage2D(c.id, clw.MemFlags(mf), cFormat, clw.Size(width), clw.Size(height), 0, nil)
+		mem, err = clw.CreateImage2D(c.id, flags, cFormat, clw.Size(width), clw.Size(height), 0, nil)
 	} else {
-		mem, err = clw.CreateImage3D(c.id, clw.MemFlags(mf), cFormat, clw.Size(width), clw.Size(height),
+		mem, err = clw.CreateImage3D(c.id, flags, cFormat, clw.Size(width), clw.Size(height),
 			clw.Size(depth), 0, 0, nil)
 	}
 	if err != nil {
@@ -196,47 +194,29 @@ func (c *Context) CreateDeviceImage(mf MemFlags, format ImageFormat, width, heig
 		nil
 }
 
-// Only source and region are used from the rectangle (though the destination is
-// still validated).
-func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
+func (c *Context) createImageInitializedBy(mf MemFlags, hiddenFlags clw.MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
 
-	// Validate input.
-	if !r.valid() {
-		return nil, ErrInvalidRect
-	}
-	dim := r.Src.dimensions()
-	if dim == 2 && r.Region[2] != 1 {
-		return nil, ErrInvalidRect
-	}
-
 	var scratch [scratchSize]byte
-	pointer, size := getPointerAndSize(value, unsafe.Pointer(&scratch[0]))
-	if uintptr(r.srcBytes()) > size {
-		return nil, ErrImageRectToBufferSizeMismatch
-	}
+	pointer, _ := getPointerAndSize(value, unsafe.Pointer(&scratch[0]))
 
-	if format.elementSize() == 0 {
-		return nil, ErrInvalidImageFormat
-	}
-
-	// Create the image.
 	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
-	flags := clw.MemFlags(mf) | clw.MemCopyHostPointer
+	flags := clw.MemFlags(mf) | hiddenFlags
 
 	var mem clw.Mem
 	var err error
-	if dim == 2 {
+	if r.Src.Origin[2] == 0 && r.Src.SlicePitch == 0 {
 		mem, err = clw.CreateImage2D(c.id, flags, cFormat, r.width(), r.height(), r.Src.rowPitch(), pointer)
 	} else {
-		mem, err = clw.CreateImage3D(c.id, flags, cFormat, r.width(), r.height(), r.depth(),
-			r.Src.rowPitch(), r.Src.slicePitch(), pointer)
+		mem, err = clw.CreateImage3D(c.id, flags, cFormat, r.width(), r.height(), r.depth(), r.Src.rowPitch(),
+			r.Src.slicePitch(), pointer)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	return &Image{id: mem,
+	return &Image{
+			id:          mem,
 			Context:     c,
 			Format:      format,
 			ElementSize: format.elementSize(),
@@ -250,11 +230,7 @@ func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat
 		nil
 }
 
-// Creates a 2D image object.
-//
-// Creates an initialized buffer on the host. Currently only *image.RGBA format
-// is supported.
-func (c *Context) CreateDeviceImageInitializedByImage(mf MemFlags, i image.Image) (*Image, error) {
+func (c *Context) createImageInitializedByImage(mf MemFlags, hiddenFlags clw.MemFlags, i image.Image) (*Image, error) {
 
 	var pointer unsafe.Pointer
 	var width, height, imageRowPitch clw.Size
@@ -275,34 +251,61 @@ func (c *Context) CreateDeviceImageInitializedByImage(mf MemFlags, i image.Image
 	}
 
 	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
-	flags := clw.MemFlags(mf) | clw.MemCopyHostPointer
+	flags := clw.MemFlags(mf) | hiddenFlags
 
 	mem, err := clw.CreateImage2D(c.id, flags, cFormat, width, height, imageRowPitch, pointer)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Image{id: mem,
+	return &Image{
+			id:          mem,
 			Context:     c,
 			Format:      format,
 			ElementSize: format.elementSize(),
 			Width:       int(width),
 			Height:      int(height),
 			Depth:       1,
+			RowPitch:    int(imageRowPitch),
 			Flags:       mf,
 		},
 		nil
 }
 
+// Creates an image object.
+//
+// Creates an uninitialized buffer on the device.
+func (c *Context) CreateDeviceImage(mf MemFlags, format ImageFormat, width, height, depth int) (*Image, error) {
+
+	return c.createImage(mf, 0, format, width, height, depth)
+}
+
+// Only source and region are used from the rectangle (though the destination is
+// still validated).
+func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
+	value interface{}) (*Image, error) {
+
+	return c.createImageInitializedBy(mf, clw.MemCopyHostPointer, format, r, value)
+}
+
+// Creates a 2D image object.
+//
+// Creates an initialized buffer on the host. Currently only *image.RGBA format
+// is supported.
+func (c *Context) CreateDeviceImageInitializedByImage(mf MemFlags, i image.Image) (*Image, error) {
+
+	return c.createImageInitializedByImage(mf, clw.MemCopyHostPointer, i)
+}
+
 func (c *Context) CreateDeviceImageFromHostMem(mf MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
-	// flags := clw.MemFlags(mf) | clw.MemUseHostPointer
-	return nil, nil
+
+	return c.createImageInitializedBy(mf, clw.MemUseHostPointer, format, r, value)
 }
 
 func (c *Context) CreateDeviceImageFromHostImage(mf MemFlags, i image.Image) (*Image, error) {
-	// flags := clw.MemFlags(mf) | clw.MemUseHostPointer
-	return nil, nil
+
+	return c.createImageInitializedByImage(mf, clw.MemUseHostPointer, i)
 }
 
 // Creates a image object.
@@ -310,42 +313,18 @@ func (c *Context) CreateDeviceImageFromHostImage(mf MemFlags, i image.Image) (*I
 // Creates an uninitialized buffer on the host.
 func (c *Context) CreateHostImage(mf MemFlags, format ImageFormat, width, height, depth int) (*Image, error) {
 
-	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
-	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer
-
-	var mem clw.Mem
-	var err error
-	if depth == 1 {
-		mem, err = clw.CreateImage2D(c.id, flags, cFormat, clw.Size(width), clw.Size(height), 0, nil)
-	} else {
-		mem, err = clw.CreateImage3D(c.id, flags, cFormat, clw.Size(width), clw.Size(height), clw.Size(depth), 0, 0,
-			nil)
-	}
-	if err != nil {
-		return nil, err
-	}
-
-	return &Image{id: mem,
-			Context:     c,
-			Format:      format,
-			ElementSize: format.elementSize(),
-			Width:       width,
-			Height:      height,
-			Depth:       depth,
-			Flags:       mf,
-		},
-		nil
+	return c.createImage(mf, clw.MemAllocHostPointer, format, width, height, depth)
 }
 
 func (c *Context) CreateHostImageInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
-	// flags := clw.MemFlags(mf) | clw.MemAllocHostPointer | clw.MemCopyHostPointer
-	return nil, nil
+
+	return c.createImageInitializedBy(mf, clw.MemAllocHostPointer|clw.MemCopyHostPointer, format, r, value)
 }
 
 func (c *Context) CreateHostImageInitializedByImage(mf MemFlags, i image.Image) (*Image, error) {
-	// flags := clw.MemFlags(mf) | clw.MemAllocHostPointer | clw.MemCopyHostPointer
-	return nil, nil
+
+	return c.createImageInitializedByImage(mf, clw.MemAllocHostPointer|clw.MemCopyHostPointer, i)
 }
 
 // Increments the image object reference count.

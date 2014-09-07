@@ -1,16 +1,6 @@
 package cl11
 
-import (
-	"errors"
-
-	clw "github.com/rdwilliamson/clw11"
-)
-
-// ErrInvalidRect is returned when a rectangle has a value less than 1, isn't
-// completely set to 2D or 3D (a layout having only one of Origin[2] or
-// SlicePitch non-zero; or the rectangle layout is 2D and a Rect.Region[2] isn't
-// 1). Or really any bad size, origin, etc.
-var ErrInvalidRect = errors.New("cl: invalid rectangle")
+import clw "github.com/rdwilliamson/clw11"
 
 // RectLayout defines a rectangle layout in bytes. For a 2D image SlicePitch and
 // Origin[2] must be zero. The offset of pixel X,Y,Z in bytes is
@@ -19,21 +9,6 @@ type RectLayout struct {
 	Origin     [3]int64
 	RowPitch   int64
 	SlicePitch int64
-}
-
-// valid validates the a rectangle layout.
-func (rl *RectLayout) valid() bool {
-	// No negative numbers.
-	if rl.Origin[0] < 0 || rl.Origin[1] < 0 || rl.Origin[2] < 0 || rl.RowPitch < 0 || rl.SlicePitch < 0 {
-		return false
-	}
-
-	// Ambigious wether it's a 2D or 3D image.
-	if (rl.Origin[2] != 0 && rl.SlicePitch == 0) || (rl.Origin[2] == 0 && rl.SlicePitch != 0) {
-		return false
-	}
-
-	return true
 }
 
 func (rl *RectLayout) origin() [3]clw.Size {
@@ -46,15 +21,6 @@ func (rl *RectLayout) rowPitch() clw.Size {
 
 func (rl *RectLayout) slicePitch() clw.Size {
 	return clw.Size(rl.SlicePitch)
-}
-
-// dimensions returns 2 for a 2D image and 3 otherwise. It assumes the
-// RectLayout is valid.
-func (rl *RectLayout) dimensions() int {
-	if rl.Origin[2] == 0 && rl.SlicePitch == 0 {
-		return 2
-	}
-	return 3
 }
 
 // A source and destination rectangular region.
@@ -73,11 +39,6 @@ type Rect struct {
 	Region [3]int64
 }
 
-// valid validates the a rectangle.
-func (r *Rect) valid() bool {
-	return r.Src.valid() && r.Dst.valid() && r.Region[0] >= 0 && r.Region[1] >= 0 && r.Region[2] >= 1
-}
-
 func (r *Rect) region() [3]clw.Size {
 	return [3]clw.Size{clw.Size(r.Region[0]), clw.Size(r.Region[1]), clw.Size(r.Region[2])}
 }
@@ -92,22 +53,6 @@ func (r *Rect) height() clw.Size {
 
 func (r *Rect) depth() clw.Size {
 	return clw.Size(r.Region[2])
-}
-
-func (r *Rect) srcBytes() int64 {
-	result := r.Src.RowPitch * r.Region[0]
-	if r.Src.SlicePitch > 0 {
-		result *= r.Src.SlicePitch
-	}
-	return result
-}
-
-func (r *Rect) dstBytes() int64 {
-	result := r.Dst.RowPitch * r.Region[0]
-	if r.Dst.SlicePitch > 0 {
-		result *= r.Dst.SlicePitch
-	}
-	return result
 }
 
 type MemFlags int
