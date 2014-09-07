@@ -31,9 +31,9 @@ var (
 	uint32Size  = uint32Type.Size()
 	float32Type = reflect.TypeOf(float32(0))
 	float32Size = float32Type.Size()
-
-	errNotAddressable = errors.New("value not addressable")
 )
+
+var errNotAddressable = errors.New("value not addressable")
 
 type (
 	Char   clw.Char
@@ -106,13 +106,17 @@ func checkIndex(i, max int) {
 	}
 }
 
+// TODO use go generate
+
 func NewChar2(v1, v2 Char) Char2 {
 	return *(*Char2)(unsafe.Pointer(&[2]Char{v1, v2}))
 }
 
-func (v2 *Char2) Get(i int) Char {
-	checkIndex(i, 2)
-	return *(*Char)(unsafe.Pointer(uintptr(unsafe.Pointer(v2)) + uintptr(i)*charSize))
+func (v *Char2) Get(i int) Char {
+	// checkIndex(i, 2)
+	// return *(*Char)(unsafe.Pointer(uintptr(unsafe.Pointer(v)) + uintptr(i)*charSize))
+
+	return Char((*[2]clw.Char)(unsafe.Pointer(v))[i])
 }
 
 func (v2 *Char2) Set(i int, v Char) {
@@ -622,7 +626,6 @@ func getPointerAndSize(x interface{}, scratch unsafe.Pointer) (unsafe.Pointer, u
 	switch value.Kind() {
 
 	case reflect.Int, reflect.Int32:
-
 		newValue := reflect.NewAt(int32Type, scratch).Elem()
 		newValue.SetInt(value.Int())
 		return addressablePointerAndSize(newValue)
@@ -632,7 +635,6 @@ func getPointerAndSize(x interface{}, scratch unsafe.Pointer) (unsafe.Pointer, u
 			value = value.Elem()
 
 			if kind := value.Kind(); kind == reflect.Int {
-
 				newValue := reflect.NewAt(int32Type, scratch).Elem()
 				newValue.SetInt(value.Int())
 				value = newValue
