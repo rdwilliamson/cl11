@@ -197,14 +197,15 @@ func (c *Context) createImage(mf MemFlags, hiddenFlags clw.MemFlags, format Imag
 func (c *Context) createImageInitializedBy(mf MemFlags, hiddenFlags clw.MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
 
-	var scratch [scratchSize]byte
-	pointer, _ := getPointerAndSize(value, unsafe.Pointer(&scratch[0]))
+	pointer, _, err := tryPointerAndSize(value)
+	if err != nil {
+		return nil, wrapError(err)
+	}
 
 	cFormat := clw.CreateImageFormat(clw.ChannelOrder(format.ChannelOrder), clw.ChannelType(format.ChannelType))
 	flags := clw.MemFlags(mf) | hiddenFlags
 
 	var mem clw.Mem
-	var err error
 	if r.Src.Origin[2] == 0 && r.Src.SlicePitch == 0 {
 		mem, err = clw.CreateImage2D(c.id, flags, cFormat, r.width(), r.height(), r.Src.rowPitch(), pointer)
 	} else {
