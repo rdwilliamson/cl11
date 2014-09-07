@@ -434,7 +434,7 @@ func (cq *CommandQueue) EnqueueWriteImageToImage(src *Image, bc BlockingCall, ds
 		rect.Region[0] = int64(v.Rect.Dx())
 		rect.Region[1] = int64(v.Rect.Dy())
 		rect.Region[2] = 1
-		rect.Src.RowPitch = int64(v.Stride)
+		rect.Dst.RowPitch = int64(v.Stride)
 		actualDst = v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4 : (v.Rect.Max.Y-1)*v.Stride+v.Rect.Max.X-1]
 
 	default:
