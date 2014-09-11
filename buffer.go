@@ -138,7 +138,7 @@ func (c *Context) CreateHostBufferInitializedBy(mf MemFlags, value interface{}) 
 // may return the same sub buffer and increment the reference count.
 func (b *Buffer) CreateSubBuffer(mf MemFlags, origin, size int64) (*Buffer, error) {
 
-	region := clw.BufferRegion{clw.Size(origin), clw.Size(size)}
+	region := clw.BufferRegion{Origin: clw.Size(origin), Size: clw.Size(size)}
 
 	memory, err := clw.CreateSubBuffer(b.id, clw.MemFlags(mf), region)
 	if err != nil {

@@ -616,8 +616,6 @@ func tryPointerAndSize(x interface{}) (pointer unsafe.Pointer, size uintptr, err
 		err = errNotAddressable
 		return
 	}
-
-	panic("unreachable")
 }
 
 func getPointerAndSize(x interface{}, scratch unsafe.Pointer) (unsafe.Pointer, uintptr) {
