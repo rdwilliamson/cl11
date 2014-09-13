@@ -39,9 +39,9 @@ type CommandQueue struct {
 	eventsScratch []clw.Event
 }
 
-type CommandQueueProperties int
+type CommandQueueProperties uint
 
-// Bitfield.
+// Bit field.
 const (
 	QueueOutOfOrderExecution = CommandQueueProperties(clw.QueueOutOfOrderExecModeEnable)
 	QueueProfilingEnable     = CommandQueueProperties(clw.QueueProfilingEnable)

@@ -55,18 +55,18 @@ func (r *Rect) depth() clw.Size {
 	return clw.Size(r.Region[2])
 }
 
-type MemFlags int
+type MemFlags uint
 
-// Bitfield.
+// Bit field.
 const (
 	MemReadWrite = MemFlags(clw.MemReadWrite)
 	MemWriteOnly = MemFlags(clw.MemWriteOnly)
 	MemReadOnly  = MemFlags(clw.MemReadOnly)
 )
 
-type MapFlags int
+type MapFlags uint
 
-// Bitfield.
+// Bit field.
 const (
 	MapRead  = MapFlags(clw.MapRead)
 	MapWrite = MapFlags(clw.MapWrite)

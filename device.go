@@ -209,9 +209,9 @@ type Device struct {
 	LocalMemTypeInfo LocalMemTypeInfo
 }
 
-type DeviceType int
+type DeviceType uint
 
-// Bitfield.
+// Bit field.
 const (
 	DeviceTypeDefault     = DeviceType(clw.DeviceTypeDefault)
 	DeviceTypeCpu         = DeviceType(clw.DeviceTypeCpu)
@@ -246,9 +246,9 @@ type VectorWidths struct {
 	// Half   int
 }
 
-type FPConfig int
+type FPConfig uint
 
-// Bitfield.
+// Bit field.
 const (
 	FPDenorm         = FPConfig(clw.FPDenorm)
 	FPFma            = FPConfig(clw.FPFma)
@@ -322,9 +322,9 @@ func (lmti LocalMemTypeInfo) String() string {
 	return ""
 }
 
-type ExecCapabilities int
+type ExecCapabilities uint
 
-// Bitfield.
+// Bit field.
 const (
 	ExecKernel       = ExecCapabilities(clw.ExecKernel)
 	ExecNativeKernel = ExecCapabilities(clw.ExecNativeKernel)
