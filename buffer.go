@@ -238,6 +238,20 @@ func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, of
 	return &MappedBuffer{pointer, size, b.id}, nil
 }
 
+// Enqueues a command to unmap a previously mapped region of a memory object.
+func (cq *CommandQueue) UnmapBuffer(mb *MappedBuffer, waitList []*Event, e *Event) error {
+
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandUnmapMemoryObject
+		e.CommandQueue = cq
+	}
+
+	return clw.EnqueueUnmapMemObject(cq.id, mb.memID, mb.pointer, cq.toEvents(waitList), event)
+}
+
 // Enqueue commands to read from a buffer object to host memory.
 //
 // Offset is in bytes. The destination must be addressable. If the buffer object

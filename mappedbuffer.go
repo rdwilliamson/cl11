@@ -14,20 +14,6 @@ type MappedBuffer struct {
 	memID   clw.Mem
 }
 
-// Enqueues a command to unmap a previously mapped region of a memory object.
-func (cq *CommandQueue) UnmapBuffer(mb *MappedBuffer, waitList []*Event, e *Event) error {
-
-	var event *clw.Event
-	if e != nil {
-		event = &e.id
-		e.Context = cq.Context
-		e.CommandType = CommandUnmapMemoryObject
-		e.CommandQueue = cq
-	}
-
-	return clw.EnqueueUnmapMemObject(cq.id, mb.memID, mb.pointer, cq.toEvents(waitList), event)
-}
-
 // Returns a slice of float32s backed by the mapped buffer.
 func (bm *MappedBuffer) Float32Slice() []float32 {
 	var header reflect.SliceHeader
