@@ -176,14 +176,19 @@ func main() {
 					err = readEvent.GetProfilingInfo()
 					check(err)
 
+					size := float64(rgba.Rect.Dx()*rgba.Rect.Dy()*4) / 1024 / 1024 / 1024
+
 					fmt.Fprintf(outText,
-						"%s\ton\t%s\tWrite (%v)\tIdle (%v)\tKernel (%v)\tIdle (%v)\tRead (%v)\tCPU Wall (%v)\n",
+						"%s\ton\t%s\tWrite (%v, %.2fGB/s)\tIdle (%v)\tKernel (%v)\tIdle (%v)\tRead (%v, %.2fGB/s)\t"+
+							"CPU Wall (%v)\n",
 						d.Name, p.Name,
 						time.Duration(writeEvent.End-writeEvent.Start),
+						size/time.Duration(writeEvent.End-writeEvent.Start).Seconds(),
 						time.Duration(kernelEvent.Start-writeEvent.End),
 						time.Duration(kernelEvent.End-kernelEvent.Start),
 						time.Duration(readEvent.Start-kernelEvent.End),
 						time.Duration(readEvent.End-readEvent.Start),
+						size/time.Duration(readEvent.End-readEvent.Start).Seconds(),
 						wall)
 				}
 			}

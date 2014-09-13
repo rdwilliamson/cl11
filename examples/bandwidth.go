@@ -69,8 +69,8 @@ func main() {
 
 			duration := time.Since(start)
 
-			transfered := float64(size) / 1024 / 1024
-			transferSpeed := transfered / duration.Seconds() / 1024
+			transfered := float64(size) / 1024 / 1024 / 1024
+			transferSpeed := transfered / duration.Seconds()
 
 			fmt.Printf("Go Timer: %s: %.2f MiB in %v (%.2f GiB/s)\n", d.Name, transfered, duration, transferSpeed)
 
