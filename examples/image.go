@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"os"
 	"path/filepath"
+	"runtime"
 	"text/tabwriter"
 	"time"
 
@@ -31,7 +32,11 @@ __kernel void toGray(__read_only image2d_t input, __write_only image2d_t output)
 		for (int x = get_global_id(0); x < width; x += get_global_size(0)) {
 
 			uint4 pixel = read_imageui(input, sampler, (int2)(x, y));
-			int v = 0.298912f*pixel.x + 0.586611f*pixel.y + 0.114478f*pixel.z;
+#ifdef INTEGER
+			uint v = (19595*pixel.x + 38469*pixel.y + 7472*pixel.z) >> 16;
+#else
+			uint v = 0.298912*pixel.x + 0.586611*pixel.y + 0.114478*pixel.z;
+#endif
 			write_imageui(output, (int2)(x, y), (uint4)(v, v, v, 255));
 		}
 	}
@@ -64,7 +69,6 @@ func main() {
 		os.Exit(1)
 	}
 	width, height := input.Bounds().Dx(), input.Bounds().Dy()
-	// output := image.NewGray(image.Rect(0, 0, width, height))
 	output := image.NewRGBA(image.Rect(0, 0, width, height))
 
 	var count int
@@ -80,16 +84,23 @@ func main() {
 		for _, d := range p.Devices {
 			count++
 
-			c, err := cl.CreateContext([]*cl.Device{d}, nil, nil, nil)
+			contextCallback := func(err string, data []byte, userData interface{}) {
+				fmt.Println(userData.(*cl.Device).Name, err)
+			}
+			c, err := cl.CreateContext([]*cl.Device{d}, nil, contextCallback, d)
 			check(err)
 
 			progam, err := c.CreateProgramWithSource([]byte(kernel))
 			check(err)
 
-			err = progam.Build([]*cl.Device{d}, "", nil, nil)
+			var options string
+			if d.Type == cl.DeviceTypeCpu {
+				options = "-D INTEGER"
+			}
+			err = progam.Build([]*cl.Device{d}, options, nil, nil)
 			if err != nil {
-				buildStatus, err2 := progam.BuildStatus(d)
-				check(err2)
+				buildStatus, err := progam.BuildStatus(d)
+				check(err)
 				if buildStatus == cl.BuildError {
 					fmt.Println(progam.BuildLog(d))
 					os.Exit(1)
@@ -100,43 +111,32 @@ func main() {
 			kernel, err := progam.CreateKernel("toGray")
 			check(err)
 
-			start := time.Now()
-
 			cq, err := c.CreateCommandQueue(d, cl.QueueProfilingEnable)
 			check(err)
 
-			var inData *cl.Image
-			if true {
-				rgba := input.(*image.RGBA)
-				format := cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}
-				inData, err = c.CreateDeviceImage(cl.MemReadOnly, format, rgba.Rect.Dx(), rgba.Rect.Dy(), 1)
-				check(err)
-				err = cq.EnqueueReadImageFromImage(inData, cl.Blocking, input, nil, nil)
-				check(err)
-			} else if true {
-				rgba := input.(*image.RGBA)
-				format := cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}
-				var rect cl.Rect
-				rect.Src.RowPitch = int64(rgba.Stride)
-				rect.Region[0] = int64(rgba.Rect.Dx())
-				rect.Region[1] = int64(rgba.Rect.Dy())
-				rect.Region[2] = 1
-				inData, err = c.CreateDeviceImageInitializedBy(cl.MemReadOnly, format, &rect, rgba.Pix)
-				check(err)
-			} else {
-				inData, err = c.CreateDeviceImageInitializedByImage(cl.MemReadOnly, input)
-				check(err)
-			}
-
 			outData, err := c.CreateDeviceImage(cl.MemWriteOnly, cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}, width,
 				height, 1)
+			check(err)
+
+			var readEvent, kernelEvent, writeEvent cl.Event
+
+			rgba := input.(*image.RGBA)
+			format := cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}
+			inData, err := c.CreateDeviceImage(cl.MemReadOnly, format, rgba.Rect.Dx(), rgba.Rect.Dy(), 1)
 			check(err)
 
 			err = kernel.SetArguments(inData, outData)
 			check(err)
 
 			localWidth := kernel.WorkGroupInfo[0].PreferredWorkGroupSizeMultiple
+			if runtime.GOOS == "darwin" && d.Type == cl.DeviceTypeCpu {
+				localWidth = 128
+			}
 			localHeight := d.MaxWorkGroupSize / localWidth
+			if localHeight > d.MaxWorkItemSizes[1] {
+				localHeight = d.MaxWorkItemSizes[1]
+			}
+
 			globalWidth, remainder := width/localWidth, width%localWidth
 			if remainder > 0 {
 				globalWidth++
@@ -148,21 +148,45 @@ func main() {
 			}
 			globalHeight *= localHeight
 
-			var kernelEvent cl.Event
-			err = cq.EnqueueNDRangeKernel(kernel, nil, []int{globalWidth, globalHeight}, []int{localWidth, localHeight},
-				nil, &kernelEvent)
-			check(err)
+			for i := 0; i < 2; i++ {
 
-			err = cq.EnqueueWriteImageToImage(outData, cl.Blocking, output, []*cl.Event{&kernelEvent}, nil)
-			check(err)
+				start := time.Now()
 
-			err = cq.Finish()
-			check(err)
+				err = cq.EnqueueReadImageFromImage(inData, cl.NonBlocking, input, nil, &readEvent)
+				check(err)
 
-			err = kernelEvent.GetProfilingInfo()
-			check(err)
-			fmt.Fprintf(outText, "%s\tvia\t%s\tKernel\t%v\tWall\t%v\n", d.Name, p.Name,
-				time.Duration(kernelEvent.End-kernelEvent.Start), time.Since(start))
+				err = cq.EnqueueNDRangeKernel(kernel, nil, []int{globalWidth, globalHeight}, []int{localWidth, localHeight},
+					[]*cl.Event{&readEvent}, &kernelEvent)
+				check(err)
+
+				err = cq.EnqueueWriteImageToImage(outData, cl.NonBlocking, output, []*cl.Event{&kernelEvent}, &writeEvent)
+				check(err)
+
+				err = writeEvent.Wait()
+				check(err)
+
+				if i == 1 {
+
+					wall := time.Since(start)
+
+					err = readEvent.GetProfilingInfo()
+					check(err)
+					err = kernelEvent.GetProfilingInfo()
+					check(err)
+					err = writeEvent.GetProfilingInfo()
+					check(err)
+
+					fmt.Fprintf(outText,
+						"%s\ton\t%s\tRead (%v)\tIdle (%v)\tKernel (%v)\tIdle (%v)\tWrite (%v)\tCPU Wall (%v)\n",
+						d.Name, p.Name,
+						time.Duration(readEvent.End-readEvent.Start),
+						time.Duration(kernelEvent.Start-readEvent.End),
+						time.Duration(kernelEvent.End-kernelEvent.Start),
+						time.Duration(writeEvent.Start-kernelEvent.End),
+						time.Duration(writeEvent.End-writeEvent.Start),
+						wall)
+				}
+			}
 
 			outFile, err := os.Create(fmt.Sprintf("%s%d%s", base, count, ext))
 			check(err)
