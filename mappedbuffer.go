@@ -7,7 +7,7 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
-// A mapped buffer or image. Has convenience functions for common data types.
+// A mapped buffer. Has convenience functions for common data types.
 type MappedBuffer struct {
 	pointer unsafe.Pointer
 	size    int64

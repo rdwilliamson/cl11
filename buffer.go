@@ -238,7 +238,7 @@ func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, of
 	return &MappedBuffer{pointer, size, b.id}, nil
 }
 
-// Enqueues a command to unmap a previously mapped region of a memory object.
+// Enqueues a command to unmap a previously mapped buffer object.
 func (cq *CommandQueue) UnmapBuffer(mb *MappedBuffer, waitList []*Event, e *Event) error {
 
 	var event *clw.Event

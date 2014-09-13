@@ -39,7 +39,7 @@ type Image struct {
 	RowPitch int
 
 	// The size in bytes of each 2D image in bytes. Only valid if Host is not
-	// nil; valid values are 0 (which is the same as RowPitch * Height) or a
+	// nil. valid values are 0 (which is the same as RowPitch * Height) or a
 	// value greater than or equal to RowPitch * Height.
 	SlicePitch int
 
@@ -481,4 +481,41 @@ func (cq *CommandQueue) EnqueueCopyImage(src, dst *Image, r *Rect, waitList []*E
 
 	return clw.EnqueueCopyImage(cq.id, src.id, dst.id, r.Src.origin(), r.Dst.origin(), r.region(),
 		cq.toEvents(waitList), event)
+}
+
+// Enqueues a command to map a region of an image object into the host address
+// space. Uses the Src and Region component of the rectangle.
+func (cq *CommandQueue) EnqueueMapImage(i *Image, bc BlockingCall, flags MapFlags, r *Rect, waitList []*Event,
+	e *Event) (*MappedImage, error) {
+
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandMapImage
+		e.CommandQueue = cq
+	}
+
+	var rowPitch, slicePitch clw.Size
+	pointer, err := clw.EnqueueMapImage(cq.id, i.id, clw.Bool(bc), clw.MapFlags(flags), r.Src.origin(), r.region(),
+		&rowPitch, &slicePitch, cq.toEvents(waitList), event)
+	if err != nil {
+		return nil, err
+	}
+
+	return &MappedImage{pointer, int64(rowPitch), int64(slicePitch), i.id}, nil
+}
+
+// Enqueues a command to unmap a previously mapped image object.
+func (cq *CommandQueue) EnqueueUnmapImage(mi *MappedImage, waitList []*Event, e *Event) error {
+
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandUnmapMemoryObject
+		e.CommandQueue = cq
+	}
+
+	return clw.EnqueueUnmapMemObject(cq.id, mi.memID, mi.pointer, cq.toEvents(waitList), event)
 }
