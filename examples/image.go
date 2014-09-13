@@ -152,38 +152,38 @@ func main() {
 
 				start := time.Now()
 
-				err = cq.EnqueueReadImageFromImage(inData, cl.NonBlocking, input, nil, &readEvent)
+				err = cq.EnqueueWriteImageFromImage(inData, cl.NonBlocking, input, nil, &writeEvent)
 				check(err)
 
 				err = cq.EnqueueNDRangeKernel(kernel, nil, []int{globalWidth, globalHeight}, []int{localWidth, localHeight},
-					[]*cl.Event{&readEvent}, &kernelEvent)
+					[]*cl.Event{&writeEvent}, &kernelEvent)
 				check(err)
 
-				err = cq.EnqueueWriteImageToImage(outData, cl.NonBlocking, output, []*cl.Event{&kernelEvent}, &writeEvent)
+				err = cq.EnqueueReadImageToImage(outData, cl.NonBlocking, output, []*cl.Event{&kernelEvent}, &readEvent)
 				check(err)
 
-				err = writeEvent.Wait()
+				err = readEvent.Wait()
 				check(err)
 
 				if i == 1 {
 
 					wall := time.Since(start)
 
-					err = readEvent.GetProfilingInfo()
+					err = writeEvent.GetProfilingInfo()
 					check(err)
 					err = kernelEvent.GetProfilingInfo()
 					check(err)
-					err = writeEvent.GetProfilingInfo()
+					err = readEvent.GetProfilingInfo()
 					check(err)
 
 					fmt.Fprintf(outText,
-						"%s\ton\t%s\tRead (%v)\tIdle (%v)\tKernel (%v)\tIdle (%v)\tWrite (%v)\tCPU Wall (%v)\n",
+						"%s\ton\t%s\tWrite (%v)\tIdle (%v)\tKernel (%v)\tIdle (%v)\tRead (%v)\tCPU Wall (%v)\n",
 						d.Name, p.Name,
-						time.Duration(readEvent.End-readEvent.Start),
-						time.Duration(kernelEvent.Start-readEvent.End),
-						time.Duration(kernelEvent.End-kernelEvent.Start),
-						time.Duration(writeEvent.Start-kernelEvent.End),
 						time.Duration(writeEvent.End-writeEvent.Start),
+						time.Duration(kernelEvent.Start-writeEvent.End),
+						time.Duration(kernelEvent.End-kernelEvent.Start),
+						time.Duration(readEvent.Start-kernelEvent.End),
+						time.Duration(readEvent.End-readEvent.Start),
 						wall)
 				}
 			}

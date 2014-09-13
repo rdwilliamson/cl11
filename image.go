@@ -273,49 +273,73 @@ func (c *Context) createImageInitializedByImage(mf MemFlags, hiddenFlags clw.Mem
 		nil
 }
 
-// Creates an image object.
+// Creates an image object on the device.
 //
 // Creates an uninitialized buffer on the device.
 func (c *Context) CreateDeviceImage(mf MemFlags, format ImageFormat, width, height, depth int) (*Image, error) {
 	return c.createImage(mf, 0, format, width, height, depth)
 }
 
-// TODO document which parts of the rectangle are used.
+// Creates an image object on the device.
+//
+// Creates an initialized buffer on the device. The size and contents are
+// interpreted according to the image format and the Src and Region member of
+// the rectangle.
 func (c *Context) CreateDeviceImageInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
 	return c.createImageInitializedBy(mf, clw.MemCopyHostPointer, format, r, value)
 }
 
-// Creates a 2D image object.
+// Creates a image object on the device.
 //
-// Creates an initialized buffer on the device.
+// Creates an initialized buffer on the device. The size and contents are
+// determined by the passed image.
 func (c *Context) CreateDeviceImageInitializedByImage(mf MemFlags, i image.Image) (*Image, error) {
 	return c.createImageInitializedByImage(mf, clw.MemCopyHostPointer, i)
 }
 
-// TODO document which parts of the rectangle are used.
+// Create a image object for the device backed by host memory.
+//
+// Creates an initialized buffer on the device. The size and contents are
+// interpreted according to the image format and the Src and Region member of
+// the rectangle.
 func (c *Context) CreateDeviceImageFromHostMem(mf MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
 	return c.createImageInitializedBy(mf, clw.MemUseHostPointer, format, r, value)
 }
 
+// Create a image object for the device backed by host memory.
+//
+// Creates an initialized buffer on the device. The size and contents are
+// determined by the passed image.
 func (c *Context) CreateDeviceImageFromHostImage(mf MemFlags, i image.Image) (*Image, error) {
 	return c.createImageInitializedByImage(mf, clw.MemUseHostPointer, i)
 }
 
-// Creates a image object.
+// Creates a image object that is host accessible.
 //
-// Creates an uninitialized buffer on the host.
+// Creates an uninitialized buffer on the host. This memory is not pageable and
+// allows for DMA copies (which are faster).
 func (c *Context) CreateHostImage(mf MemFlags, format ImageFormat, width, height, depth int) (*Image, error) {
 	return c.createImage(mf, clw.MemAllocHostPointer, format, width, height, depth)
 }
 
-// TODO document which parts of the rectangle are used.
+// Creates a image object that is host accessible.
+//
+// Creates an initialized buffer on the host. The size and contents are
+// interpreted according to the image format and the Src and Region member of
+// the rectangle. This memory is not pageable and allows for DMA copies (which
+// are faster).
 func (c *Context) CreateHostImageInitializedBy(mf MemFlags, format ImageFormat, r *Rect,
 	value interface{}) (*Image, error) {
 	return c.createImageInitializedBy(mf, clw.MemAllocHostPointer|clw.MemCopyHostPointer, format, r, value)
 }
 
+// Creates a image object that is host accessible.
+//
+// Creates an initialized buffer on the host. The size and contents are
+// determined by the passed image. This memory is not pageable and allows for
+// DMA copies (which are faster).
 func (c *Context) CreateHostImageInitializedByImage(mf MemFlags, i image.Image) (*Image, error) {
 	return c.createImageInitializedByImage(mf, clw.MemAllocHostPointer|clw.MemCopyHostPointer, i)
 }
@@ -352,8 +376,10 @@ func (b *Image) ReferenceCount() (int, error) {
 	return int(count), nil
 }
 
-// TODO document which parts of the rectangle are used.
-func (cq *CommandQueue) EnqueueReadImage(dst *Image, bc BlockingCall, r *Rect, src interface{}, waitList []*Event,
+// Enqueues a command to read from a image object to host memory.
+//
+// Uses the Dst and Region member of the rectangle.
+func (cq *CommandQueue) EnqueueReadImage(src *Image, bc BlockingCall, r *Rect, dst interface{}, waitList []*Event,
 	e *Event) error {
 
 	var event *clw.Event
@@ -361,49 +387,6 @@ func (cq *CommandQueue) EnqueueReadImage(dst *Image, bc BlockingCall, r *Rect, s
 		event = &e.id
 		e.Context = cq.Context
 		e.CommandType = CommandReadImage
-		e.CommandQueue = cq
-	}
-
-	pointer, _, err := tryPointerAndSize(src)
-	if err != nil {
-		return wrapError(err)
-	}
-
-	return clw.EnqueueWriteImage(cq.id, dst.id, clw.Bool(bc), r.Src.origin(), r.region(), r.Src.rowPitch(),
-		r.Src.slicePitch(), pointer, cq.toEvents(waitList), event)
-}
-
-func (cq *CommandQueue) EnqueueReadImageFromImage(dst *Image, bc BlockingCall, src image.Image, waitList []*Event,
-	e *Event) error {
-
-	var rect Rect
-	var actualSrc interface{}
-
-	switch v := src.(type) {
-
-	case *image.RGBA:
-		rect.Region[0] = int64(v.Rect.Dx())
-		rect.Region[1] = int64(v.Rect.Dy())
-		rect.Region[2] = 1
-		rect.Src.RowPitch = int64(v.Stride)
-		actualSrc = v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4 : (v.Rect.Max.Y-1)*v.Stride+v.Rect.Max.X-1]
-
-	default:
-		return ErrUnsupportedImageFormat
-	}
-
-	return cq.EnqueueReadImage(dst, bc, &rect, actualSrc, waitList, e)
-}
-
-// TODO document which parts of the rectangle are used.
-func (cq *CommandQueue) EnqueueWriteImage(src *Image, bc BlockingCall, r *Rect, dst interface{}, waitList []*Event,
-	e *Event) error {
-
-	var event *clw.Event
-	if e != nil {
-		event = &e.id
-		e.Context = cq.Context
-		e.CommandType = CommandWriteImage
 		e.CommandQueue = cq
 	}
 
@@ -416,7 +399,8 @@ func (cq *CommandQueue) EnqueueWriteImage(src *Image, bc BlockingCall, r *Rect, 
 		r.Dst.slicePitch(), pointer, cq.toEvents(waitList), event)
 }
 
-func (cq *CommandQueue) EnqueueWriteImageToImage(src *Image, bc BlockingCall, dst image.Image, waitList []*Event,
+// Enqueues a command to read from a image object to host memory.
+func (cq *CommandQueue) EnqueueReadImageToImage(src *Image, bc BlockingCall, dst image.Image, waitList []*Event,
 	e *Event) error {
 
 	var rect Rect
@@ -435,10 +419,56 @@ func (cq *CommandQueue) EnqueueWriteImageToImage(src *Image, bc BlockingCall, ds
 		return ErrUnsupportedImageFormat
 	}
 
-	return cq.EnqueueWriteImage(src, bc, &rect, actualDst, waitList, e)
+	return cq.EnqueueReadImage(src, bc, &rect, actualDst, waitList, e)
 }
 
-// TODO document which parts of the rectangle are used.
+// Enqueues a command to write to a image object from host memory.
+//
+// Uses the Src and Region member of the rectangle.
+func (cq *CommandQueue) EnqueueWriteImage(dst *Image, bc BlockingCall, r *Rect, src interface{}, waitList []*Event,
+	e *Event) error {
+
+	var event *clw.Event
+	if e != nil {
+		event = &e.id
+		e.Context = cq.Context
+		e.CommandType = CommandWriteImage
+		e.CommandQueue = cq
+	}
+
+	pointer, _, err := tryPointerAndSize(src)
+	if err != nil {
+		return wrapError(err)
+	}
+
+	return clw.EnqueueWriteImage(cq.id, dst.id, clw.Bool(bc), r.Src.origin(), r.region(), r.Src.rowPitch(),
+		r.Src.slicePitch(), pointer, cq.toEvents(waitList), event)
+}
+
+// Enqueues a command to write to a image object from host memory.
+func (cq *CommandQueue) EnqueueWriteImageFromImage(dst *Image, bc BlockingCall, src image.Image, waitList []*Event,
+	e *Event) error {
+
+	var rect Rect
+	var actualSrc interface{}
+
+	switch v := src.(type) {
+
+	case *image.RGBA:
+		rect.Region[0] = int64(v.Rect.Dx())
+		rect.Region[1] = int64(v.Rect.Dy())
+		rect.Region[2] = 1
+		rect.Src.RowPitch = int64(v.Stride)
+		actualSrc = v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4 : (v.Rect.Max.Y-1)*v.Stride+v.Rect.Max.X-1]
+
+	default:
+		return ErrUnsupportedImageFormat
+	}
+
+	return cq.EnqueueWriteImage(dst, bc, &rect, actualSrc, waitList, e)
+}
+
+// Enqueues a command to copy image objects.
 func (cq *CommandQueue) EnqueueCopyImage(src, dst *Image, r *Rect, waitList []*Event, e *Event) error {
 
 	var event *clw.Event
