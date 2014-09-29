@@ -183,7 +183,7 @@ func (b *Buffer) ReferenceCount() (int, error) {
 // Enqueues a command to copy from one buffer object to another.
 //
 // Source offset, destination offset, and size are in bytes.
-func (cq *CommandQueue) CopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size int64, waitList []*Event,
+func (cq *CommandQueue) EnqueueCopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size int64, waitList []*Event,
 	e *Event) error {
 
 	var event *clw.Event
@@ -202,7 +202,7 @@ func (cq *CommandQueue) CopyBuffer(src, dst *Buffer, srcOffset, dstOffset, size 
 // another buffer object.
 //
 // See Rect definition for how source and destination are defined.
-func (cq *CommandQueue) CopyBufferRect(src, dst *Buffer, r *Rect, waitList []*Event, e *Event) error {
+func (cq *CommandQueue) EnqueueCopyBufferRect(src, dst *Buffer, r *Rect, waitList []*Event, e *Event) error {
 
 	var event *clw.Event
 	if e != nil {
@@ -218,8 +218,8 @@ func (cq *CommandQueue) CopyBufferRect(src, dst *Buffer, r *Rect, waitList []*Ev
 
 // Enqueues a command to map a region of the buffer object given by buffer into
 // the host address space.
-func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, offset, size int64, waitList []*Event,
-	e *Event) (*MappedBuffer, error) {
+func (cq *CommandQueue) EnqueueMapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, offset, size int64,
+	waitList []*Event, e *Event) (*MappedBuffer, error) {
 
 	var event *clw.Event
 	if e != nil {
@@ -239,7 +239,7 @@ func (cq *CommandQueue) MapBuffer(b *Buffer, bc BlockingCall, flags MapFlags, of
 }
 
 // Enqueues a command to unmap a previously mapped buffer object.
-func (cq *CommandQueue) UnmapBuffer(mb *MappedBuffer, waitList []*Event, e *Event) error {
+func (cq *CommandQueue) EnqueueUnmapBuffer(mb *MappedBuffer, waitList []*Event, e *Event) error {
 
 	var event *clw.Event
 	if e != nil {
@@ -258,7 +258,7 @@ func (cq *CommandQueue) UnmapBuffer(mb *MappedBuffer, waitList []*Event, e *Even
 // is backed by host memory then all commands that use it and sub buffers must
 // have finished execution and it must not be mapped otherwise the results are
 // undefined.
-func (cq *CommandQueue) ReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst interface{}, waitList []*Event,
+func (cq *CommandQueue) EnqueueReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst interface{}, waitList []*Event,
 	e *Event) error {
 
 	var event *clw.Event
@@ -287,7 +287,7 @@ func (cq *CommandQueue) ReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst
 // it is the user's responsibility to ensure that the source data is valid at
 // the time the write is actually performed. If the source isn't addressable a
 // copy will be created.
-func (cq *CommandQueue) WriteBuffer(b *Buffer, bc BlockingCall, offset int64, src interface{}, waitList []*Event,
+func (cq *CommandQueue) EnqueueWriteBuffer(b *Buffer, bc BlockingCall, offset int64, src interface{}, waitList []*Event,
 	e *Event) error {
 
 	// Ensure we always have an event if not blocking. The event will be used to
@@ -340,8 +340,8 @@ func (cq *CommandQueue) WriteBuffer(b *Buffer, bc BlockingCall, offset int64, sr
 // addressable. If the buffer object is backed by host memory then all commands
 // that use it and sub buffers must have finished execution and it must not be
 // mapped otherwise the results are undefined.
-func (cq *CommandQueue) ReadBufferRect(b *Buffer, bc BlockingCall, offset *Rect, dst interface{}, waitList []*Event,
-	e *Event) error {
+func (cq *CommandQueue) EnqueueReadBufferRect(b *Buffer, bc BlockingCall, offset *Rect, dst interface{},
+	waitList []*Event, e *Event) error {
 
 	var event *clw.Event
 	if e != nil {
@@ -371,8 +371,8 @@ func (cq *CommandQueue) ReadBufferRect(b *Buffer, bc BlockingCall, offset *Rect,
 // garbage collected, it is the user's responsibility to ensure that the source
 // data is valid at the time the write is actually performed. If the source
 // isn't addressable a copy will be created.
-func (cq *CommandQueue) WriteBufferRect(b *Buffer, bc BlockingCall, offset *Rect, src interface{}, waitList []*Event,
-	e *Event) error {
+func (cq *CommandQueue) EnqueueWriteBufferRect(b *Buffer, bc BlockingCall, offset *Rect, src interface{},
+	waitList []*Event, e *Event) error {
 
 	// Ensure we always have an event if not blocking. The event will be used to
 	// register a callback. Thus the source data is guaranteed to be referenced
