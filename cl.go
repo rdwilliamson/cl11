@@ -564,7 +564,9 @@ func toVersion(version string) Version {
 	}
 
 	if err != nil {
-		panic(err)
+		// Maybe a regexp to try and find a "\d.\d"? It works on nVidia, AMD,
+		// and Intel atm.
+		panic("could not parse version string \"" + version + "\"")
 	}
 
 	return result
