@@ -27,9 +27,6 @@ type Kernel struct {
 
 	// Information about the kernel object that may be specific to a device.
 	WorkGroupInfo []KernelWorkGroupInfo
-
-	// Scratch space to store arguments.
-	argScratch [][scratchSize]byte
 }
 
 // Information about the kernel object specific to a device.
@@ -142,9 +139,6 @@ func (k *Kernel) getAllInfo() (err error) {
 
 	k.FunctionName = k.getString(clw.KernelFunctionName)
 	k.Arguments = k.getUint(clw.KernelNumArgs)
-	// TODO since there is the potential to store 128 bytes per argument
-	// (Double8) convert to a slice of byte slices.
-	k.argScratch = make([][scratchSize]byte, k.Arguments)
 
 	for i := range k.WorkGroupInfo {
 		wgi := &k.WorkGroupInfo[i]
@@ -247,12 +241,9 @@ func (k *Kernel) ReferenceCount() (int, error) {
 
 // Set the argument value for a specific argument of a kernel.
 //
-// TODO currently only native go types, Buffers, Images, and LocalSpaceArgs are
-// supported (no cl.Int, cl.Int8, etc. yet).
-//
 // All OpenCL API calls are thread-safe except SetArg (and SetArguments), which
-// is safe to call from any host thread, and is safe to call re-entrantly so
-// long as concurrent calls operate on different cl_kernel objects.
+// is safe to call from any host thread, and is re-entrant so long as concurrent
+// calls operate on different cl_kernel objects.
 //
 // A kernel object does not update the reference count for objects such as
 // memory, sampler objects specified as argument values by clSetKernelArg. Users
@@ -278,6 +269,8 @@ func (k *Kernel) SetArg(index int, arg interface{}) error {
 		size = uintptr(v)
 
 	default:
+
+		// Find the underlying type.
 		value := reflect.ValueOf(arg)
 		kind := value.Kind()
 		for kind == reflect.Ptr || kind == reflect.Interface {
@@ -285,50 +278,15 @@ func (k *Kernel) SetArg(index int, arg interface{}) error {
 			kind = value.Kind()
 		}
 
-		// TODO since there is the potential to store 128 bytes per argument
-		// (Double8) the scratch space will need to be allocated/resized as
-		// needed.
-		pointer = unsafe.Pointer(&k.argScratch[index][0])
-
-		switch kind {
-
-		case reflect.Bool:
-
-			localCopy := reflect.NewAt(int32Type, pointer).Elem()
-			if value.Bool() {
-				localCopy.SetInt(int64(clw.True))
-			} else {
-				localCopy.SetInt(int64(clw.False))
-			}
-
-			size = int32Size
-
-		case reflect.Int:
-
-			localCopy := reflect.NewAt(int32Type, pointer).Elem()
-			localCopy.SetInt(value.Int())
-
-			size = int32Size
-
-		case reflect.Uint:
-
-			localCopy := reflect.NewAt(uint32Type, pointer).Elem()
-			localCopy.SetUint(value.Uint())
-
-			size = uint32Size
-
-		case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Uint8, reflect.Uint16, reflect.Uint32,
-			reflect.Uint64, reflect.Float32, reflect.Float64:
-
-			localType := value.Type()
-			localCopy := reflect.NewAt(localType, pointer).Elem()
-			localCopy.Set(value)
-
-			size = localType.Size()
-
-		default:
-			return wrapError(fmt.Errorf("invalid argument kind: %s", kind.String()))
+		// Create an addressable copy if required.
+		if !value.CanAddr() {
+			newvalue := reflect.New(value.Type()).Elem()
+			newvalue.Set(value)
+			value = newvalue
 		}
+
+		pointer = unsafe.Pointer(value.UnsafeAddr())
+		size = value.Type().Size()
 	}
 
 	return clw.SetKernelArg(k.id, clw.Uint(index), clw.Size(size), pointer)
