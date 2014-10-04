@@ -11,10 +11,6 @@ import (
 	"unsafe"
 )
 
-const (
-	scratchSize = uintptr(8)
-)
-
 var (
 	int32Type   = reflect.TypeOf(int32(0))
 	int32Size   = int32Type.Size()
@@ -24,7 +20,10 @@ var (
 	float32Size = float32Type.Size()
 )
 
-var errNotAddressable = errors.New("value not addressable")
+var (
+	errNotAddressable    = errors.New("value not addressable")
+	errValueSizeTooSmall = errors.New("value's size is too small")
+)
 
 type Profile int
 

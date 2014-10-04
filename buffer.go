@@ -54,8 +54,10 @@ func (c *Context) CreateDeviceBufferInitializedBy(mf MemFlags, value interface{}
 
 	flags := clw.MemFlags(mf) | clw.MemCopyHostPointer
 
-	var scratch [scratchSize]byte
-	pointer, size := getPointerAndSize(value, unsafe.Pointer(&scratch[0]))
+	pointer, size, err := tryPointerAndSize(value)
+	if err != nil {
+		return nil, wrapError(err)
+	}
 
 	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(size), pointer)
 	if err != nil {
@@ -120,8 +122,10 @@ func (c *Context) CreateHostBufferInitializedBy(mf MemFlags, value interface{}) 
 
 	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer | clw.MemCopyHostPointer
 
-	var scratch [scratchSize]byte
-	pointer, size := getPointerAndSize(value, unsafe.Pointer(&scratch[0]))
+	pointer, size, err := tryPointerAndSize(value)
+	if err != nil {
+		return nil, wrapError(err)
+	}
 
 	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(size), pointer)
 	if err != nil {
@@ -308,12 +312,8 @@ func (cq *CommandQueue) EnqueueWriteBuffer(b *Buffer, bc BlockingCall, offset in
 	}
 
 	pointer, size, err := tryPointerAndSize(src)
-
 	if err != nil {
-		// The source value is not addressable so create a local copy of it.
-		var scratch [scratchSize]byte
-		pointer, size = getPointerAndSize(src, unsafe.Pointer(&scratch[0]))
-		src = &scratch
+		return wrapError(err)
 	}
 
 	err = clw.EnqueueWriteBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer,
@@ -351,9 +351,12 @@ func (cq *CommandQueue) EnqueueReadBufferRect(b *Buffer, bc BlockingCall, offset
 		e.CommandQueue = cq
 	}
 
-	pointer, _, err := tryPointerAndSize(dst)
+	pointer, size, err := tryPointerAndSize(dst)
 	if err != nil {
 		return wrapError(err)
+	}
+	if size < uintptr(b.Size) {
+		return wrapError(errValueSizeTooSmall)
 	}
 
 	return clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), offset.Dst.origin(), offset.Src.origin(),
@@ -390,14 +393,12 @@ func (cq *CommandQueue) EnqueueWriteBufferRect(b *Buffer, bc BlockingCall, offse
 		e.CommandType = CommandWriteBuffer
 		e.CommandQueue = cq
 	}
-
-	pointer, _, err := tryPointerAndSize(src)
-
+	pointer, size, err := tryPointerAndSize(src)
 	if err != nil {
-		// The source value is not addressable so create a local copy of it.
-		var scratch [scratchSize]byte
-		pointer, _ = getPointerAndSize(src, unsafe.Pointer(&scratch[0]))
-		src = &scratch
+		return wrapError(err)
+	}
+	if size < uintptr(b.Size) {
+		return wrapError(errValueSizeTooSmall)
 	}
 
 	err = clw.EnqueueWriteBufferRect(cq.id, b.id, clw.Bool(bc), offset.Dst.origin(), offset.Src.origin(),
