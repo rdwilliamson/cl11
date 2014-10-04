@@ -35,7 +35,7 @@ __kernel void toGray(__read_only image2d_t input, __write_only image2d_t output)
 #ifdef INTEGER
 			uint v = (19595*pixel.x + 38469*pixel.y + 7472*pixel.z) >> 16;
 #else
-			uint v = 0.298912*pixel.x + 0.586611*pixel.y + 0.114478*pixel.z;
+			uint v = 0.298912f*pixel.x + 0.586611f*pixel.y + 0.114478f*pixel.z;
 #endif
 			write_imageui(output, (int2)(x, y), (uint4)(v, v, v, 255));
 		}
