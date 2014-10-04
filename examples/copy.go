@@ -75,18 +75,18 @@ func main() {
 			check(kernelEvent.Wait())
 			check(kernelEvent.GetProfilingInfo())
 
-			mb, err := cq.MapBuffer(outData, cl.Blocking, cl.MapRead, 0, size*4, nil, nil)
+			mb, err := cq.EnqueueMapBuffer(outData, cl.Blocking, cl.MapRead, 0, size*4, nil, nil)
 			check(err)
 
 			equal := reflect.DeepEqual(values, mb.Float32Slice())
 
 			var event cl.Event
-			check(cq.UnmapBuffer(mb, nil, &event))
+			check(cq.EnqueueUnmapBuffer(mb, nil, &event))
 			check(event.Wait())
 
 			if equal {
 				duration := time.Duration(kernelEvent.End - kernelEvent.Start)
-				fmt.Printf("%s copied %s in %v (%.2f GiB/s)\n", d.Name, snippets.PrintBytes(int64(size*4)),
+				fmt.Printf("%s copied %s in %v (%.2f GiB/s)\n", d.Name, snippets.Bytes(size*4),
 					duration, float64(size*4)/1024/1024/1024/duration.Seconds())
 			} else {
 				fmt.Println(d.Name, "values do not match")
