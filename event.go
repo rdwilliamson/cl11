@@ -1,6 +1,7 @@
 package cl11
 
 import (
+	"errors"
 	"fmt"
 	"unsafe"
 
@@ -134,7 +135,7 @@ func (e *Event) Status() (ces CommandExecutionStatus, eventErr, getStatusErr err
 	}
 
 	if ces < 0 {
-		return 0, fmt.Errorf("event abnormally terminated: %s", clw.CodeToError(clw.Int(ces)).Error()), nil
+		return 0, fmt.Errorf("cl: event abnormally terminated: %s", clw.CodeToError(clw.Int(ces)).Error()), nil
 	}
 
 	return CommandExecutionStatus(ces), nil, nil
@@ -272,7 +273,7 @@ func (e *Event) SetComplete() error {
 // be negative.
 func (e *Event) SetError(err int) error {
 	if err >= 0 {
-		return wrapError(fmt.Errorf("can not set event error code to a non-negative value"))
+		return wrapError(errors.New("cl: can not set event error code to a non-negative value"))
 	}
 	return clw.SetUserEventStatus(e.id, clw.Int(err))
 }
