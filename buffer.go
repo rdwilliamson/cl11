@@ -1,8 +1,6 @@
 package cl11
 
 import (
-	"fmt"
-	"reflect"
 	"unsafe"
 
 	clw "github.com/rdwilliamson/clw11"
@@ -46,57 +44,6 @@ func (c *Context) CreateDeviceBuffer(size int64, mf MemFlags) (*Buffer, error) {
 	return &Buffer{id: memory, Context: c, Size: size, Flags: mf}, nil
 }
 
-// Create a buffer object on the device.
-//
-// Create a buffer object initialized with the passed value. The size and
-// contents are determined by the passed value.
-func (c *Context) CreateDeviceBufferInitializedBy(mf MemFlags, value interface{}) (*Buffer, error) {
-
-	flags := clw.MemFlags(mf) | clw.MemCopyHostPointer
-
-	pointer, size, err := tryPointerAndSize(value)
-	if err != nil {
-		return nil, wrapError(err)
-	}
-
-	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(size), pointer)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Buffer{id: memory, Context: c, Size: int64(size), Flags: mf}, nil
-}
-
-// Create a buffer object for the device backed by host memory.
-//
-// Create a device accessible buffer object on the host. The host value must be
-// addressable. The OpenCL implementation is allowed to cache the data on the
-// device.
-func (c *Context) CreateDeviceBufferFromHostMem(mf MemFlags, host interface{}) (*Buffer, error) {
-
-	flags := clw.MemFlags(mf) | clw.MemUseHostPointer
-
-	value := reflect.ValueOf(host)
-	if kind := value.Kind(); kind != reflect.Ptr && kind != reflect.Slice {
-		return nil, wrapError(fmt.Errorf("host value not addressable"))
-	} else if kind == reflect.Ptr {
-		for {
-			value = value.Elem()
-			if value.Kind() != reflect.Ptr {
-				break
-			}
-		}
-	}
-	pointer, size := addressablePointerAndSize(value)
-
-	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(size), pointer)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Buffer{id: memory, Context: c, Size: int64(size), Host: host, Flags: mf}, nil
-}
-
 // Creates a buffer object that is host accessible.
 //
 // Creates an uninitialized buffer in pinned memory. The size is in bytes. This
@@ -111,28 +58,6 @@ func (c *Context) CreateHostBuffer(size int64, mf MemFlags) (*Buffer, error) {
 	}
 
 	return &Buffer{id: memory, Context: c, Size: size, Flags: mf}, nil
-}
-
-// Creates a buffer object that is host accessible.
-//
-// Creates an initialized buffer in pinned memory. The size and contents are
-// determined by value. This memory is not pageable and allows for DMA copies
-// (which are faster).
-func (c *Context) CreateHostBufferInitializedBy(mf MemFlags, value interface{}) (*Buffer, error) {
-
-	flags := clw.MemFlags(mf) | clw.MemAllocHostPointer | clw.MemCopyHostPointer
-
-	pointer, size, err := tryPointerAndSize(value)
-	if err != nil {
-		return nil, wrapError(err)
-	}
-
-	memory, err := clw.CreateBuffer(c.id, flags, clw.Size(size), pointer)
-	if err != nil {
-		return nil, err
-	}
-
-	return &Buffer{id: memory, Context: c, Size: int64(size), Flags: mf}, nil
 }
 
 // Creates a buffer object from an existing object with the passed offset and
