@@ -16,6 +16,13 @@ var (
 	float32Size = float32Type.Size()
 )
 
+// A reference counted OpenCL object.
+type Object interface {
+	Retain() error
+	Release() error
+	ReferenceCount() (int, error)
+}
+
 type Profile int
 
 func toProfile(profile string) Profile {
