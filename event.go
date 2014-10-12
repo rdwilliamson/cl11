@@ -1,7 +1,6 @@
 package cl11
 
 import (
-	"errors"
 	"fmt"
 	"unsafe"
 
@@ -272,9 +271,6 @@ func (e *Event) SetComplete() error {
 // enqueued commands that wait on this user event will be terminated. Err must
 // be negative.
 func (e *Event) SetError(err int) error {
-	if err >= 0 {
-		return wrapError(errors.New("cl: can not set event error code to a non-negative value"))
-	}
 	return clw.SetUserEventStatus(e.id, clw.Int(err))
 }
 

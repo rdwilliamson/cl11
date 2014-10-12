@@ -1,7 +1,6 @@
 package cl11
 
 import (
-	"fmt"
 	"reflect"
 	"strings"
 	"unsafe"
@@ -296,18 +295,12 @@ func (k *Kernel) SetArg(index int, arg interface{}) error {
 //
 // This is a convenience wrapper around SetArg, consult it for more info.
 func (k *Kernel) SetArguments(args ...interface{}) error {
-
-	if len(args) != k.Arguments {
-		return wrapError(fmt.Errorf("invalid number of arguments: expecting %d, got %d", k.Arguments, len(args)))
-	}
-
 	for i := range args {
 		err := k.SetArg(i, args[i])
 		if err != nil {
-			return wrapError(fmt.Errorf("setting argument %d: %s", i, err.Error()))
+			return err
 		}
 	}
-
 	return nil
 }
 
