@@ -1,114 +1,162 @@
 package cl11
 
 import (
+	"math/rand"
 	"reflect"
 	"testing"
-
-	"math/rand"
 )
 
-type bufferTestData struct {
-	cq         *CommandQueue
-	in         *Buffer
-	out        *Buffer
-	k          *Kernel
-	localSize  []int
-	globalSize []int
-}
+func TestBuffers(t *testing.T) {
+	allDevices := getDevices(t)
+	for _, device := range allDevices {
 
-func setupBuffers(d *Device, t *testing.T) bufferTestData {
-	c, err := CreateContext([]*Device{d}, nil, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
+		var toRelease []Object
+		size := int64(1024 * 1024)
 
-	progam, err := c.CreateProgramWithSource([]byte(`
-#define int64_t long
-__kernel void copy(__global float* in, __global float* out, int64_t size)
-{
-	for (int64_t id = get_global_id(0); id < size; id += get_global_size(0)) {
-		out[id] = in[id];
-	}
-}`))
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = progam.Build([]*Device{d}, "", nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	k, err := progam.CreateKernel("copy")
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	size := int64(1024 * 1024 / 4)
-	if size*4 > d.MaxMemAllocSize {
-		size = d.MaxMemAllocSize / 4
-	}
-
-	in, err := c.CreateDeviceBuffer(size*4, MemReadOnly)
-	if err != nil {
-		t.Fatal(err)
-	}
-	out, err := c.CreateDeviceBuffer(size*4, MemWriteOnly)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	err = k.SetArguments(in, out, size)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	cq, err := c.CreateCommandQueue(d, 0)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	localSize := k.WorkGroupInfo[0].PreferredWorkGroupSizeMultiple
-	globalSize := int(size)
-	if globalSize%localSize > 0 {
-		globalSize = (globalSize/localSize + 1) * localSize
-	}
-
-	return bufferTestData{cq, in, out, k, []int{localSize}, []int{globalSize}}
-}
-
-func TestEnqueueReadWriteBuffer(t *testing.T) {
-	platforms, err := GetPlatforms()
-	if err != nil {
-		t.Fatal(err)
-	}
-	for _, p := range platforms {
-		for _, d := range p.Devices {
-
-			vars := setupBuffers(d, t)
-
-			want := make([]float32, vars.in.Size/4)
-			got := make([]float32, vars.in.Size/4)
-			for i := range want {
-				want[i] = rand.Float32()
-			}
-
-			err = vars.cq.EnqueueWriteBuffer(vars.in, NonBlocking, 0, want, nil, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = vars.cq.EnqueueNDRangeKernel(vars.k, nil, vars.globalSize, vars.localSize, nil, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-			err = vars.cq.EnqueueReadBuffer(vars.out, Blocking, 0, got, nil, nil)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if !reflect.DeepEqual(want, got) {
-				t.Error("copy does not match")
-			}
+		ctx, err := CreateContext([]*Device{device}, []ContextProperties{}, nil, nil)
+		if err != nil {
+			t.Error(err)
+			continue
 		}
+		toRelease = append(toRelease, ctx)
+
+		cq, err := ctx.CreateCommandQueue(device, 0)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+		toRelease = append(toRelease, cq)
+
+		host0, err := ctx.CreateHostBuffer(size, MemReadWrite)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+		toRelease = append(toRelease, host0)
+
+		host1, err := ctx.CreateHostBuffer(size, MemReadWrite)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+		toRelease = append(toRelease, host1)
+
+		device0, err := ctx.CreateDeviceBuffer(size, MemReadWrite)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+		toRelease = append(toRelease, device0)
+
+		map0, err := cq.EnqueueMapBuffer(host0, Blocking, MapWrite, 0, size, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		values := map0.Float32Slice()
+		for i := range values {
+			values[i] = rand.Float32()
+		}
+
+		err = cq.EnqueueUnmapBuffer(map0, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		err = cq.EnqueueCopyBuffer(host0, device0, 0, 0, size, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		err = cq.EnqueueCopyBuffer(device0, host1, 0, 0, size, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		map0, err = cq.EnqueueMapBuffer(host0, Blocking, MapRead, 0, size, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		map1, err := cq.EnqueueMapBuffer(host1, Blocking, MapRead, 0, size, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		want := map0.Float32Slice()
+		got := map1.Float32Slice()
+		if !reflect.DeepEqual(want, got) {
+			t.Error("values mismatch")
+		}
+
+		err = cq.EnqueueUnmapBuffer(map0, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		err = cq.EnqueueUnmapBuffer(map1, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		want = make([]float32, int(size)/int(float32Size))
+		got = make([]float32, int(size)/int(float32Size))
+		for i := range want {
+			want[i] = rand.Float32()
+		}
+
+		err = cq.EnqueueWriteBuffer(host0, NonBlocking, 0, want, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		err = cq.EnqueueCopyBuffer(host0, device0, 0, 0, size, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		err = cq.EnqueueCopyBuffer(device0, host1, 0, 0, size, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		err = cq.EnqueueReadBuffer(host1, Blocking, 0, got, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		if !reflect.DeepEqual(want, got) {
+			t.Error("values mismatch")
+		}
+
+		releaseAll(toRelease, t)
 	}
 }
