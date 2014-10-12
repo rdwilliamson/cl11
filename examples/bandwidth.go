@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"os"
 	"time"
 
@@ -28,8 +29,18 @@ func main() {
 			check(err)
 
 			size := d.MaxMemAllocSize
+			if size > 1024*1024*1024 {
+				size = 1024 * 1024 * 1024
+			}
 
 			host, err := c.CreateHostBuffer(size, 0)
+			check(err)
+
+			random := make([]float32, size/4)
+			for i := range random {
+				random[i] = rand.Float32()
+			}
+			err = cq.EnqueueWriteBuffer(host, cl.NonBlocking, 0, random, nil, nil)
 			check(err)
 
 			device, err := c.CreateDeviceBuffer(size, 0)
@@ -62,7 +73,7 @@ func main() {
 			start := time.Now()
 
 			var e cl.Event
-			check(cq.CopyBuffer(host, device, 0, 0, size, nil, &e))
+			check(cq.EnqueueCopyBuffer(host, device, 0, 0, size, nil, &e))
 			e.SetCallback(sendFunc, d.Name)
 
 			check(cq.Finish())
@@ -74,10 +85,13 @@ func main() {
 
 			fmt.Printf("Go Timer: %s: %.2f MiB in %v (%.2f GiB/s)\n", d.Name, transfered, duration, transferSpeed)
 
+			<-callbackChan
+
+			check(c.Release())
+			check(cq.Release())
 			check(host.Release())
 			check(device.Release())
-
-			<-callbackChan
+			check(e.Release())
 		}
 	}
 }
