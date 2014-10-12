@@ -120,7 +120,7 @@ func CreateContextFromType(cp []ContextProperties, dt DeviceType, cc ContextCall
 
 // Increment the context reference count.
 func (c *Context) Retain() error {
-	return clw.ReleaseContext(c.id)
+	return clw.RetainContext(c.id)
 }
 
 // Decrement the context reference count.
