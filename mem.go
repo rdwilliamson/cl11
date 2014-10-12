@@ -1,9 +1,24 @@
 package cl11
 
-import clw "github.com/rdwilliamson/clw11"
+import (
+	"errors"
 
-// RectLayout defines a rectangle layout in bytes. For a 2D image SlicePitch and
-// Origin[2] must be zero. The offset of pixel X,Y,Z in bytes is
+	clw "github.com/rdwilliamson/clw11"
+)
+
+var (
+	// ErrNotAddressable is returned when attempting to read from or write to a
+	// value that is not addressable (see reflect.Value.CanAddr).
+	ErrNotAddressable = errors.New("cl: not addressable")
+
+	// ErrTooSmall is returned when attempting to read from a value into a
+	// buffer or write from a buffer into a value where the destination is
+	// smaller than the source.
+	ErrTooSmall = errors.New("cl: value too small")
+)
+
+// RectLayout defines a rectangle layout in bytes. For a 2D rectangle SlicePitch
+// and Origin[2] must be zero. The offset of pixel X,Y,Z in bytes is
 // (Z-Origin[2])*SlicePitch + (Y-Origin[1])*RowPitch + (X-Origin[0]).
 type RectLayout struct {
 	Origin     [3]int64
@@ -34,8 +49,8 @@ type Rect struct {
 	// Dst.SlicePitch + Dst.Origin[1] * Dst.RowPitch + Dst.Origin[0].
 	Dst RectLayout
 
-	// The (width, height, depth) in pixels of the region being copied. For a 2D
-	// image the depth value given by Region[2] must be 1.
+	// The (width, height, depth) in bytes of the region being copied. For a 2D
+	// rectangle the depth value given by Region[2] must be 1.
 	Region [3]int64
 }
 
@@ -53,6 +68,10 @@ func (r *Rect) height() clw.Size {
 
 func (r *Rect) depth() clw.Size {
 	return clw.Size(r.Region[2])
+}
+
+func (r *Rect) size() uintptr {
+	return uintptr(r.Region[0] * r.Region[1] * r.Region[2])
 }
 
 type MemFlags uint

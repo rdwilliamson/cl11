@@ -27,7 +27,7 @@ type Buffer struct {
 	// The parent buffer, if applicable.
 	Buffer *Buffer
 
-	// The offset in bytes within the parent buffer.
+	// The offset in bytes within the parent buffer, if applicable.
 	Origin int64
 }
 
@@ -198,13 +198,26 @@ func (cq *CommandQueue) EnqueueReadBuffer(b *Buffer, bc BlockingCall, offset int
 		e.CommandQueue = cq
 	}
 
-	pointer, size, err := tryPointerAndSize(dst)
+	pointer, size, err := pointerSize(dst)
 	if err != nil {
-		return wrapError(err)
+		return err
 	}
 
-	return clw.EnqueueReadBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer,
+	err = clw.EnqueueReadBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer,
 		cq.toEvents(waitList), event)
+	if err != nil {
+		return err
+	}
+
+	// Set a no-op callback, just need hold a reference to the source data.
+	if bc == NonBlocking {
+		err = e.SetCallback(noOpEventCallback, dst)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Enqueue commands to write to a buffer object from host memory.
@@ -236,9 +249,9 @@ func (cq *CommandQueue) EnqueueWriteBuffer(b *Buffer, bc BlockingCall, offset in
 		e.CommandQueue = cq
 	}
 
-	pointer, size, err := tryPointerAndSize(src)
+	pointer, size, err := pointerSize(src)
 	if err != nil {
-		return wrapError(err)
+		return err
 	}
 
 	err = clw.EnqueueWriteBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer,
@@ -261,10 +274,8 @@ func (cq *CommandQueue) EnqueueWriteBuffer(b *Buffer, bc BlockingCall, offset in
 // Enqueue commands to read from a rectangular region from a buffer object to
 // host memory.
 //
-// See Rect definition for offset is defined. The destination must be
-// addressable. If the buffer object is backed by host memory then all commands
-// that use it and sub buffers must have finished execution and it must not be
-// mapped otherwise the results are undefined.
+// See Rect definition for how offset is defined. The destination must be
+// addressable.
 func (cq *CommandQueue) EnqueueReadBufferRect(b *Buffer, bc BlockingCall, offset *Rect, dst interface{},
 	waitList []*Event, e *Event) error {
 
@@ -276,17 +287,27 @@ func (cq *CommandQueue) EnqueueReadBufferRect(b *Buffer, bc BlockingCall, offset
 		e.CommandQueue = cq
 	}
 
-	pointer, size, err := tryPointerAndSize(dst)
+	pointer, _, err := pointerSize(dst)
 	if err != nil {
-		return wrapError(err)
-	}
-	if size < uintptr(b.Size) {
-		return wrapError(errValueSizeTooSmall)
+		return err
 	}
 
-	return clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), offset.Dst.origin(), offset.Src.origin(),
+	err = clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), offset.Dst.origin(), offset.Src.origin(),
 		offset.region(), offset.Dst.rowPitch(), offset.Dst.slicePitch(), offset.Src.rowPitch(), offset.Dst.rowPitch(),
 		pointer, cq.toEvents(waitList), event)
+	if err != nil {
+		return err
+	}
+
+	// Set a no-op callback, just need hold a reference to the source data.
+	if bc == NonBlocking {
+		err = e.SetCallback(noOpEventCallback, dst)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Enqueue commands to write a rectangular region to a buffer object from host
@@ -318,12 +339,10 @@ func (cq *CommandQueue) EnqueueWriteBufferRect(b *Buffer, bc BlockingCall, offse
 		e.CommandType = CommandWriteBuffer
 		e.CommandQueue = cq
 	}
-	pointer, size, err := tryPointerAndSize(src)
+
+	pointer, _, err := pointerSize(src)
 	if err != nil {
-		return wrapError(err)
-	}
-	if size < uintptr(b.Size) {
-		return wrapError(errValueSizeTooSmall)
+		return err
 	}
 
 	err = clw.EnqueueWriteBufferRect(cq.id, b.id, clw.Bool(bc), offset.Dst.origin(), offset.Src.origin(),

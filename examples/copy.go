@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"math/rand"
 	"reflect"
 	"time"
 
 	cl "github.com/rdwilliamson/cl11"
-	"github.com/rdwilliamson/cl11/examples/utils"
 	"github.com/rdwilliamson/snippets"
 )
 
@@ -49,9 +49,12 @@ func main() {
 			if size*4 > d.MaxMemAllocSize/2 {
 				size = d.MaxMemAllocSize / 2 / 4
 			}
-			values := utils.RandomFloat32(int(size))
+			values := make([]float32, int(size))
+			for i := range vlaues {
+				values[i] = rand.Float32()
+			}
 
-			inData, err := c.CreateDeviceBufferInitializedBy(cl.MemReadOnly, values)
+			inData, err := c.CreateDeviceBuffer(size*4, cl.MemReadOnly)
 			check(err)
 			outData, err := c.CreateDeviceBuffer(size*4, cl.MemWriteOnly)
 			check(err)
@@ -67,6 +70,9 @@ func main() {
 			if globalSize%localSize > 0 {
 				globalSize = (globalSize/localSize + 1) * localSize
 			}
+
+			err = cq.EnqueueWriteBuffer(inData, cl.Blocking, 0, values, nil, nil)
+			check(err)
 
 			var kernelEvent cl.Event
 			err = cq.EnqueueNDRangeKernel(kernel, nil, []int{globalSize}, []int{localSize}, nil, &kernelEvent)

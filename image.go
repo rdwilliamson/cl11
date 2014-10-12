@@ -257,13 +257,26 @@ func (cq *CommandQueue) EnqueueReadImage(src *Image, bc BlockingCall, r *Rect, d
 		e.CommandQueue = cq
 	}
 
-	pointer, _, err := tryPointerAndSize(dst)
+	pointer, _, err := pointerSize(dst)
 	if err != nil {
-		return wrapError(err)
+		return err
 	}
 
-	return clw.EnqueueReadImage(cq.id, src.id, clw.Bool(bc), r.Dst.origin(), r.region(), r.Dst.rowPitch(),
+	err = clw.EnqueueReadImage(cq.id, src.id, clw.Bool(bc), r.Dst.origin(), r.region(), r.Dst.rowPitch(),
 		r.Dst.slicePitch(), pointer, cq.toEvents(waitList), event)
+	if err != nil {
+		return err
+	}
+
+	// Set a no-op callback, just need hold a reference to the source data.
+	if bc == NonBlocking {
+		err = e.SetCallback(noOpEventCallback, dst)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Enqueues a command to read from a image object to host memory.
@@ -303,13 +316,26 @@ func (cq *CommandQueue) EnqueueWriteImage(dst *Image, bc BlockingCall, r *Rect, 
 		e.CommandQueue = cq
 	}
 
-	pointer, _, err := tryPointerAndSize(src)
+	pointer, _, err := pointerSize(src)
 	if err != nil {
-		return wrapError(err)
+		return err
 	}
 
-	return clw.EnqueueWriteImage(cq.id, dst.id, clw.Bool(bc), r.Src.origin(), r.region(), r.Src.rowPitch(),
+	err = clw.EnqueueWriteImage(cq.id, dst.id, clw.Bool(bc), r.Src.origin(), r.region(), r.Src.rowPitch(),
 		r.Src.slicePitch(), pointer, cq.toEvents(waitList), event)
+	if err != nil {
+		return err
+	}
+
+	// Set a no-op callback, just need hold a reference to the source data.
+	if bc == NonBlocking {
+		err = e.SetCallback(noOpEventCallback, src)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Enqueues a command to write to a image object from host memory.
