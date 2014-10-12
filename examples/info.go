@@ -2,17 +2,17 @@ package main
 
 import (
 	"fmt"
-
-	cl "github.com/rdwilliamson/cl11"
+	"os"
 
 	"github.com/davecgh/go-spew/spew"
+	cl "github.com/rdwilliamson/cl11"
 )
 
 func main() {
 	platforms, err := cl.GetPlatforms()
 	if err != nil {
 		fmt.Println(err)
-		return
+		os.Exit(1)
 	}
 	spew.Dump(platforms)
 }
