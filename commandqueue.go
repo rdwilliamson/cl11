@@ -2,6 +2,7 @@ package cl11
 
 import (
 	"strings"
+	"unsafe"
 
 	clw "github.com/rdwilliamson/clw11"
 )
@@ -103,6 +104,23 @@ func (cq *CommandQueue) Retain() error {
 // Decrements the command_queue reference count.
 func (cq *CommandQueue) Release() error {
 	return clw.ReleaseCommandQueue(cq.id)
+}
+
+// Return the command queue's reference count.
+//
+// The reference count returned should be considered immediately stale. It is
+// unsuitable for general use in applications. This feature is provided for
+// identifying memory leaks.
+func (cq *CommandQueue) ReferenceCount() (int, error) {
+
+	var count clw.Uint
+	err := clw.GetCommandQueueInfo(cq.id, clw.QueueReferenceCount, clw.Size(unsafe.Sizeof(count)),
+		unsafe.Pointer(&count), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	return int(count), nil
 }
 
 // Enqueues a marker command.
