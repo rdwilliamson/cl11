@@ -245,9 +245,21 @@ func (b *Image) ReferenceCount() (int, error) {
 
 // Enqueues a command to read from a image object to host memory.
 //
-// Uses the Dst and Region member of the rectangle.
+// Uses the Dst and Region member of the rectangle. See ReadBuffer for more info
+// relating to destination.
 func (cq *CommandQueue) EnqueueReadImage(src *Image, bc BlockingCall, r *Rect, dst interface{}, waitList []*Event,
 	e *Event) error {
+
+	// Ensure we always have an event if not blocking. The event will be used to
+	// register a callback. Thus the source data is guaranteed to be referenced
+	// somewhere to preventing it from being garbage collected. Once the event
+	// has completed and the callback is triggered (doing nothing) the reference
+	// to the source data will be removed allowing it to be garbage collected.
+	retainEvent := true
+	if e == nil && bc == NonBlocking {
+		e = &Event{}
+		retainEvent = false
+	}
 
 	var event *clw.Event
 	if e != nil {
@@ -270,6 +282,12 @@ func (cq *CommandQueue) EnqueueReadImage(src *Image, bc BlockingCall, r *Rect, d
 
 	// Set a no-op callback, just need hold a reference to the source data.
 	if bc == NonBlocking {
+		if retainEvent {
+			err = e.Retain()
+			if err != nil {
+				return err
+			}
+		}
 		err = e.SetCallback(noOpEventCallback, dst)
 		if err != nil {
 			return err
@@ -304,9 +322,21 @@ func (cq *CommandQueue) EnqueueReadImageToImage(src *Image, bc BlockingCall, dst
 
 // Enqueues a command to write to a image object from host memory.
 //
-// Uses the Src and Region member of the rectangle.
+// Uses the Src and Region member of the rectangle. See WriteBuffer for more
+// info relating to source.
 func (cq *CommandQueue) EnqueueWriteImage(dst *Image, bc BlockingCall, r *Rect, src interface{}, waitList []*Event,
 	e *Event) error {
+
+	// Ensure we always have an event if not blocking. The event will be used to
+	// register a callback. Thus the source data is guaranteed to be referenced
+	// somewhere to preventing it from being garbage collected. Once the event
+	// has completed and the callback is triggered (doing nothing) the reference
+	// to the source data will be removed allowing it to be garbage collected.
+	retainEvent := true
+	if e == nil && bc == NonBlocking {
+		e = &Event{}
+		retainEvent = false
+	}
 
 	var event *clw.Event
 	if e != nil {
@@ -329,6 +359,12 @@ func (cq *CommandQueue) EnqueueWriteImage(dst *Image, bc BlockingCall, r *Rect, 
 
 	// Set a no-op callback, just need hold a reference to the source data.
 	if bc == NonBlocking {
+		if retainEvent {
+			err = e.Retain()
+			if err != nil {
+				return err
+			}
+		}
 		err = e.SetCallback(noOpEventCallback, src)
 		if err != nil {
 			return err
