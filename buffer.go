@@ -190,6 +190,18 @@ func (cq *CommandQueue) EnqueueUnmapBuffer(mb *MappedBuffer, waitList []*Event, 
 func (cq *CommandQueue) EnqueueReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst interface{}, waitList []*Event,
 	e *Event) error {
 
+	// Ensure we always have an event if not blocking. The event will be used to
+	// register a callback. Thus the destination data is guaranteed to be
+	// referenced somewhere to preventing it from being garbage collected. Once
+	// the event has completed and the callback is triggered (doing nothing) the
+	// reference to the source data will be removed allowing it to be garbage
+	// collected.
+	retainEvent := true
+	if e == nil && bc == NonBlocking {
+		e = &Event{}
+		retainEvent = false
+	}
+
 	var event *clw.Event
 	if e != nil {
 		event = &e.id
@@ -211,6 +223,12 @@ func (cq *CommandQueue) EnqueueReadBuffer(b *Buffer, bc BlockingCall, offset int
 
 	// Set a no-op callback, just need hold a reference to the source data.
 	if bc == NonBlocking {
+		if retainEvent {
+			err = e.Retain()
+			if err != nil {
+				return err
+			}
+		}
 		err = e.SetCallback(noOpEventCallback, dst)
 		if err != nil {
 			return err
@@ -222,13 +240,12 @@ func (cq *CommandQueue) EnqueueReadBuffer(b *Buffer, bc BlockingCall, offset int
 
 // Enqueue commands to write to a buffer object from host memory.
 //
-// Offset is in bytes. If the buffer object is backed by host memory then all
-// commands that use it and sub buffers must have finished execution and it must
-// not be mapped otherwise the results are undefined. If the source is
-// addressable a reference will be held to prevent it being garbage collected,
-// it is the user's responsibility to ensure that the source data is valid at
-// the time the write is actually performed. If the source isn't addressable a
-// copy will be created.
+// Offset is in bytes. The source must be addressable. If the buffer object is
+// backed by host memory then all commands that use it and sub buffers must have
+// finished execution and it must not be mapped otherwise the results are
+// undefined. A reference to source will be held to prevent it being garbage
+// collected, it is the user's responsibility to ensure that the source data is
+// valid at the time the write is actually performed.
 func (cq *CommandQueue) EnqueueWriteBuffer(b *Buffer, bc BlockingCall, offset int64, src interface{}, waitList []*Event,
 	e *Event) error {
 
@@ -237,8 +254,10 @@ func (cq *CommandQueue) EnqueueWriteBuffer(b *Buffer, bc BlockingCall, offset in
 	// somewhere to preventing it from being garbage collected. Once the event
 	// has completed and the callback is triggered (doing nothing) the reference
 	// to the source data will be removed allowing it to be garbage collected.
+	retainEvent := true
 	if e == nil && bc == NonBlocking {
 		e = &Event{}
+		retainEvent = false
 	}
 
 	var event *clw.Event
@@ -262,6 +281,12 @@ func (cq *CommandQueue) EnqueueWriteBuffer(b *Buffer, bc BlockingCall, offset in
 
 	// Set a no-op callback, just need hold a reference to the source data.
 	if bc == NonBlocking {
+		if retainEvent {
+			err = e.Retain()
+			if err != nil {
+				return err
+			}
+		}
 		err = e.SetCallback(noOpEventCallback, src)
 		if err != nil {
 			return err
