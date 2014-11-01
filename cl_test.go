@@ -1,6 +1,8 @@
 package cl11
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -20,6 +22,18 @@ func getDevices(t *testing.T) []*Device {
 	}
 	var results []*Device
 	for _, platform := range allPlatforms {
+		if strings.Contains(platform.Name, "AMD") {
+			fmt.Println("skipping amd")
+			continue
+		}
+		if strings.Contains(platform.Name, "Intel") {
+			fmt.Println("skipping intel")
+			continue
+		}
+		// if strings.Contains(platform.Name, "NVIDIA") {
+		// 	fmt.Println("skipping nvidia")
+		// 	continue
+		// }
 		for _, device := range platform.Devices {
 			results = append(results, device)
 		}

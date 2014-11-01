@@ -274,9 +274,9 @@ func (cq *CommandQueue) EnqueueWriteBuffer(b *Buffer, bc BlockingCall, offset in
 // Enqueue commands to read from a rectangular region from a buffer object to
 // host memory.
 //
-// See Rect definition for how offset is defined. The destination must be
+// See Rect definition for how r is defined. The destination must be
 // addressable.
-func (cq *CommandQueue) EnqueueReadBufferRect(b *Buffer, bc BlockingCall, offset *Rect, dst interface{},
+func (cq *CommandQueue) EnqueueReadBufferRect(b *Buffer, bc BlockingCall, r *Rect, dst interface{},
 	waitList []*Event, e *Event) error {
 
 	var event *clw.Event
@@ -292,9 +292,8 @@ func (cq *CommandQueue) EnqueueReadBufferRect(b *Buffer, bc BlockingCall, offset
 		return err
 	}
 
-	err = clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), offset.Dst.origin(), offset.Src.origin(),
-		offset.region(), offset.Dst.rowPitch(), offset.Dst.slicePitch(), offset.Src.rowPitch(), offset.Dst.rowPitch(),
-		pointer, cq.toEvents(waitList), event)
+	err = clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), r.Dst.origin(), r.Src.origin(), r.region(),
+		r.Dst.rowPitch(), r.Dst.slicePitch(), r.Src.rowPitch(), r.Dst.rowPitch(), pointer, cq.toEvents(waitList), event)
 	if err != nil {
 		return err
 	}
@@ -313,14 +312,14 @@ func (cq *CommandQueue) EnqueueReadBufferRect(b *Buffer, bc BlockingCall, offset
 // Enqueue commands to write a rectangular region to a buffer object from host
 // memory.
 //
-// See Rect definition for offset is defined. If the buffer object is backed by
+// See Rect definition for how r is defined. If the buffer object is backed by
 // host memory then all commands that use it and sub buffers must have finished
 // execution and it must not be mapped otherwise the results are undefined. If
 // the source is addressable a reference will be held to prevent it being
 // garbage collected, it is the user's responsibility to ensure that the source
 // data is valid at the time the write is actually performed. If the source
 // isn't addressable a copy will be created.
-func (cq *CommandQueue) EnqueueWriteBufferRect(b *Buffer, bc BlockingCall, offset *Rect, src interface{},
+func (cq *CommandQueue) EnqueueWriteBufferRect(b *Buffer, bc BlockingCall, r *Rect, src interface{},
 	waitList []*Event, e *Event) error {
 
 	// Ensure we always have an event if not blocking. The event will be used to
@@ -345,9 +344,9 @@ func (cq *CommandQueue) EnqueueWriteBufferRect(b *Buffer, bc BlockingCall, offse
 		return err
 	}
 
-	err = clw.EnqueueWriteBufferRect(cq.id, b.id, clw.Bool(bc), offset.Dst.origin(), offset.Src.origin(),
-		offset.region(), offset.Dst.rowPitch(), offset.Dst.slicePitch(), offset.Src.rowPitch(), offset.Src.slicePitch(),
-		pointer, cq.toEvents(waitList), event)
+	err = clw.EnqueueWriteBufferRect(cq.id, b.id, clw.Bool(bc), r.Dst.origin(), r.Src.origin(), r.region(),
+		r.Dst.rowPitch(), r.Dst.slicePitch(), r.Src.rowPitch(), r.Src.slicePitch(), pointer, cq.toEvents(waitList),
+		event)
 	if err != nil {
 		return err
 	}
