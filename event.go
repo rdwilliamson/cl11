@@ -36,7 +36,9 @@ type Event struct {
 // either Complete (success) or an error.
 type EventCallback func(e *Event, err error, userData interface{})
 
-var noOpEventCallback EventCallback = func(e *Event, err error, userData interface{}) {}
+var noOpEventCallback EventCallback = func(e *Event, err error, userData interface{}) {
+	e.Release()
+}
 
 type CommandType int
 
