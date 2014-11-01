@@ -186,7 +186,9 @@ func (cq *CommandQueue) EnqueueUnmapBuffer(mb *MappedBuffer, waitList []*Event, 
 // Offset is in bytes. The destination must be addressable. If the buffer object
 // is backed by host memory then all commands that use it and sub buffers must
 // have finished execution and it must not be mapped otherwise the results are
-// undefined.
+// undefined. A reference to destination will be held to prevent it being
+// garbage collected, it is the user's responsibility to ensure that the
+// destination data is valid at the time the write is actually performed.
 func (cq *CommandQueue) EnqueueReadBuffer(b *Buffer, bc BlockingCall, offset int64, dst interface{}, waitList []*Event,
 	e *Event) error {
 
@@ -299,10 +301,22 @@ func (cq *CommandQueue) EnqueueWriteBuffer(b *Buffer, bc BlockingCall, offset in
 // Enqueue commands to read from a rectangular region from a buffer object to
 // host memory.
 //
-// See Rect definition for how r is defined. The destination must be
-// addressable.
+// See Rect definition for how r is defined. See ReadBuffer for more info
+// relating to destination.
 func (cq *CommandQueue) EnqueueReadBufferRect(b *Buffer, bc BlockingCall, r *Rect, dst interface{},
 	waitList []*Event, e *Event) error {
+
+	// Ensure we always have an event if not blocking. The event will be used to
+	// register a callback. Thus the destination data is guaranteed to be
+	// referenced somewhere to preventing it from being garbage collected. Once
+	// the event has completed and the callback is triggered (doing nothing) the
+	// reference to the source data will be removed allowing it to be garbage
+	// collected.
+	retainEvent := true
+	if e == nil && bc == NonBlocking {
+		e = &Event{}
+		retainEvent = false
+	}
 
 	var event *clw.Event
 	if e != nil {
@@ -325,6 +339,12 @@ func (cq *CommandQueue) EnqueueReadBufferRect(b *Buffer, bc BlockingCall, r *Rec
 
 	// Set a no-op callback, just need hold a reference to the source data.
 	if bc == NonBlocking {
+		if retainEvent {
+			err = e.Retain()
+			if err != nil {
+				return err
+			}
+		}
 		err = e.SetCallback(noOpEventCallback, dst)
 		if err != nil {
 			return err
@@ -337,13 +357,8 @@ func (cq *CommandQueue) EnqueueReadBufferRect(b *Buffer, bc BlockingCall, r *Rec
 // Enqueue commands to write a rectangular region to a buffer object from host
 // memory.
 //
-// See Rect definition for how r is defined. If the buffer object is backed by
-// host memory then all commands that use it and sub buffers must have finished
-// execution and it must not be mapped otherwise the results are undefined. If
-// the source is addressable a reference will be held to prevent it being
-// garbage collected, it is the user's responsibility to ensure that the source
-// data is valid at the time the write is actually performed. If the source
-// isn't addressable a copy will be created.
+// See Rect definition for how r is defined. See WriteBuffer for more info
+// relating to source.
 func (cq *CommandQueue) EnqueueWriteBufferRect(b *Buffer, bc BlockingCall, r *Rect, src interface{},
 	waitList []*Event, e *Event) error {
 
@@ -352,8 +367,10 @@ func (cq *CommandQueue) EnqueueWriteBufferRect(b *Buffer, bc BlockingCall, r *Re
 	// somewhere to preventing it from being garbage collected. Once the event
 	// has completed and the callback is triggered (doing nothing) the reference
 	// to the source data will be removed allowing it to be garbage collected.
+	retainEvent := true
 	if e == nil && bc == NonBlocking {
 		e = &Event{}
+		retainEvent = false
 	}
 
 	var event *clw.Event
@@ -378,6 +395,12 @@ func (cq *CommandQueue) EnqueueWriteBufferRect(b *Buffer, bc BlockingCall, r *Re
 
 	// Set a no-op callback, just need hold a reference to the source data.
 	if bc == NonBlocking {
+		if retainEvent {
+			err = e.Retain()
+			if err != nil {
+				return err
+			}
+		}
 		err = e.SetCallback(noOpEventCallback, src)
 		if err != nil {
 			return err
