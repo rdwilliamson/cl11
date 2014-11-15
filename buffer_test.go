@@ -13,7 +13,7 @@ func TestBuffer(t *testing.T) {
 		var toRelease []Object
 		size := int64(1024 * 1024)
 
-		ctx, err := CreateContext([]*Device{device}, []ContextProperties{}, nil, nil)
+		ctx, err := CreateContext([]*Device{device}, nil, nil, nil)
 		if err != nil {
 			t.Error(err)
 			continue
