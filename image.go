@@ -2,6 +2,7 @@ package cl11
 
 import (
 	"errors"
+	"fmt"
 	"image"
 	"unsafe"
 
@@ -77,6 +78,39 @@ const (
 	RGBx      = ChannelOrder(clw.RGBx)
 )
 
+func (co ChannelOrder) String() string {
+	switch co {
+	case R:
+		return "R"
+	case A:
+		return "A"
+	case RG:
+		return "RG"
+	case RA:
+		return "RA"
+	case RGB:
+		return "RGB"
+	case RGBA:
+		return "RGBA"
+	case BGRA:
+		return "BGRA"
+	case ARGB:
+		return "ARGB"
+	case Intensity:
+		return "Intensity"
+	case Luminance:
+		return "Luminance"
+	case Rx:
+		return "Rx"
+	case RGx:
+		return "RGx"
+	case RGBx:
+		return "RGBx"
+	default:
+		return fmt.Sprintf("unknown (%x)", int(co))
+	}
+}
+
 const (
 	SnormInt8      = ChannelType(clw.SnormInt8)
 	SnormInt16     = ChannelType(clw.SnormInt16)
@@ -94,6 +128,43 @@ const (
 	HalfFloat      = ChannelType(clw.HalfFloat)
 	Float32        = ChannelType(clw.Float32)
 )
+
+func (ct ChannelType) String() string {
+	switch ct {
+	case SnormInt8:
+		return "SnormInt8"
+	case SnormInt16:
+		return "SnormInt16"
+	case UnormInt8:
+		return "UnormInt8"
+	case UnormInt16:
+		return "UnormInt16"
+	case UnormShort565:
+		return "UnormShort565"
+	case UnormShort555:
+		return "UnormShort555"
+	case UnormInt101010:
+		return "UnormInt101010"
+	case SignedInt8:
+		return "SignedInt8"
+	case SignedInt16:
+		return "SignedInt16"
+	case SignedInt32:
+		return "SignedInt32"
+	case UnsignedInt8:
+		return "UnsignedInt8"
+	case UnsignedInt16:
+		return "UnsignedInt16"
+	case UnsignedInt32:
+		return "UnsignedInt32"
+	case HalfFloat:
+		return "HalfFloat"
+	case Float32:
+		return "Float32"
+	default:
+		return fmt.Sprintf("unknown (%x)", int(ct))
+	}
+}
 
 const (
 	MemObjectBuffer  = MemObjectType(clw.MemObjectBuffer)
