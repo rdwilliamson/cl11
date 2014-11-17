@@ -86,6 +86,7 @@ func TestImage(t *testing.T) {
 		rect.Dst.RowPitch = int64(img0.Stride)
 		rect.Region[0] = int64(img0.Bounds().Dx())
 		rect.Region[1] = int64(img0.Bounds().Dy())
+		rect.Region[2] = 1
 		err = cq.EnqueueCopyImage(host0, device0, &rect, nil, nil)
 		if err != nil {
 			t.Error(err)
