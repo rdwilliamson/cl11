@@ -118,8 +118,6 @@ func main() {
 				height, 1)
 			check(err)
 
-			var readEvent, kernelEvent, writeEvent cl.Event
-
 			rgba := input.(*image.RGBA)
 			format := cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}
 			inData, err := c.CreateDeviceImage(cl.MemReadOnly, format, rgba.Rect.Dx(), rgba.Rect.Dy(), 1)
@@ -149,6 +147,8 @@ func main() {
 			globalHeight *= localHeight
 
 			for i := 0; i < 2; i++ {
+
+				var readEvent, kernelEvent, writeEvent cl.Event
 
 				start := time.Now()
 
