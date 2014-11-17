@@ -2,6 +2,8 @@ package cl11
 
 import (
 	"image"
+	"image/color"
+	"math/rand"
 	"reflect"
 
 	"testing"
@@ -12,8 +14,17 @@ func TestImage(t *testing.T) {
 	for _, device := range allDevices {
 
 		var toRelease []Object
-		img0 := image.NewRGBA(image.Rect(0, 0, 3, 3))
-		img1 := image.NewRGBA(image.Rect(0, 0, 3, 3))
+		img0 := image.NewRGBA(image.Rect(0, 0, 256, 256))
+		for y, height := 0, img0.Bounds().Dy(); y < height; y++ {
+			for x, width := 0, img0.Bounds().Dx(); x < width; x++ {
+				r := uint8(rand.Intn(256))
+				g := uint8(rand.Intn(256))
+				b := uint8(rand.Intn(256))
+				a := uint8(rand.Intn(256))
+				img0.Set(x, y, color.NRGBA{r, g, b, a})
+			}
+		}
+		img1 := image.NewRGBA(img0.Bounds())
 
 		ctx, err := CreateContext([]*Device{device}, nil, nil, nil)
 		if err != nil {
