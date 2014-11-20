@@ -197,9 +197,9 @@ func (i *ImageFormat) elementSize() int {
 
 	var channelBytes int
 	switch i.ChannelType {
-	case SnormInt8, UnsignedInt8, UnormInt8, UnormInt16, SignedInt8:
+	case SnormInt8, UnormInt8, SignedInt8, UnsignedInt8:
 		channelBytes = 1
-	case SnormInt16, UnormShort565, UnormShort555, SignedInt16, UnsignedInt16, HalfFloat:
+	case SnormInt16, UnormInt16, UnormShort565, UnormShort555, SignedInt16, UnsignedInt16, HalfFloat:
 		channelBytes = 2
 	case UnormInt101010, SignedInt32, UnsignedInt32, Float32:
 		channelBytes = 4
