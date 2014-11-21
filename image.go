@@ -1,7 +1,6 @@
 package cl11
 
 import (
-	"errors"
 	"fmt"
 	"image"
 	"unsafe"
@@ -172,11 +171,6 @@ const (
 	MemObjectImage3D = MemObjectType(clw.MemObjectImage3D)
 )
 
-// ErrUnsupportedImageFormat is returned when trying to use an unsupported Go
-// image format in one of the convenience image methods (ends something along the
-// lines on By/From Image).
-var ErrUnsupportedImageFormat = errors.New("cl: unsupported image format")
-
 // Invalid image formats will return 0.
 func (i *ImageFormat) elementSize() int {
 
@@ -218,14 +212,12 @@ func (c *Context) GetSupportedImageFormats(mf MemFlags, mot MemObjectType) ([]Im
 	}
 
 	formats := make([]clw.ImageFormat, int(count))
-
 	err = clw.GetSupportedImageFormats(c.id, clw.MemFlags(mf), clw.MemObjectType(mot), count, &formats[0], nil)
 	if err != nil {
 		return nil, err
 	}
 
 	results := make([]ImageFormat, int(count))
-
 	for i := range formats {
 		results[i].ChannelOrder = ChannelOrder(formats[i].ChannelOrder())
 		results[i].ChannelType = ChannelType(formats[i].ChannelType())
@@ -385,7 +377,7 @@ func (cq *CommandQueue) EnqueueReadImageToImage(src *Image, bc BlockingCall, dst
 		actualDst = v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4 : (v.Rect.Max.Y-1)*v.Stride+v.Rect.Max.X-1]
 
 	default:
-		return ErrUnsupportedImageFormat
+		return UnsupportedImageFormat
 	}
 
 	return cq.EnqueueReadImage(src, bc, &rect, actualDst, waitList, e)
@@ -462,7 +454,7 @@ func (cq *CommandQueue) EnqueueWriteImageFromImage(dst *Image, bc BlockingCall, 
 		actualSrc = v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4 : (v.Rect.Max.Y-1)*v.Stride+v.Rect.Max.X-1]
 
 	default:
-		return ErrUnsupportedImageFormat
+		return UnsupportedImageFormat
 	}
 
 	return cq.EnqueueWriteImage(dst, bc, &rect, actualSrc, waitList, e)

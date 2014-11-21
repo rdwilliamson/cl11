@@ -1,20 +1,7 @@
 package cl11
 
 import (
-	"errors"
-
 	clw "github.com/rdwilliamson/clw11"
-)
-
-var (
-	// ErrNotAddressable is returned when attempting to read from or write to a
-	// value that is not addressable (see reflect.Value.CanAddr).
-	ErrNotAddressable = errors.New("cl: not addressable")
-
-	// ErrTooSmall is returned when attempting to read from a value into a
-	// buffer or write from a buffer into a value where the destination is
-	// smaller than the source.
-	ErrTooSmall = errors.New("cl: value too small")
 )
 
 // RectLayout defines a rectangle layout in bytes. For a 2D rectangle SlicePitch
