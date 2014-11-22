@@ -3,15 +3,13 @@ package cl11
 import (
 	"reflect"
 	"unsafe"
-
-	clw "github.com/rdwilliamson/clw11"
 )
 
 // A mapped buffer. Has convenience functions for common data types.
 type MappedBuffer struct {
+	Buffer  *Buffer
 	pointer unsafe.Pointer
 	size    int64
-	memID   clw.Mem
 }
 
 // Returns a slice of float32s backed by the mapped buffer.

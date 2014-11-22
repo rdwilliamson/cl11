@@ -164,7 +164,7 @@ func (cq *CommandQueue) EnqueueMapBuffer(b *Buffer, bc BlockingCall, flags MapFl
 		return nil, err
 	}
 
-	return &MappedBuffer{pointer, size, b.id}, nil
+	return &MappedBuffer{b, pointer, size}, nil
 }
 
 // Enqueues a command to unmap a previously mapped buffer object.
@@ -178,7 +178,7 @@ func (cq *CommandQueue) EnqueueUnmapBuffer(mb *MappedBuffer, waitList []*Event, 
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueUnmapMemObject(cq.id, mb.memID, mb.pointer, cq.toEvents(waitList), event)
+	return clw.EnqueueUnmapMemObject(cq.id, mb.Buffer.id, mb.pointer, cq.toEvents(waitList), event)
 }
 
 // Enqueue commands to read from a buffer object to host memory.
