@@ -176,17 +176,14 @@ func (i *ImageFormat) elementSize() int {
 
 	var channels int
 	switch i.ChannelOrder {
-	case R, A, Intensity, Luminance:
+	case R, Rx, A, Intensity, Luminance:
 		channels = 1
-	case RG, RA:
+	case RG, RGx, RA:
 		channels = 2
-	case RGB:
+	case RGB, RGBx:
 		channels = 3
 	case RGBA, BGRA, ARGB:
 		channels = 4
-	case Rx, RGx, RGBx:
-		// TODO how many channels do each of these have?
-		panic("unknown number of channels in format")
 	}
 
 	var channelBytes int
