@@ -125,6 +125,34 @@ func TestImage(t *testing.T) {
 			continue
 		}
 
+		mapped, err := cq.EnqueueMapImage(device0, Blocking, MapRead, &rect, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		mappedImage, err := mapped.GoImage()
+		if err != nil {
+			// TODO unmap
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		if !reflect.DeepEqual(img0, mappedImage) {
+			t.Error("images don't match")
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		err = cq.EnqueueUnmapImage(mapped, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
 		releaseAll(toRelease, t)
 	}
 }

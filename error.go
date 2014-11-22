@@ -10,9 +10,9 @@ import (
 // that is not addressable (see reflect.Value.CanAddr).
 var NotAddressable = errors.New("cl: not addressable")
 
-// UnsupportedImageFormat is returned when trying to use an unsupported Go image
-// format in one of the convenience image methods (ends something along the
-// lines on By/From Image).
+// UnsupportedImageFormat is returned when trying to use one of the convenience
+// image methods and there is a mismatch or incompatibility between the Go image
+// and the OpenCL image.
 var UnsupportedImageFormat = errors.New("cl: unsupported image format")
 
 var (

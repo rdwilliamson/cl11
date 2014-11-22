@@ -492,7 +492,7 @@ func (cq *CommandQueue) EnqueueMapImage(i *Image, bc BlockingCall, flags MapFlag
 		return nil, err
 	}
 
-	return &MappedImage{pointer, int64(rowPitch), int64(slicePitch), i.id}, nil
+	return &MappedImage{i, pointer, int64(rowPitch), int64(slicePitch)}, nil
 }
 
 // Enqueues a command to unmap a previously mapped image object.
@@ -506,5 +506,5 @@ func (cq *CommandQueue) EnqueueUnmapImage(mi *MappedImage, waitList []*Event, e 
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueUnmapMemObject(cq.id, mi.memID, mi.pointer, cq.toEvents(waitList), event)
+	return clw.EnqueueUnmapMemObject(cq.id, mi.Image.id, mi.pointer, cq.toEvents(waitList), event)
 }
