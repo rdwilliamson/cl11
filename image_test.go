@@ -124,5 +124,7 @@ func TestImage(t *testing.T) {
 			releaseAll(toRelease, t)
 			continue
 		}
+
+		releaseAll(toRelease, t)
 	}
 }
