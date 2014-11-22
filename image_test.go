@@ -132,15 +132,7 @@ func TestImage(t *testing.T) {
 			continue
 		}
 
-		mappedImage, err := mapped.GoImage()
-		if err != nil {
-			// TODO unmap
-			t.Error(err)
-			releaseAll(toRelease, t)
-			continue
-		}
-
-		if !reflect.DeepEqual(img0, mappedImage) {
+		if !reflect.DeepEqual(img0, mapped.RGBA()) {
 			t.Error("images don't match")
 			releaseAll(toRelease, t)
 			continue
