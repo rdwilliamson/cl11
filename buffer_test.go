@@ -146,7 +146,14 @@ func TestBuffer(t *testing.T) {
 			continue
 		}
 
-		err = cq.EnqueueReadBuffer(host1, Blocking, 0, got, nil, nil)
+		err = cq.EnqueueReadBuffer(host1, NonBlocking, 0, got, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		err = cq.Finish()
 		if err != nil {
 			t.Error(err)
 			releaseAll(toRelease, t)

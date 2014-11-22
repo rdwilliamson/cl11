@@ -85,7 +85,7 @@ func TestImage(t *testing.T) {
 		}
 		toRelease = append(toRelease, device0)
 
-		err = cq.EnqueueWriteImageFromImage(host0, Blocking, img0, nil, nil)
+		err = cq.EnqueueWriteImageFromImage(host0, NonBlocking, img0, nil, nil)
 		if err != nil {
 			t.Error(err)
 			releaseAll(toRelease, t)
@@ -105,7 +105,14 @@ func TestImage(t *testing.T) {
 			continue
 		}
 
-		err = cq.EnqueueReadImageToImage(device0, Blocking, img1, nil, nil)
+		err = cq.EnqueueReadImageToImage(device0, NonBlocking, img1, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		err = cq.Finish()
 		if err != nil {
 			t.Error(err)
 			releaseAll(toRelease, t)
