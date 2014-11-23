@@ -9,6 +9,7 @@ import (
 func TestBuffer(t *testing.T) {
 	allDevices := getDevices(t)
 	for _, device := range allDevices {
+		t.Log(device.Name, "on", device.Platform.Name)
 
 		var toRelease []Object
 		size := int64(1024 * 1024)

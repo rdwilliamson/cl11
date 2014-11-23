@@ -19,6 +19,7 @@ __kernel void copy(__global float* in, __global float* out, int64_t size)
 func TestKernel(t *testing.T) {
 	allDevices := getDevices(t)
 	for _, device := range allDevices {
+		t.Log(device.Name, "on", device.Platform.Name)
 
 		var toRelease []Object
 		elements := int64(1024)

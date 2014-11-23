@@ -11,6 +11,7 @@ import (
 func TestImage(t *testing.T) {
 	allDevices := getDevices(t)
 	for _, device := range allDevices {
+		t.Log(device.Name, "on", device.Platform.Name)
 
 		var toRelease []Object
 		img0 := image.NewRGBA(image.Rect(0, 0, 256, 256))
