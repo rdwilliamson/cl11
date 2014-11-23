@@ -5,7 +5,6 @@ import (
 	"image/color"
 	"math/rand"
 	"reflect"
-
 	"testing"
 )
 
