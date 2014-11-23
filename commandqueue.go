@@ -127,9 +127,7 @@ func (cq *CommandQueue) ReferenceCount() (int, error) {
 //
 // Enqueues a marker command to the command queue. The marker command is not
 // completed until all commands enqueued before it have completed. The marker
-// command returns an event which can be waited on, i.e. this event can be
-// waited on to ensure that all commands which have been queued before the
-// market command have been completed. complete.
+// command returns an event which can be waited on.
 func (cq *CommandQueue) EnqueueMarker(e *Event) error {
 
 	if e != nil {
