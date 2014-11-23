@@ -11,6 +11,9 @@ import (
 type Device struct {
 	id clw.DeviceID
 
+	// The platform from which the device was created.
+	Platform *Platform
+
 	// A device type can be a CPU, a host processor that runs the OpenCL
 	// implementation. A GPU, a device can also be used to accelerate a 3D API
 	// such as OpenGL or DirectX. A dedicated OpenCL accelerator (for example
@@ -358,7 +361,7 @@ func (p *Platform) getDevices() error {
 	p.Devices = make([]*Device, len(deviceIDs))
 	for i := range p.Devices {
 
-		device := &Device{id: deviceIDs[i]}
+		device := &Device{id: deviceIDs[i], Platform: p}
 
 		err = device.getAllInfo()
 		if err != nil {
