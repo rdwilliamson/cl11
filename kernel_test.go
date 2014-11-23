@@ -24,7 +24,7 @@ func TestKernel(t *testing.T) {
 		elements := int64(1024)
 		size := elements * 4
 
-		ctx, err := CreateContext([]*Device{device}, nil, nil, nil)
+		ctx, err := CreateContext([]*Device{device}, nil, contextCallback, t)
 		if err != nil {
 			t.Error(err)
 			continue
