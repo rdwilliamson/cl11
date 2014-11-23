@@ -334,8 +334,10 @@ func (cq *CommandQueue) EnqueueReadImage(src *Image, bc BlockingCall, r *Rect, d
 		return err
 	}
 
+	events := cq.createEvents(waitList)
 	err = clw.EnqueueReadImage(cq.id, src.id, clw.Bool(bc), r.Dst.origin(), r.region(), r.Dst.rowPitch(),
-		r.Dst.slicePitch(), pointer, cq.toEvents(waitList), event)
+		r.Dst.slicePitch(), pointer, events, event)
+	cq.releaseEvents(events)
 	if err != nil {
 		return err
 	}
@@ -411,8 +413,10 @@ func (cq *CommandQueue) EnqueueWriteImage(dst *Image, bc BlockingCall, r *Rect, 
 		return err
 	}
 
+	events := cq.createEvents(waitList)
 	err = clw.EnqueueWriteImage(cq.id, dst.id, clw.Bool(bc), r.Src.origin(), r.region(), r.Src.rowPitch(),
-		r.Src.slicePitch(), pointer, cq.toEvents(waitList), event)
+		r.Src.slicePitch(), pointer, events, event)
+	cq.releaseEvents(events)
 	if err != nil {
 		return err
 	}
@@ -468,8 +472,10 @@ func (cq *CommandQueue) EnqueueCopyImage(src, dst *Image, r *Rect, waitList []*E
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueCopyImage(cq.id, src.id, dst.id, r.Src.origin(), r.Dst.origin(), r.region(),
-		cq.toEvents(waitList), event)
+	events := cq.createEvents(waitList)
+	err := clw.EnqueueCopyImage(cq.id, src.id, dst.id, r.Src.origin(), r.Dst.origin(), r.region(), events, event)
+	cq.releaseEvents(events)
+	return err
 }
 
 // Enqueues a command to map a region of an image object into the host address
@@ -486,8 +492,10 @@ func (cq *CommandQueue) EnqueueMapImage(i *Image, bc BlockingCall, flags MapFlag
 	}
 
 	var rowPitch, slicePitch clw.Size
+	events := cq.createEvents(waitList)
 	pointer, err := clw.EnqueueMapImage(cq.id, i.id, clw.Bool(bc), clw.MapFlags(flags), r.Src.origin(), r.region(),
-		&rowPitch, &slicePitch, cq.toEvents(waitList), event)
+		&rowPitch, &slicePitch, events, event)
+	cq.releaseEvents(events)
 	if err != nil {
 		return nil, err
 	}
@@ -506,5 +514,8 @@ func (cq *CommandQueue) EnqueueUnmapImage(mi *MappedImage, waitList []*Event, e 
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueUnmapMemObject(cq.id, mi.Image.id, mi.pointer, cq.toEvents(waitList), event)
+	events := cq.createEvents(waitList)
+	err := clw.EnqueueUnmapMemObject(cq.id, mi.Image.id, mi.pointer, events, event)
+	cq.releaseEvents(events)
+	return err
 }

@@ -97,8 +97,11 @@ func (cq *CommandQueue) EnqueueCopyImageToBuffer(src *Image, dst *Buffer, r *Rec
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueCopyImageToBuffer(cq.id, src.id, dst.id, r.Src.origin(), r.region(), clw.Size(offset),
-		cq.toEvents(waitList), event)
+	events := cq.createEvents(waitList)
+	err := clw.EnqueueCopyImageToBuffer(cq.id, src.id, dst.id, r.Src.origin(), r.region(), clw.Size(offset), events,
+		event)
+	cq.releaseEvents(events)
+	return err
 }
 
 // Only the destination and region are used from the rectangle.
@@ -113,6 +116,9 @@ func (cq *CommandQueue) EnqueueCopyBufferToImage(src *Buffer, dst *Image, offset
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueCopyBufferToImage(cq.id, src.id, dst.id, clw.Size(offset), r.Dst.origin(), r.region(),
-		cq.toEvents(waitList), event)
+	events := cq.createEvents(waitList)
+	err := clw.EnqueueCopyBufferToImage(cq.id, src.id, dst.id, clw.Size(offset), r.Dst.origin(), r.region(), events,
+		event)
+	cq.releaseEvents(events)
+	return err
 }

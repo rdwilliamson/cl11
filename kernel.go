@@ -332,8 +332,11 @@ func (cq *CommandQueue) EnqueueNDRangeKernel(k *Kernel, globalOffset, globalSize
 		sizes[2*dims+i] = clw.Size(localSize[i])
 	}
 
-	return clw.EnqueueNDRangeKernel(cq.id, k.id, sizes[:dims], sizes[dims:2*dims], sizes[2*dims:],
-		cq.toEvents(waitList), event)
+	events := cq.createEvents(waitList)
+	err := clw.EnqueueNDRangeKernel(cq.id, k.id, sizes[:dims], sizes[dims:2*dims], sizes[2*dims:],
+		events, event)
+	cq.releaseEvents(events)
+	return err
 }
 
 // Enqueues a command to execute a kernel on a device.
@@ -349,5 +352,8 @@ func (cq *CommandQueue) EnqueueTask(k *Kernel, waitList []*Event, e *Event) erro
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueTask(cq.id, k.id, cq.toEvents(waitList), event)
+	events := cq.createEvents(waitList)
+	err := clw.EnqueueTask(cq.id, k.id, events, event)
+	cq.releaseEvents(events)
+	return err
 }

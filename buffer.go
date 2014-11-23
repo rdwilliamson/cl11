@@ -123,8 +123,11 @@ func (cq *CommandQueue) EnqueueCopyBuffer(src, dst *Buffer, srcOffset, dstOffset
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueCopyBuffer(cq.id, src.id, dst.id, clw.Size(srcOffset), clw.Size(dstOffset), clw.Size(size),
-		cq.toEvents(waitList), event)
+	events := cq.createEvents(waitList)
+	err := clw.EnqueueCopyBuffer(cq.id, src.id, dst.id, clw.Size(srcOffset), clw.Size(dstOffset), clw.Size(size),
+		events, event)
+	cq.releaseEvents(events)
+	return err
 }
 
 // Enqueues a command to copy a rectangular region from the buffer object to
@@ -141,8 +144,11 @@ func (cq *CommandQueue) EnqueueCopyBufferRect(src, dst *Buffer, r *Rect, waitLis
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueCopyBufferRect(cq.id, src.id, dst.id, r.Src.origin(), r.Dst.origin(), r.region(),
-		r.Src.rowPitch(), r.Src.slicePitch(), r.Dst.rowPitch(), r.Dst.slicePitch(), cq.toEvents(waitList), event)
+	events := cq.createEvents(waitList)
+	err := clw.EnqueueCopyBufferRect(cq.id, src.id, dst.id, r.Src.origin(), r.Dst.origin(), r.region(),
+		r.Src.rowPitch(), r.Src.slicePitch(), r.Dst.rowPitch(), r.Dst.slicePitch(), events, event)
+	cq.releaseEvents(events)
+	return err
 }
 
 // Enqueues a command to map a region of the buffer object given by buffer into
@@ -158,8 +164,10 @@ func (cq *CommandQueue) EnqueueMapBuffer(b *Buffer, bc BlockingCall, flags MapFl
 		e.CommandQueue = cq
 	}
 
+	events := cq.createEvents(waitList)
 	pointer, err := clw.EnqueueMapBuffer(cq.id, b.id, clw.Bool(bc), clw.MapFlags(flags), clw.Size(offset),
-		clw.Size(size), cq.toEvents(waitList), event)
+		clw.Size(size), events, event)
+	cq.releaseEvents(events)
 	if err != nil {
 		return nil, err
 	}
@@ -178,7 +186,10 @@ func (cq *CommandQueue) EnqueueUnmapBuffer(mb *MappedBuffer, waitList []*Event, 
 		e.CommandQueue = cq
 	}
 
-	return clw.EnqueueUnmapMemObject(cq.id, mb.Buffer.id, mb.pointer, cq.toEvents(waitList), event)
+	events := cq.createEvents(waitList)
+	err := clw.EnqueueUnmapMemObject(cq.id, mb.Buffer.id, mb.pointer, events, event)
+	cq.releaseEvents(events)
+	return err
 }
 
 // Enqueue commands to read from a buffer object to host memory.
@@ -217,8 +228,9 @@ func (cq *CommandQueue) EnqueueReadBuffer(b *Buffer, bc BlockingCall, offset int
 		return err
 	}
 
-	err = clw.EnqueueReadBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer,
-		cq.toEvents(waitList), event)
+	events := cq.createEvents(waitList)
+	err = clw.EnqueueReadBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer, events, event)
+	cq.releaseEvents(events)
 	if err != nil {
 		return err
 	}
@@ -275,8 +287,9 @@ func (cq *CommandQueue) EnqueueWriteBuffer(b *Buffer, bc BlockingCall, offset in
 		return err
 	}
 
-	err = clw.EnqueueWriteBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer,
-		cq.toEvents(waitList), event)
+	events := cq.createEvents(waitList)
+	err = clw.EnqueueWriteBuffer(cq.id, b.id, clw.Bool(bc), clw.Size(offset), clw.Size(size), pointer, events, event)
+	cq.releaseEvents(events)
 	if err != nil {
 		return err
 	}
@@ -331,8 +344,10 @@ func (cq *CommandQueue) EnqueueReadBufferRect(b *Buffer, bc BlockingCall, r *Rec
 		return err
 	}
 
+	events := cq.createEvents(waitList)
 	err = clw.EnqueueReadBufferRect(cq.id, b.id, clw.Bool(bc), r.Dst.origin(), r.Src.origin(), r.region(),
-		r.Dst.rowPitch(), r.Dst.slicePitch(), r.Src.rowPitch(), r.Dst.rowPitch(), pointer, cq.toEvents(waitList), event)
+		r.Dst.rowPitch(), r.Dst.slicePitch(), r.Src.rowPitch(), r.Dst.rowPitch(), pointer, events, event)
+	cq.releaseEvents(events)
 	if err != nil {
 		return err
 	}
@@ -386,9 +401,10 @@ func (cq *CommandQueue) EnqueueWriteBufferRect(b *Buffer, bc BlockingCall, r *Re
 		return err
 	}
 
+	events := cq.createEvents(waitList)
 	err = clw.EnqueueWriteBufferRect(cq.id, b.id, clw.Bool(bc), r.Dst.origin(), r.Src.origin(), r.region(),
-		r.Dst.rowPitch(), r.Dst.slicePitch(), r.Src.rowPitch(), r.Src.slicePitch(), pointer, cq.toEvents(waitList),
-		event)
+		r.Dst.rowPitch(), r.Dst.slicePitch(), r.Src.rowPitch(), r.Src.slicePitch(), pointer, events, event)
+	cq.releaseEvents(events)
 	if err != nil {
 		return err
 	}

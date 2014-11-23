@@ -2,6 +2,7 @@ package cl11
 
 import (
 	"strings"
+	"sync"
 	"unsafe"
 
 	clw "github.com/rdwilliamson/clw11"
@@ -36,9 +37,11 @@ type CommandQueue struct {
 	// Bit-field list of properties for the command queue.
 	Properties CommandQueueProperties
 
-	// Scratch space to avoid allocating memory when converting a wait list.
-	eventsScratch []clw.Event
+	// Pool used when converting a wait list.
+	eventPool sync.Pool
 }
+
+const eventPoolThreshold = 8
 
 type CommandQueueProperties uint
 
@@ -67,7 +70,8 @@ func (c *Context) CreateCommandQueue(d *Device, cqp CommandQueueProperties) (*Co
 		return nil, err
 	}
 
-	return &CommandQueue{id: commandQueue, Context: c, Device: d, Properties: cqp}, nil
+	return &CommandQueue{id: commandQueue, Context: c, Device: d, Properties: cqp,
+		eventPool: sync.Pool{New: func() interface{} { return make([]clw.Event, eventPoolThreshold) }}}, nil
 }
 
 // Issues all previously queued OpenCL commands in a command-queue to the device
@@ -145,7 +149,11 @@ func (cq *CommandQueue) EnqueueMarker(e *Event) error {
 // The context associated with events in event_list and command_queue must be
 // the same.
 func (cq *CommandQueue) EnqueueWaitForEvents(waitList []*Event) error {
-	return clw.EnqueueWaitForEvents(cq.id, cq.toEvents(waitList))
+
+	events := cq.createEvents(waitList)
+	err := clw.EnqueueWaitForEvents(cq.id, events)
+	cq.releaseEvents(events)
+	return err
 }
 
 // A synchronization point that enqueues a barrier operation.
@@ -157,19 +165,20 @@ func (cq *CommandQueue) EnqueueBarrier() error {
 	return clw.EnqueueBarrier(cq.id)
 }
 
-func (cq *CommandQueue) toEvents(in []*Event) []clw.Event {
-
-	if in == nil {
-		return nil
+func (cq *CommandQueue) createEvents(waitList []*Event) []clw.Event {
+	var result []clw.Event
+	if len(waitList) > eventPoolThreshold {
+		result = make([]clw.Event, len(waitList))
 	}
-
-	if len(cq.eventsScratch) < len(in) {
-		cq.eventsScratch = make([]clw.Event, len(in))
+	result = cq.eventPool.Get().([]clw.Event)[:len(waitList)]
+	for i, v := range waitList {
+		result[i] = v.id
 	}
+	return result
+}
 
-	for i := range in {
-		cq.eventsScratch[i] = in[i].id
+func (cq *CommandQueue) releaseEvents(events []clw.Event) {
+	if cap(events) == eventPoolThreshold {
+		cq.eventPool.Put(events)
 	}
-
-	return cq.eventsScratch[:len(in)]
 }
