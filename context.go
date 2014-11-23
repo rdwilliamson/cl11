@@ -41,6 +41,10 @@ var _ clw.ContextCallbackFunc = clw.ContextCallbackFunc(ContextCallback(func(err
 // the OpenCL runtime for managing objects such as command-queues, memory,
 // program and kernel objects and for executing kernels on one or more devices
 // specified in the context.
+//
+// WARNING: The callback and user data will be referenced for the lifetime of
+//          the program. Thus any variables captured if callback is a closure or
+//          any variables referenced by user data will not be garbage collected.
 func CreateContext(d []*Device, cp []ContextProperties, cc ContextCallback, userData interface{}) (*Context, error) {
 
 	devices := make([]clw.DeviceID, len(d))
@@ -68,6 +72,10 @@ func CreateContext(d []*Device, cp []ContextProperties, cc ContextCallback, user
 
 // Create an OpenCL context from a device type that identifies the specific
 // device(s) to use.
+//
+// WARNING: The callback and user data will be referenced for the lifetime of
+//          the program. Thus any variables captured if callback is a closure or
+//          any variables referenced by user data will not be garbage collected.
 func CreateContextFromType(cp []ContextProperties, dt DeviceType, cc ContextCallback,
 	userData interface{}) (*Context, error) {
 
@@ -119,11 +127,22 @@ func CreateContextFromType(cp []ContextProperties, dt DeviceType, cc ContextCall
 }
 
 // Increment the context reference count.
+//
+// CreateContext and CreateContextFromType perform an implicit retain. This is
+// very helpful for 3rd party libraries, which typically get a context passed to
+// them by the application. However, it is possible that the application may
+// delete the context without informing the library. Allowing functions to
+// attach to (i.e. retain) and release a context solves the problem of a context
+// being used by a library no longer being valid.
 func (c *Context) Retain() error {
 	return clw.RetainContext(c.id)
 }
 
 // Decrement the context reference count.
+//
+// After the context reference count becomes zero and all the objects attached
+// to context (such as memory objects, command-queues) are released, the context
+// is deleted.
 func (c *Context) Release() error {
 	return clw.ReleaseContext(c.id)
 }
