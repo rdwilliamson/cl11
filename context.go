@@ -28,13 +28,6 @@ const (
 
 type ContextCallback func(err string, data []byte, userData interface{})
 
-// Ensure the definitions of context callbacks match. ContextCallback isn't an
-// alias for clw.ContextCallbackFunc just so the user doesn't have to look into
-// clw.
-var _ clw.ContextCallbackFunc = clw.ContextCallbackFunc(ContextCallback(func(err string, data []byte,
-	userData interface{}) {
-}))
-
 // Creates an OpenCL context.
 //
 // An OpenCL context is created with one or more devices. Contexts are used by
