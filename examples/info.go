@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/davecgh/go-spew/spew"
 	cl "github.com/rdwilliamson/cl11"
+
+	"github.com/davecgh/go-spew/spew"
 )
 
 func main() {

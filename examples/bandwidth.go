@@ -64,11 +64,6 @@ func main() {
 				callbackChan <- fmt.Sprintf("Callback with Event Profiling: %s: %.2f MiB in %v (%.2f GiB/s)", name,
 					transfered, duration, transferSpeed)
 			}
-			recieveFunc := func() {
-				fmt.Println(<-callbackChan)
-				callbackChan <- ""
-			}
-			go recieveFunc()
 
 			start := time.Now()
 
@@ -80,12 +75,11 @@ func main() {
 
 			duration := time.Since(start)
 
-			transfered := float64(size) / 1024 / 1024 / 1024
-			transferSpeed := transfered / duration.Seconds()
+			transfered := float64(size) / 1024 / 1024
+			transferSpeed := transfered / duration.Seconds() / 1024
 
 			fmt.Printf("Go Timer: %s: %.2f MiB in %v (%.2f GiB/s)\n", d.Name, transfered, duration, transferSpeed)
-
-			<-callbackChan
+			fmt.Println(<-callbackChan)
 
 			check(c.Release())
 			check(cq.Release())

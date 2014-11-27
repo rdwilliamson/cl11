@@ -114,13 +114,12 @@ func main() {
 			cq, err := c.CreateCommandQueue(d, cl.QueueProfilingEnable)
 			check(err)
 
-			outData, err := c.CreateDeviceImage(cl.MemWriteOnly, cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}, width,
-				height, 1)
+			format := cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}
+
+			outData, err := c.CreateDeviceImage(cl.MemWriteOnly, format, width, height, 1)
 			check(err)
 
-			rgba := input.(*image.RGBA)
-			format := cl.ImageFormat{cl.RGBA, cl.UnsignedInt8}
-			inData, err := c.CreateDeviceImage(cl.MemReadOnly, format, rgba.Rect.Dx(), rgba.Rect.Dy(), 1)
+			inData, err := c.CreateDeviceImage(cl.MemReadOnly, format, width, height, 1)
 			check(err)
 
 			err = kernel.SetArguments(inData, outData)
@@ -155,8 +154,8 @@ func main() {
 				err = cq.EnqueueWriteImageFromImage(inData, cl.NonBlocking, input, nil, &writeEvent)
 				check(err)
 
-				err = cq.EnqueueNDRangeKernel(kernel, nil, []int{globalWidth, globalHeight}, []int{localWidth, localHeight},
-					[]*cl.Event{&writeEvent}, &kernelEvent)
+				err = cq.EnqueueNDRangeKernel(kernel, nil, []int{globalWidth, globalHeight},
+					[]int{localWidth, localHeight}, []*cl.Event{&writeEvent}, &kernelEvent)
 				check(err)
 
 				err = cq.EnqueueReadImageToImage(outData, cl.NonBlocking, output, []*cl.Event{&kernelEvent}, &readEvent)
@@ -176,7 +175,7 @@ func main() {
 					err = readEvent.GetProfilingInfo()
 					check(err)
 
-					size := float64(rgba.Rect.Dx()*rgba.Rect.Dy()*4) / 1024 / 1024 / 1024
+					size := float64(width*height*4) / 1024 / 1024 / 1024
 
 					fmt.Fprintf(outText,
 						"%s\ton\t%s\tWrite (%v, %.2fGB/s)\tIdle (%v)\tKernel (%v)\tIdle (%v)\tRead (%v, %.2fGB/s)\t"+
