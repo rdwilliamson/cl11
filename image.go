@@ -242,8 +242,16 @@ func (c *Context) CreateDeviceImage(mf MemFlags, format ImageFormat, width, heig
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, ElementSize: format.elementSize(), Width: width, Height: height,
-		Depth: depth, Flags: mf}, nil
+	return &Image{
+		id:          mem,
+		Context:     c,
+		Format:      format,
+		ElementSize: format.elementSize(),
+		Width:       width,
+		Height:      height,
+		Depth:       depth,
+		Flags:       mf,
+	}, nil
 }
 
 // Creates a image object that is host accessible.
@@ -267,8 +275,16 @@ func (c *Context) CreateHostImage(mf MemFlags, format ImageFormat, width, height
 		return nil, err
 	}
 
-	return &Image{id: mem, Context: c, Format: format, ElementSize: format.elementSize(), Width: width, Height: height,
-		Depth: depth, Flags: mf}, nil
+	return &Image{
+		id:          mem,
+		Context:     c,
+		Format:      format,
+		ElementSize: format.elementSize(),
+		Width:       width,
+		Height:      height,
+		Depth:       depth,
+		Flags:       mf,
+	}, nil
 }
 
 // Increments the image object reference count.
@@ -292,15 +308,10 @@ func (b *Image) Release() error {
 // unsuitable for general use in applications. This feature is provided for
 // identifying memory leaks.
 func (b *Image) ReferenceCount() (int, error) {
-
 	var count clw.Uint
 	err := clw.GetMemObjectInfo(b.id, clw.MemReferenceCount, clw.Size(unsafe.Sizeof(count)), unsafe.Pointer(&count),
 		nil)
-	if err != nil {
-		return 0, err
-	}
-
-	return int(count), nil
+	return int(count), err
 }
 
 // Enqueues a command to read from a image object to host memory.

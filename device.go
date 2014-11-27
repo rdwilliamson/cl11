@@ -606,12 +606,10 @@ func (d *Device) getLocalMemTypeInfo(paramName clw.DeviceInfo) LocalMemTypeInfo 
 
 // Check if the device supports the extension.
 func (d *Device) HasExtension(extension string) bool {
-
 	for _, v := range d.Extensions {
 		if v == extension {
 			return true
 		}
 	}
-
 	return false
 }

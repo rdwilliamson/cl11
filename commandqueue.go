@@ -70,8 +70,13 @@ func (c *Context) CreateCommandQueue(d *Device, cqp CommandQueueProperties) (*Co
 		return nil, err
 	}
 
-	return &CommandQueue{id: commandQueue, Context: c, Device: d, Properties: cqp,
-		eventPool: sync.Pool{New: func() interface{} { return make([]clw.Event, eventPoolThreshold) }}}, nil
+	return &CommandQueue{
+		id:         commandQueue,
+		Context:    c,
+		Device:     d,
+		Properties: cqp,
+		eventPool:  sync.Pool{New: func() interface{} { return make([]clw.Event, eventPoolThreshold) }},
+	}, nil
 }
 
 // Issues all previously queued OpenCL commands in a command-queue to the device
@@ -116,15 +121,10 @@ func (cq *CommandQueue) Release() error {
 // unsuitable for general use in applications. This feature is provided for
 // identifying memory leaks.
 func (cq *CommandQueue) ReferenceCount() (int, error) {
-
 	var count clw.Uint
 	err := clw.GetCommandQueueInfo(cq.id, clw.QueueReferenceCount, clw.Size(unsafe.Sizeof(count)),
 		unsafe.Pointer(&count), nil)
-	if err != nil {
-		return 0, err
-	}
-
-	return int(count), nil
+	return int(count), err
 }
 
 // Enqueues a marker command.

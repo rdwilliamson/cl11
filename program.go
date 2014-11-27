@@ -71,7 +71,11 @@ func (c *Context) CreateProgramWithSource(sources ...[]byte) (*Program, error) {
 		return nil, err
 	}
 
-	return &Program{id: program, Context: c, Devices: c.Devices}, nil
+	return &Program{
+		id:      program,
+		Context: c,
+		Devices: c.Devices,
+	}, nil
 }
 
 // Creates a program object for a context for the specified devices with the
@@ -91,7 +95,11 @@ func (c *Context) CreateProgramWithBinary(d []*Device, binaries [][]byte, status
 		return nil, err
 	}
 
-	return &Program{id: program, Context: c, Devices: d}, nil
+	return &Program{
+		id:      program,
+		Context: c,
+		Devices: d,
+	}, nil
 }
 
 // Builds (compiles and links) a program executable from the program source or

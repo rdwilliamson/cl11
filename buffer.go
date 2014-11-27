@@ -41,7 +41,12 @@ func (c *Context) CreateDeviceBuffer(size int64, mf MemFlags) (*Buffer, error) {
 		return nil, err
 	}
 
-	return &Buffer{id: memory, Context: c, Size: size, Flags: mf}, nil
+	return &Buffer{
+		id:      memory,
+		Context: c,
+		Size:    size,
+		Flags:   mf,
+	}, nil
 }
 
 // Creates a buffer object that is host accessible.
@@ -57,7 +62,12 @@ func (c *Context) CreateHostBuffer(size int64, mf MemFlags) (*Buffer, error) {
 		return nil, err
 	}
 
-	return &Buffer{id: memory, Context: c, Size: size, Flags: mf}, nil
+	return &Buffer{
+		id:      memory,
+		Context: c,
+		Size:    size,
+		Flags:   mf,
+	}, nil
 }
 
 // Creates a buffer object from an existing object with the passed offset and
@@ -74,7 +84,14 @@ func (b *Buffer) CreateSubBuffer(mf MemFlags, origin, size int64) (*Buffer, erro
 		return nil, err
 	}
 
-	return &Buffer{id: memory, Context: b.Context, Size: size, Flags: mf, Buffer: b, Origin: origin}, nil
+	return &Buffer{
+		id:      memory,
+		Context: b.Context,
+		Size:    size,
+		Flags:   mf,
+		Buffer:  b,
+		Origin:  origin,
+	}, nil
 }
 
 // Increments the buffer object reference count.
@@ -98,15 +115,10 @@ func (b *Buffer) Release() error {
 // unsuitable for general use in applications. This feature is provided for
 // identifying memory leaks.
 func (b *Buffer) ReferenceCount() (int, error) {
-
 	var count clw.Uint
 	err := clw.GetMemObjectInfo(b.id, clw.MemReferenceCount, clw.Size(unsafe.Sizeof(count)), unsafe.Pointer(&count),
 		nil)
-	if err != nil {
-		return 0, err
-	}
-
-	return int(count), nil
+	return int(count), err
 }
 
 // Enqueues a command to copy from one buffer object to another.

@@ -60,7 +60,11 @@ func CreateContext(d []*Device, cp []ContextProperties, cc ContextCallback, user
 		return nil, err
 	}
 
-	return &Context{id: context, Devices: d, Properties: cp}, nil
+	return &Context{
+		id:         context,
+		Devices:    d,
+		Properties: cp,
+	}, nil
 }
 
 // Create an OpenCL context from a device type that identifies the specific
@@ -116,7 +120,11 @@ func CreateContextFromType(cp []ContextProperties, dt DeviceType, cc ContextCall
 		}
 	}
 
-	return &Context{context, devicePtrs, cp}, nil
+	return &Context{
+		id:         context,
+		Devices:    devicePtrs,
+		Properties: cp,
+	}, nil
 }
 
 // Increment the context reference count.
@@ -146,13 +154,8 @@ func (c *Context) Release() error {
 // unsuitable for general use in applications. This feature is provided for
 // identifying memory leaks.
 func (c *Context) ReferenceCount() (int, error) {
-
 	var count clw.Uint
 	err := clw.GetContextInfo(c.id, clw.ContextReferenceCount, clw.Size(unsafe.Sizeof(count)), unsafe.Pointer(&count),
 		nil)
-	if err != nil {
-		return 0, err
-	}
-
-	return int(count), nil
+	return int(count), err
 }

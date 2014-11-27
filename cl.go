@@ -26,14 +26,12 @@ type Object interface {
 type Profile int
 
 func toProfile(profile string) Profile {
-
 	switch profile {
 	case "FULL_PROFILE":
 		return FullProfile
 	case "EMBEDDED_PROFILE":
 		return EmbeddedProfile
 	}
-
 	panic(errors.New("unknown profile"))
 }
 

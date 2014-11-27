@@ -208,7 +208,6 @@ func (e *Event) GetProfilingInfo() error {
 // OpenCL API calls to create contexts or command-queues, or blocking OpenCL
 // operations, in a callback is undefined.
 func (e *Event) SetCallback(callback EventCallback, userData interface{}) error {
-
 	return clw.SetEventCallback(e.id, clw.Complete,
 		func(event clw.Event, ces clw.CommandExecutionStatus, _userData interface{}) {
 			var err error
@@ -262,7 +261,11 @@ func (c *Context) CreateUserEvent() (*Event, error) {
 		return nil, err
 	}
 
-	return &Event{id: event, Context: c, CommandType: CommandUser}, nil
+	return &Event{
+		id:          event,
+		Context:     c,
+		CommandType: CommandUser,
+	}, nil
 }
 
 // Sets the execution status of a user event object to Complete.

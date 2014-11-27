@@ -111,13 +111,11 @@ func (p *Platform) getString(paramName clw.PlatformInfo) string {
 
 // Check if the platform supports the extension.
 func (p *Platform) HasExtension(extension string) bool {
-
 	for _, v := range p.Extensions {
 		if v == extension {
 			return true
 		}
 	}
-
 	return false
 }
 
