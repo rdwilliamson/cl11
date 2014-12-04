@@ -1,6 +1,4 @@
 // A wrapper package that attempts to map the OpenCL 1.1 C API to idiomatic Go.
-//
-// TODO describe how empty interfaces are interpreted.
 package cl11
 
 import (
