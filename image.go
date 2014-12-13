@@ -387,7 +387,7 @@ func (cq *CommandQueue) EnqueueReadImageToImage(src *Image, bc BlockingCall, dst
 		actualDst = v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4 : (v.Rect.Max.Y-1)*v.Stride+v.Rect.Max.X-1]
 
 	default:
-		return UnsupportedImageFormat
+		return ErrUnsupportedImageFormat
 	}
 
 	return cq.EnqueueReadImage(src, bc, &rect, actualDst, waitList, e)
@@ -466,7 +466,7 @@ func (cq *CommandQueue) EnqueueWriteImageFromImage(dst *Image, bc BlockingCall, 
 		actualSrc = v.Pix[v.Rect.Min.Y*v.Stride+v.Rect.Min.X*4 : (v.Rect.Max.Y-1)*v.Stride+v.Rect.Max.X-1]
 
 	default:
-		return UnsupportedImageFormat
+		return ErrUnsupportedImageFormat
 	}
 
 	return cq.EnqueueWriteImage(dst, bc, &rect, actualSrc, waitList, e)

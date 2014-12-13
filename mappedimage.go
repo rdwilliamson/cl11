@@ -19,7 +19,7 @@ func (mi *MappedImage) GoImage() (image.Image, error) {
 	if mi.Image.Format.ChannelOrder == RGBA && mi.Image.Format.ChannelType == UnsignedInt8 {
 		return mi.RGBA(), nil
 	}
-	return nil, UnsupportedImageFormat
+	return nil, ErrUnsupportedImageFormat
 }
 
 // Return an RGBA image with its pixels backed by the mapped buffer.

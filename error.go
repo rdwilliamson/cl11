@@ -6,14 +6,14 @@ import (
 	clw "github.com/rdwilliamson/clw11"
 )
 
-// NotAddressable is returned when attempting to read from or write to a value
-// that is not addressable (see reflect.Value.CanAddr).
-var NotAddressable = errors.New("cl: not addressable")
+// ErrNotAddressable is returned when attempting to read from or write to a
+// value that is not addressable (see reflect.Value.CanAddr).
+var ErrNotAddressable = errors.New("cl: not addressable")
 
-// UnsupportedImageFormat is returned when trying to use one of the convenience
-// image methods and there is a mismatch or incompatibility between the Go image
-// and the OpenCL image.
-var UnsupportedImageFormat = errors.New("cl: unsupported image format")
+// ErrUnsupportedImageFormat is returned when trying to use one of the
+// convenience image methods and there is a mismatch or incompatibility between
+// the Go image and the OpenCL image.
+var ErrUnsupportedImageFormat = errors.New("cl: unsupported image format")
 
 var (
 	DeviceNotFound                     = clw.DeviceNotFound

@@ -88,5 +88,5 @@ func pointerSize(value interface{}) (unsafe.Pointer, uintptr, error) {
 		size := v.Type().Elem().Size() * uintptr(v.Len())
 		return pointer, size, nil
 	}
-	return unsafe.Pointer(uintptr(0)), 0, NotAddressable
+	return unsafe.Pointer(uintptr(0)), 0, ErrNotAddressable
 }
