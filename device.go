@@ -1,6 +1,7 @@
 package cl11
 
 import (
+	"encoding/binary"
 	"strings"
 	"unsafe"
 
@@ -28,8 +29,8 @@ type Device struct {
 	// the program source. Can only be false on an embedded platform.
 	CompilerAvailable bool
 
-	// True if the device is little endian.
-	LittleEndian bool
+	// Either binary.BigEndian or binary.LittleEndian.
+	ByteOrder binary.ByteOrder
 
 	// True if the device implements error correction for all accesses to
 	// compute device memory (global and constant).
@@ -384,7 +385,6 @@ func (d *Device) getAllInfo() (err error) {
 
 	d.Available = d.getBool(clw.DeviceAvailable)
 	d.CompilerAvailable = d.getBool(clw.DeviceCompilerAvailable)
-	d.LittleEndian = d.getBool(clw.DeviceEndianLittle)
 	d.ErrorCorrectionSupport = d.getBool(clw.DeviceErrorCorrectionSupport)
 	d.ImageSupport = d.getBool(clw.DeviceImageSupport)
 	d.UnifiedHostMemory = d.getBool(clw.DeviceHostUnifiedMemory)
@@ -418,6 +418,12 @@ func (d *Device) getAllInfo() (err error) {
 	// d.NativeVectorWidths.Half = d.getUint(clw.DeviceNativeVectorWidthHalf)
 
 	d.Extensions = strings.Fields(d.getString(clw.DeviceExtensions))
+
+	if d.getBool(clw.DeviceEndianLittle) {
+		d.ByteOrder = binary.LittleEndian
+	} else {
+		d.ByteOrder = binary.BigEndian
+	}
 
 	d.Name = d.getString(clw.DeviceName)
 	d.Vendor = d.getString(clw.DeviceVendor)
