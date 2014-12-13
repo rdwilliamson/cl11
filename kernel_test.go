@@ -1,6 +1,7 @@
 package cl11
 
 import (
+	"encoding/binary"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -63,9 +64,15 @@ func TestKernel(t *testing.T) {
 			continue
 		}
 
-		values := map0.Float32s()
+		values := make([]float32, size/4)
 		for i := range values {
 			values[i] = rand.Float32()
+		}
+		err = binary.Write(map0, device.ByteOrder, values)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
 		}
 
 		err = cq.EnqueueUnmapBuffer(map0, nil, nil)
@@ -126,8 +133,14 @@ func TestKernel(t *testing.T) {
 			continue
 		}
 
-		want := map0.Float32s()
-		got := map1.Float32s()
+		want := values
+		got := make([]float32, len(values))
+		err = binary.Read(map1, device.ByteOrder, got)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
 		if !reflect.DeepEqual(want, got) {
 			t.Error("values mismatch")
 		}

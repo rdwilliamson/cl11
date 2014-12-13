@@ -15,6 +15,9 @@ var ErrNotAddressable = errors.New("cl: not addressable")
 // the Go image and the OpenCL image.
 var ErrUnsupportedImageFormat = errors.New("cl: unsupported image format")
 
+// ErrBufferFull is returned when trying to write past the end of a buffer.
+var ErrBufferFull = errors.New("cl: buffer full")
+
 var (
 	DeviceNotFound                     = clw.DeviceNotFound
 	DeviceNotAvailable                 = clw.DeviceNotAvailable

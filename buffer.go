@@ -184,7 +184,12 @@ func (cq *CommandQueue) EnqueueMapBuffer(b *Buffer, bc BlockingCall, flags MapFl
 		return nil, err
 	}
 
-	return &MappedBuffer{b, pointer, size}, nil
+	return &MappedBuffer{
+		Buffer:  b,
+		pointer: pointer,
+		index:   0,
+		size:    size,
+	}, nil
 }
 
 // Enqueues a command to unmap a previously mapped buffer object.
