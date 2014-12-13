@@ -63,7 +63,7 @@ func TestKernel(t *testing.T) {
 			continue
 		}
 
-		values := map0.Float32Slice()
+		values := map0.Float32s()
 		for i := range values {
 			values[i] = rand.Float32()
 		}
@@ -126,8 +126,8 @@ func TestKernel(t *testing.T) {
 			continue
 		}
 
-		want := map0.Float32Slice()
-		got := map1.Float32Slice()
+		want := map0.Float32s()
+		got := map1.Float32s()
 		if !reflect.DeepEqual(want, got) {
 			t.Error("values mismatch")
 		}

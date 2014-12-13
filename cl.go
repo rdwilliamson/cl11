@@ -9,11 +9,6 @@ import (
 	"unsafe"
 )
 
-var (
-	float32Type = reflect.TypeOf(float32(0))
-	float32Size = float32Type.Size()
-)
-
 // A reference counted OpenCL object.
 type Object interface {
 	Retain() error

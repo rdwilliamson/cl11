@@ -13,10 +13,10 @@ type MappedBuffer struct {
 }
 
 // Returns a slice of float32s backed by the mapped buffer.
-func (mb *MappedBuffer) Float32Slice() []float32 {
+func (mb *MappedBuffer) Float32s() []float32 {
 	var header reflect.SliceHeader
 	header.Data = uintptr(mb.pointer)
-	size := int(mb.size / int64(float32Size))
+	size := int(mb.size / int64(4))
 	header.Len = size
 	header.Cap = size
 	return *(*[]float32)(unsafe.Pointer(&header))

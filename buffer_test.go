@@ -60,7 +60,7 @@ func TestBuffer(t *testing.T) {
 			continue
 		}
 
-		values := map0.Float32Slice()
+		values := map0.Float32s()
 		for i := range values {
 			values[i] = rand.Float32()
 		}
@@ -100,8 +100,8 @@ func TestBuffer(t *testing.T) {
 			continue
 		}
 
-		want := map0.Float32Slice()
-		got := map1.Float32Slice()
+		want := map0.Float32s()
+		got := map1.Float32s()
 		if !reflect.DeepEqual(want, got) {
 			t.Error("values mismatch")
 		}
@@ -120,8 +120,8 @@ func TestBuffer(t *testing.T) {
 			continue
 		}
 
-		want = make([]float32, int(size)/int(float32Size))
-		got = make([]float32, int(size)/int(float32Size))
+		want = make([]float32, int(size)/4)
+		got = make([]float32, int(size)/4)
 		for i := range want {
 			want[i] = rand.Float32()
 		}
