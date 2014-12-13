@@ -36,7 +36,7 @@ type Event struct {
 // either Complete (success) or an error.
 type EventCallback func(e *Event, err error, userData interface{})
 
-var noOpEventCallback EventCallback = func(e *Event, err error, userData interface{}) {
+var noOpEventCallback = func(e *Event, err error, userData interface{}) {
 	// TODO how to report errors here?
 	e.Release()
 }
