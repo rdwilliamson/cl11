@@ -17,7 +17,7 @@ func check(err error) {
 	}
 }
 
-var kernel = []byte(`
+var kernelSrc = []byte(`
 __constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_FILTER_NEAREST;
 
 __kernel void toGray(__read_only image2d_t input, __write_only image2d_t output)
@@ -104,7 +104,7 @@ func main() {
 			check(err)
 
 			// Create the kernel and set its arguments.
-			progam, err := c.CreateProgramWithSource(kernel)
+			progam, err := c.CreateProgramWithSource(kernelSrc)
 			check(err)
 			var options string
 			if device.Type == cl.DeviceTypeCpu {
