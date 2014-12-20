@@ -122,7 +122,7 @@ func TestMappedBufferRead(t *testing.T) {
 		// Read at starting at a negative value.
 		n, err = map0.ReadAt(everything, -1)
 		if n != 0 || err == nil {
-			t.Error("read at 0 everything: want 0 cl: MappedBuffer.ReadAt: negative offset, got", n, err)
+			t.Error("read at -1 everything: want 0 cl: MappedBuffer.ReadAt: negative offset, got", n, err)
 			releaseAll(toRelease, t)
 			continue
 		}
