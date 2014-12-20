@@ -37,6 +37,9 @@ func (mb *MappedBuffer) Read(b []byte) (int, error) {
 // input source. It returns the number of bytes read (0 <= n <= len(b)) and any
 // error encountered. When ReadAt returns n < len(b), it returns io.EOF.
 func (mb *MappedBuffer) ReadAt(b []byte, offset int64) (int, error) {
+	if len(b) == 0 {
+		return 0, nil
+	}
 	if offset < 0 {
 		return 0, errors.New("cl: MappedBuffer.ReadAt: negative offset")
 	}
@@ -102,6 +105,9 @@ func (mb *MappedBuffer) Write(b []byte) (int, error) {
 func (mb *MappedBuffer) WriteAt(b []byte, offset int64) (int, error) {
 	if len(b) == 0 {
 		return 0, nil
+	}
+	if offset < 0 {
+		return 0, errors.New("cl: MappedBuffer.WriteAt: negative offset")
 	}
 	if offset >= mb.size {
 		return 0, ErrBufferFull

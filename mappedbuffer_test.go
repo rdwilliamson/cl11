@@ -137,3 +137,118 @@ func TestMappedBufferRead(t *testing.T) {
 		releaseAll(toRelease, t)
 	}
 }
+
+func TestMappedBufferWrite(t *testing.T) {
+	allDevices := getDevices(t)
+	for _, device := range allDevices {
+		t.Log(device.Name, "on", device.Platform.Name)
+
+		var toRelease []Object
+		size := 1024 * 1024
+
+		ctx, err := CreateContext([]*Device{device}, nil, nil, nil)
+		if err != nil {
+			t.Error(err)
+			continue
+		}
+		toRelease = append(toRelease, ctx)
+
+		cq, err := ctx.CreateCommandQueue(device, 0)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+		toRelease = append(toRelease, cq)
+
+		device0, err := ctx.CreateDeviceBuffer(int64(size), MemReadWrite)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+		toRelease = append(toRelease, device0)
+
+		map0, err := cq.EnqueueMapBuffer(device0, Blocking, MapWrite, 0, int64(size), nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		// Write nothing.
+		var nothing []byte
+		n, err := map0.Write(nothing)
+		if n != 0 || err != nil {
+			t.Error("writing nothing: want 0 <nil>, got", n, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		// Write everything.
+		everything := make([]byte, size)
+		n, err = map0.Write(everything)
+		if n != size || err != nil {
+			t.Error("writting everything: want", size, "<nil>, got", n, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		// Write past end of buffer.
+		n, err = map0.Write(everything)
+		if n != 0 || err != ErrBufferFull {
+			t.Error("writting past end of buffer: want 0", ErrBufferFull, "got", n, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		// Reset relative to start.
+		nn, err := map0.Seek(0, 0)
+		if nn != 0 || err != nil {
+			t.Error("seeking: want 0 <nil>, got", nn, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		// Write at everything.
+		n, err = map0.WriteAt(everything, 0)
+		if n != size || err != nil {
+			t.Error("write at 0 everything: want", size, "<nil>, got", n, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		// Write at running past the end of the buffer.
+		n, err = map0.WriteAt(everything, 1)
+		if n != size-1 || err != ErrBufferFull {
+			t.Error("write at 1 everything: want", size-1, "<nil>, got", n, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		// Write at starting past the end of the buffer.
+		n, err = map0.WriteAt(everything, int64(size))
+		if n != 0 || err != ErrBufferFull {
+			t.Error("write at end of buffer: want 0 <nil>, got", n, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		// Write at starting at a negative value.
+		n, err = map0.WriteAt(everything, -1)
+		if n != 0 || err == nil {
+			t.Error("write at -1 everything: want 0 cl: MappedBuffer.WriteAt: negative offset, got", n, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		err = cq.EnqueueUnmapBuffer(map0, nil, nil)
+		if err != nil {
+			t.Error("failed to unmap buffer")
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		releaseAll(toRelease, t)
+	}
+}
