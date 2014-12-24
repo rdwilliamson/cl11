@@ -3,16 +3,24 @@ package cl11
 import (
 	"bytes"
 	"io"
+	"math/rand"
+	"reflect"
 	"testing"
+	"time"
 )
 
 func TestMappedBufferRead(t *testing.T) {
+	size := 1024 * 1024
+	data := make([]byte, size)
+	rand.Seed(time.Now().Unix())
+	for i := range data {
+		data[i] = byte(rand.Int())
+	}
+
 	allDevices := getDevices(t)
 	for _, device := range allDevices {
 		t.Log(device.Name, "on", device.Platform.Name)
-
 		var toRelease []Object
-		size := 1024 * 1024
 
 		ctx, err := CreateContext([]*Device{device}, nil, nil, nil)
 		if err != nil {
@@ -37,7 +45,22 @@ func TestMappedBufferRead(t *testing.T) {
 		}
 		toRelease = append(toRelease, device0)
 
-		map0, err := cq.EnqueueMapBuffer(device0, Blocking, MapRead, 0, int64(size), nil, nil)
+		map0, err := cq.EnqueueMapBuffer(device0, Blocking, MapWrite, 0, int64(size), nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+		copy(map0.Bytes(), data)
+
+		err = cq.EnqueueUnmapBuffer(map0, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		map0, err = cq.EnqueueMapBuffer(device0, Blocking, MapRead, 0, int64(size), nil, nil)
 		if err != nil {
 			t.Error(err)
 			releaseAll(toRelease, t)
@@ -58,6 +81,11 @@ func TestMappedBufferRead(t *testing.T) {
 		n, err = map0.Read(everything)
 		if n != size || err != nil {
 			t.Error("reading everything: want", size, "<nil>, got", n, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+		if !reflect.DeepEqual(everything, data) {
+			t.Error("reading everything data mismatch")
 			releaseAll(toRelease, t)
 			continue
 		}
@@ -86,11 +114,24 @@ func TestMappedBufferRead(t *testing.T) {
 			releaseAll(toRelease, t)
 			continue
 		}
+		if !reflect.DeepEqual(buf.Bytes(), data) {
+			t.Error("reading everything data mismatch")
+			releaseAll(toRelease, t)
+			continue
+		}
 
 		// Write to, but buffers already consumed.
 		nn, err = map0.WriteTo(&buf)
 		if nn != 0 || err != nil {
 			t.Error("writing to: want 0 <nil>, got", nn, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		// Reat at nothing.
+		n, err = map0.ReadAt(nothing, 0)
+		if n != 0 || err != nil {
+			t.Error("read at 0 nothing: want 0 <nil>, got", n, err)
 			releaseAll(toRelease, t)
 			continue
 		}
@@ -102,11 +143,21 @@ func TestMappedBufferRead(t *testing.T) {
 			releaseAll(toRelease, t)
 			continue
 		}
+		if !reflect.DeepEqual(everything, data) {
+			t.Error("reading everything data mismatch")
+			releaseAll(toRelease, t)
+			continue
+		}
 
 		// Read at running past end of buffer.
 		n, err = map0.ReadAt(everything, 1)
 		if n != size-1 || err != io.EOF {
 			t.Error("read at 0 everything: want", size-1, "<nil>, got", n, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+		if !reflect.DeepEqual(everything[:size-1], data[1:size]) {
+			t.Error("reading almost everything data mismatch")
 			releaseAll(toRelease, t)
 			continue
 		}
@@ -206,6 +257,30 @@ func TestMappedBufferWrite(t *testing.T) {
 		nn, err := map0.Seek(0, 0)
 		if nn != 0 || err != nil {
 			t.Error("seeking: want 0 <nil>, got", nn, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		// Write almost everything.
+		n, err = map0.Write(everything[:size-1])
+		if n != size-1 || err != nil {
+			t.Error("writing almost everything: want", size-1, "<nil>, got", n, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		// Write something but try to continue past the end of the buffer.
+		n, err = map0.Write(everything)
+		if n != 1 || err != ErrBufferFull {
+			t.Error("writing interrupted by full buffer: want 1", ErrBufferFull, " got", n, err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		// Write at nothing.
+		n, err = map0.WriteAt(nothing, 0)
+		if n != 0 || err != nil {
+			t.Error("write at nothing: want 0 <nil>, got", n, err)
 			releaseAll(toRelease, t)
 			continue
 		}
