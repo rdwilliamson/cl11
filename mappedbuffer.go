@@ -140,7 +140,7 @@ func (mb *MappedBuffer) WriteTo(w io.Writer) (int64, error) {
 	if m != len(b) {
 		return n, io.ErrShortWrite
 	}
-	return n, err
+	return n, nil
 }
 
 // Returns a slice of bytes backed by the mapped buffer.
