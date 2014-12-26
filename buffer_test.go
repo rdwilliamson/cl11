@@ -1,13 +1,14 @@
 package cl11
 
 import (
-	"encoding/binary"
 	"math/rand"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestBuffer(t *testing.T) {
+	rand.Seed(time.Now().Unix())
 	allDevices := getDevices(t)
 	for _, device := range allDevices {
 		t.Log(device.Name, "on", device.Platform.Name)
@@ -65,12 +66,7 @@ func TestBuffer(t *testing.T) {
 		for i := range values {
 			values[i] = rand.Float32()
 		}
-		err = binary.Write(map0, device.ByteOrder, values)
-		if err != nil {
-			t.Error(err)
-			releaseAll(toRelease, t)
-			continue
-		}
+		copy(map0.Float32s(), values)
 
 		err = cq.EnqueueUnmapBuffer(map0, nil, nil)
 		if err != nil {
@@ -107,16 +103,10 @@ func TestBuffer(t *testing.T) {
 			continue
 		}
 
-		want := values
-		got := make([]float32, len(values))
-		err = binary.Read(map1, device.ByteOrder, got)
-		if err != nil {
-			t.Error(err)
+		if !reflect.DeepEqual(map1.Float32s(), values) {
+			t.Error("values mismatch")
 			releaseAll(toRelease, t)
 			continue
-		}
-		if !reflect.DeepEqual(want, got) {
-			t.Error("values mismatch")
 		}
 
 		err = cq.EnqueueUnmapBuffer(map0, nil, nil)
@@ -133,49 +123,11 @@ func TestBuffer(t *testing.T) {
 			continue
 		}
 
-		want = make([]float32, int(size)/4)
-		got = make([]float32, int(size)/4)
-		for i := range want {
-			want[i] = rand.Float32()
-		}
-
-		err = cq.EnqueueWriteBuffer(host0, NonBlocking, 0, want, nil, nil)
-		if err != nil {
-			t.Error(err)
-			releaseAll(toRelease, t)
-			continue
-		}
-
-		err = cq.EnqueueCopyBuffer(host0, device0, 0, 0, size, nil, nil)
-		if err != nil {
-			t.Error(err)
-			releaseAll(toRelease, t)
-			continue
-		}
-
-		err = cq.EnqueueCopyBuffer(device0, host1, 0, 0, size, nil, nil)
-		if err != nil {
-			t.Error(err)
-			releaseAll(toRelease, t)
-			continue
-		}
-
-		err = cq.EnqueueReadBuffer(host1, NonBlocking, 0, got, nil, nil)
-		if err != nil {
-			t.Error(err)
-			releaseAll(toRelease, t)
-			continue
-		}
-
 		err = cq.Finish()
 		if err != nil {
 			t.Error(err)
 			releaseAll(toRelease, t)
 			continue
-		}
-
-		if !reflect.DeepEqual(want, got) {
-			t.Error("values mismatch")
 		}
 
 		releaseAll(toRelease, t)
