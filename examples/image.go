@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"image"
+	"image/draw"
 	"image/png"
 	"os"
 	"path/filepath"
@@ -79,10 +80,13 @@ func main() {
 		os.Exit(1)
 	}
 	width, height := input.Bounds().Dx(), input.Bounds().Dy()
-	output := image.NewRGBA(image.Rect(0, 0, width, height))
 	base := filepath.Base(os.Args[1])
 	ext := filepath.Ext(os.Args[1])
 	base = base[:len(base)-len(ext)]
+	var rect cl.Rect
+	rect.Region[0] = int64(width)
+	rect.Region[1] = int64(height)
+	rect.Region[2] = 1
 
 	// Run the kernel on every device of every platform.
 	var count int
@@ -118,18 +122,24 @@ func main() {
 			check(err)
 
 			// Create the command queue then use it to copy the image to the
-			// device, run the kernel, and copy the result back.
+			// device and run the kernel.
 			cq, err := c.CreateCommandQueue(device, 0)
 			check(err)
-			err = cq.EnqueueWriteImageFromImage(inData, cl.NonBlocking, input, nil, nil)
+			inMapped, err := cq.EnqueueMapImage(inData, cl.Blocking, cl.MapWrite, &rect, nil, nil)
+			check(err)
+			inRgba := inMapped.RGBA()
+			draw.Draw(inRgba, inRgba.Bounds(), input, input.Bounds().Min, draw.Src)
+			err = cq.EnqueueUnmapImage(inMapped, nil, nil)
 			check(err)
 			err = cq.EnqueueNDRangeKernel(kernel, nil, []int{width, height}, []int{128, 1}, nil, nil)
 			check(err)
-			err = cq.EnqueueReadImageToImage(outData, cl.Blocking, output, nil, nil)
-			check(err)
 
-			// Write the result to a file.
-			err = writeImage(fmt.Sprintf("%s%d%s", base, count, ext), output)
+			// Copy the result to a file.
+			outMapped, err := cq.EnqueueMapImage(outData, cl.Blocking, cl.MapRead, &rect, nil, nil)
+			check(err)
+			err = writeImage(fmt.Sprintf("%s%d%s", base, count, ext), outMapped.RGBA())
+			check(err)
+			err = cq.EnqueueUnmapImage(outMapped, nil, nil)
 			check(err)
 		}
 	}

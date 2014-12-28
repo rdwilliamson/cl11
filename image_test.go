@@ -3,6 +3,7 @@ package cl11
 import (
 	"image"
 	"image/color"
+	"image/draw"
 	"math/rand"
 	"reflect"
 	"testing"
@@ -14,6 +15,7 @@ func TestImage(t *testing.T) {
 		t.Log(device.Name, "on", device.Platform.Name)
 
 		var toRelease []Object
+
 		img0 := image.NewRGBA(image.Rect(0, 0, 256, 256))
 		for y, height := 0, img0.Bounds().Dy(); y < height; y++ {
 			for x, width := 0, img0.Bounds().Dx(); x < width; x++ {
@@ -25,6 +27,13 @@ func TestImage(t *testing.T) {
 			}
 		}
 		img1 := image.NewRGBA(img0.Bounds())
+
+		var rect Rect
+		rect.Src.RowPitch = int64(img0.Stride)
+		rect.Dst.RowPitch = int64(img0.Stride)
+		rect.Region[0] = int64(img0.Bounds().Dx())
+		rect.Region[1] = int64(img0.Bounds().Dy())
+		rect.Region[2] = 1
 
 		ctx, err := CreateContext([]*Device{device}, nil, nil, nil)
 		if err != nil {
@@ -85,19 +94,23 @@ func TestImage(t *testing.T) {
 		}
 		toRelease = append(toRelease, device0)
 
-		err = cq.EnqueueWriteImageFromImage(host0, NonBlocking, img0, nil, nil)
+		mappedHost0, err := cq.EnqueueMapImage(host0, Blocking, MapWrite, &rect, nil, nil)
 		if err != nil {
 			t.Error(err)
 			releaseAll(toRelease, t)
 			continue
 		}
 
-		var rect Rect
-		rect.Src.RowPitch = int64(img0.Stride)
-		rect.Dst.RowPitch = int64(img0.Stride)
-		rect.Region[0] = int64(img0.Bounds().Dx())
-		rect.Region[1] = int64(img0.Bounds().Dy())
-		rect.Region[2] = 1
+		rgbaHost0 := mappedHost0.RGBA()
+		draw.Draw(rgbaHost0, rgbaHost0.Bounds(), img0, img0.Bounds().Min, draw.Src)
+
+		err = cq.EnqueueUnmapImage(mappedHost0, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
 		err = cq.EnqueueCopyImage(host0, device0, &rect, nil, nil)
 		if err != nil {
 			t.Error(err)
@@ -105,7 +118,17 @@ func TestImage(t *testing.T) {
 			continue
 		}
 
-		err = cq.EnqueueReadImageToImage(device0, NonBlocking, img1, nil, nil)
+		mappedDevice0, err := cq.EnqueueMapImage(device0, Blocking, MapRead, &rect, nil, nil)
+		if err != nil {
+			t.Error(err)
+			releaseAll(toRelease, t)
+			continue
+		}
+
+		rgbaDevice0 := mappedDevice0.RGBA()
+		draw.Draw(img1, img1.Bounds(), rgbaDevice0, rgbaDevice0.Bounds().Min, draw.Src)
+
+		err = cq.EnqueueUnmapImage(mappedDevice0, nil, nil)
 		if err != nil {
 			t.Error(err)
 			releaseAll(toRelease, t)
