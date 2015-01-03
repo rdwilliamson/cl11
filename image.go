@@ -198,6 +198,9 @@ func (i *ImageFormat) elementSize() int {
 	return channels * channelBytes
 }
 
+// EntireImage is a convenience value to ease reading of the code.
+var EntireImage = (*Rect)(nil)
+
 // Get the list of image formats supported by an OpenCL implementation.
 func (c *Context) GetSupportedImageFormats(mf MemFlags, mot MemObjectType) ([]ImageFormat, error) {
 
@@ -341,6 +344,16 @@ func (cq *CommandQueue) EnqueueMapImage(i *Image, bc BlockingCall, flags MapFlag
 		e.Context = cq.Context
 		e.CommandType = CommandMapImage
 		e.CommandQueue = cq
+	}
+
+	// If the rect is nil map the entire image.
+	if r == nil {
+		rowPitch := int64(i.Width * i.ElementSize)
+		slicePitch := rowPitch * int64(i.Height)
+		r = &Rect{
+			Src:    RectLayout{RowPitch: rowPitch, SlicePitch: slicePitch},
+			Region: [3]int64{int64(i.Width), int64(i.Height), int64(i.Depth)},
+		}
 	}
 
 	var rowPitch, slicePitch clw.Size

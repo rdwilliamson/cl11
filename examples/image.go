@@ -83,10 +83,6 @@ func main() {
 	base := filepath.Base(os.Args[1])
 	ext := filepath.Ext(os.Args[1])
 	base = base[:len(base)-len(ext)]
-	var rect cl.Rect
-	rect.Region[0] = int64(width)
-	rect.Region[1] = int64(height)
-	rect.Region[2] = 1
 
 	// Run the kernel on every device of every platform.
 	var count int
@@ -125,7 +121,7 @@ func main() {
 			// device and run the kernel.
 			cq, err := c.CreateCommandQueue(device, 0)
 			check(err)
-			inMapped, err := cq.EnqueueMapImage(inData, cl.Blocking, cl.MapWrite, &rect, nil, nil)
+			inMapped, err := cq.EnqueueMapImage(inData, cl.Blocking, cl.MapWrite, cl.EntireImage, nil, nil)
 			check(err)
 			inRgba := inMapped.RGBA()
 			draw.Draw(inRgba, inRgba.Bounds(), input, input.Bounds().Min, draw.Src)
@@ -135,7 +131,7 @@ func main() {
 			check(err)
 
 			// Copy the result to a file.
-			outMapped, err := cq.EnqueueMapImage(outData, cl.Blocking, cl.MapRead, &rect, nil, nil)
+			outMapped, err := cq.EnqueueMapImage(outData, cl.Blocking, cl.MapRead, cl.EntireImage, nil, nil)
 			check(err)
 			err = writeImage(fmt.Sprintf("%s%d%s", base, count, ext), outMapped.RGBA())
 			check(err)
